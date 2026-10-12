@@ -1,0 +1,9 @@
+import { resolvePostLoginRedirect } from "@/lib/auth/redirect";
+import { redirect } from "next/navigation";
+
+export const dynamic = "force-dynamic";
+
+export default async function AppPage() {
+  const destination = await resolvePostLoginRedirect();
+  redirect(destination.path);
+}
