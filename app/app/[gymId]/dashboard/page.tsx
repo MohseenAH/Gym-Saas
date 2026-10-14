@@ -38,28 +38,7 @@ export default async function DashboardPage({ params, searchParams }: PageProps)
 
   const supabase = await createClient();
 
-  // 1. Fetch Gym & Branches in parallel (Stage 1)
-  const [gymRes, branchesRes] = await Promise.all([
-    supabase
-      .from("gyms")
-      .select("name, phone, account_id, accounts(subscription_tier, trial_ends_at)")
-      .eq("id", gymId)
-      .single(),
-    supabase
-      .from("branches")
-      .select("id, name")
-      .eq("gym_id", gymId)
-      .eq("is_active", true),
-  ]);
-
-  const gym = gymRes.data;
-  const accountData = gym?.accounts as { trial_ends_at?: string; subscription_tier?: string } | null;
-  const pilotStatus = evaluatePilotStatus(
-    accountData?.trial_ends_at,
-    accountData?.subscription_tier
-  );
-
-  const branchList = branchesRes.data || [];
+  // Resolve branch context immediately using cached authContext
   const branchContext = resolveBranchContext({
     role: authContext.role,
     authorizedBranchIds: authContext.branchIds,
@@ -70,9 +49,9 @@ export default async function DashboardPage({ params, searchParams }: PageProps)
   const gymBranchIds = branchContext.effectiveBranchIds;
   const isValidBranchFilter = !!selectedBranchId;
 
-  // 2. Prepare independent queries (Stage 2)
   const todayStr = new Date().toISOString().split("T")[0];
 
+  // Prepare all independent queries simultaneously
   let membersQuery = supabase
     .from("members")
     .select("id", { count: "exact", head: true })
@@ -137,8 +116,10 @@ export default async function DashboardPage({ params, searchParams }: PageProps)
     recentAttendanceQuery = recentAttendanceQuery.in("branch_id", gymBranchIds);
   }
 
-  // 3. Execute all independent queries concurrently (Stage 2)
+  // Execute ALL page queries concurrently in parallel
   const [
+    gymRes,
+    branchesRes,
     membersRes,
     attendanceCountRes,
     paymentsRes,
@@ -147,6 +128,16 @@ export default async function DashboardPage({ params, searchParams }: PageProps)
     noticesRes,
     recentAttendanceRes,
   ] = await Promise.all([
+    supabase
+      .from("gyms")
+      .select("name, phone, account_id, accounts(subscription_tier, trial_ends_at)")
+      .eq("id", gymId)
+      .single(),
+    supabase
+      .from("branches")
+      .select("id, name")
+      .eq("gym_id", gymId)
+      .eq("is_active", true),
     membersQuery,
     attendanceCountQuery,
     paymentsQuery,
@@ -155,6 +146,14 @@ export default async function DashboardPage({ params, searchParams }: PageProps)
     noticesQuery,
     recentAttendanceQuery,
   ]);
+
+  const gym = gymRes.data;
+  const accountData = gym?.accounts as { trial_ends_at?: string; subscription_tier?: string } | null;
+  const pilotStatus = evaluatePilotStatus(
+    accountData?.trial_ends_at,
+    accountData?.subscription_tier
+  );
+  const branchList = branchesRes.data || [];
 
   const membersCount = membersRes.count;
   const todayCheckIns = attendanceCountRes.count;

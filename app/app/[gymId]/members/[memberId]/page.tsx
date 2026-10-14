@@ -17,43 +17,65 @@ export default async function MemberDetailPage({ params }: MemberDetailPageProps
 
   const supabase = await createClient();
 
-  // 1. Fetch Member
-  const { data: member, error: memberErr } = await supabase
-    .from("members")
-    .select("id, branch_id, user_id, full_name, phone, email, status, notes, created_at, branches(id, name)")
-    .eq("id", memberId)
-    .single();
+  // Parallel fetch: member dossier, gym info, branches, plans, memberships, payments, and attendance
+  const [
+    memberRes,
+    gymRes,
+    branchesRes,
+    plansRes,
+    membershipsRes,
+    paymentsRes,
+    attendanceRes,
+  ] = await Promise.all([
+    supabase
+      .from("members")
+      .select("id, branch_id, user_id, full_name, phone, email, status, notes, created_at, branches(id, name)")
+      .eq("id", memberId)
+      .single(),
+    supabase
+      .from("gyms")
+      .select("name")
+      .eq("id", gymId)
+      .single(),
+    supabase
+      .from("branches")
+      .select("id, name")
+      .eq("gym_id", gymId)
+      .eq("is_active", true),
+    supabase
+      .from("membership_plans")
+      .select("id, name, price, duration_days")
+      .eq("is_active", true),
+    supabase
+      .from("memberships")
+      .select("id, plan_id, start_date, end_date, status, notes, created_at, membership_plans(name, price, duration_days)")
+      .eq("member_id", memberId)
+      .order("start_date", { ascending: false }),
+    supabase
+      .from("payments")
+      .select("id, membership_id, amount, payment_method, payment_status, payment_date, notes, created_at")
+      .eq("member_id", memberId)
+      .order("payment_date", { ascending: false }),
+    supabase
+      .from("attendance")
+      .select("id, check_in_date, check_in_time, check_in_method, branches(name)")
+      .eq("member_id", memberId)
+      .order("check_in_date", { ascending: false })
+      .order("check_in_time", { ascending: false })
+      .limit(50),
+  ]);
 
-  if (memberErr || !member) {
+  const member = memberRes.data;
+  if (memberRes.error || !member) {
     notFound();
   }
 
-  // 2. Fetch Gym Info
-  const { data: gym } = await supabase
-    .from("gyms")
-    .select("name")
-    .eq("id", gymId)
-    .single();
-
-  // 3. Fetch Branches
-  const { data: branches } = await supabase
-    .from("branches")
-    .select("id, name")
-    .eq("gym_id", gymId)
-    .eq("is_active", true);
-
-  // 4. Fetch Membership Plans
-  const { data: plans } = await supabase
-    .from("membership_plans")
-    .select("id, name, price, duration_days")
-    .eq("is_active", true);
-
-  // 5. Fetch Member's Memberships
-  const { data: rawMemberships } = await supabase
-    .from("memberships")
-    .select("id, plan_id, start_date, end_date, status, notes, created_at, membership_plans(name, price, duration_days)")
-    .eq("member_id", memberId)
-    .order("start_date", { ascending: false });
+  const gym = gymRes.data;
+  const branches = branchesRes.data || [];
+  const plans = plansRes.data || [];
+  const rawMemberships = membershipsRes.data || [];
+  const rawPayments = paymentsRes.data || [];
+  const rawAttendance = attendanceRes.data || [];
 
   interface RawMemberMembership {
     id: string;
@@ -93,13 +115,6 @@ export default async function MemberDetailPage({ params }: MemberDetailPageProps
     };
   }
 
-  // 6. Fetch Payments
-  const { data: rawPayments } = await supabase
-    .from("payments")
-    .select("id, membership_id, amount, payment_method, payment_status, payment_date, notes, created_at")
-    .eq("member_id", memberId)
-    .order("payment_date", { ascending: false });
-
   interface RawMemberPayment {
     id: string;
     membership_id?: string | null;
@@ -130,15 +145,6 @@ export default async function MemberDetailPage({ params }: MemberDetailPageProps
       .reduce((acc, curr) => acc + curr.amount, 0);
     outstandingDues = Math.max(0, activeMembership.planPrice - paidForActive);
   }
-
-  // 7. Fetch Attendance Records
-  const { data: rawAttendance } = await supabase
-    .from("attendance")
-    .select("id, check_in_date, check_in_time, check_in_method, branches(name)")
-    .eq("member_id", memberId)
-    .order("check_in_date", { ascending: false })
-    .order("check_in_time", { ascending: false })
-    .limit(50);
 
   interface RawMemberAttendance {
     id: string;

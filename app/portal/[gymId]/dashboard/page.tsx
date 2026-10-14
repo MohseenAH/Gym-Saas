@@ -45,23 +45,34 @@ export default async function MemberPortalDashboardPage({ params }: PageProps) {
   const gymName = branchData?.gyms?.name || "Gym";
   const branchName = branchData?.name || "Main Branch";
 
-  // Check today's check-in status
+  // Fetch today's check-in status, active membership, and active notices in parallel
   const today = new Date().toISOString().split("T")[0];
-  const { data: todayCheckIn } = await supabase
-    .from("attendance")
-    .select("id, check_in_time")
-    .eq("member_id", member.id)
-    .eq("check_in_date", today)
-    .maybeSingle();
+  const [todayCheckInRes, membershipRes, noticesRes] = await Promise.all([
+    supabase
+      .from("attendance")
+      .select("id, check_in_time")
+      .eq("member_id", member.id)
+      .eq("check_in_date", today)
+      .maybeSingle(),
+    supabase
+      .from("memberships")
+      .select("id, start_date, end_date, status, membership_plans(name, price, duration_days)")
+      .eq("member_id", member.id)
+      .eq("status", "active")
+      .order("end_date", { ascending: false })
+      .maybeSingle(),
+    supabase
+      .from("notices")
+      .select("id, title, content, priority, published_at")
+      .eq("gym_id", gymId)
+      .eq("is_active", true)
+      .order("published_at", { ascending: false })
+      .limit(3),
+  ]);
 
-  // Fetch active membership contract
-  const { data: membership } = await supabase
-    .from("memberships")
-    .select("id, start_date, end_date, status, membership_plans(name, price, duration_days)")
-    .eq("member_id", member.id)
-    .eq("status", "active")
-    .order("end_date", { ascending: false })
-    .maybeSingle();
+  const todayCheckIn = todayCheckInRes.data;
+  const membership = membershipRes.data;
+  const notices = noticesRes.data;
 
   // Calculate days remaining
   let daysRemaining = 0;
@@ -71,15 +82,6 @@ export default async function MemberPortalDashboardPage({ params }: PageProps) {
     const diff = Math.ceil((end.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
     daysRemaining = Math.max(0, diff);
   }
-
-  // Fetch active announcements / notices for this gym
-  const { data: notices } = await supabase
-    .from("notices")
-    .select("id, title, content, priority, published_at")
-    .eq("gym_id", gymId)
-    .eq("is_active", true)
-    .order("published_at", { ascending: false })
-    .limit(3);
 
   const planData = membership?.membership_plans as unknown as PlanRelation | null;
   const planName = planData?.name || "No Active Plan";

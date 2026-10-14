@@ -35,6 +35,7 @@ export async function updateGymProfileAction(input: z.infer<typeof updateGymProf
       return { success: false, error: error.message };
     }
 
+    revalidatePath(`/app/${context.gymId}`, "layout");
     revalidatePath(`/app/${context.gymId}/settings`);
     revalidatePath(`/app/${context.gymId}/dashboard`);
     return { success: true };
@@ -150,6 +151,7 @@ export async function redeemPilotCodeAction(params: {
       return { success: false, error: accErr.message };
     }
 
+    revalidatePath(`/app/${context.gymId}`, "layout");
     revalidatePath(`/app/${context.gymId}/settings`);
     revalidatePath(`/app/${context.gymId}/dashboard`);
 

@@ -41,6 +41,7 @@ export async function createBranchAction(input: z.infer<typeof createBranchSchem
       return { success: false, error: error.message };
     }
 
+    revalidatePath(`/app/${context.gymId}`, "layout");
     revalidatePath(`/app/${context.gymId}/branches`);
     revalidatePath(`/app/${context.gymId}/settings`);
     revalidatePath(`/app/${context.gymId}/dashboard`);
@@ -89,6 +90,7 @@ export async function updateBranchAction(input: z.infer<typeof updateBranchSchem
       return { success: false, error: error.message };
     }
 
+    revalidatePath(`/app/${context.gymId}`, "layout");
     revalidatePath(`/app/${context.gymId}/branches`);
     revalidatePath(`/app/${context.gymId}/settings`);
     return { success: true };

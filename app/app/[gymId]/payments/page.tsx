@@ -29,30 +29,13 @@ export default async function PaymentsPage({ params, searchParams }: PaymentsPag
 
   const supabase = await createClient();
 
-  // 1. Fetch gym, branches, and user permissions in parallel
-  const [gymRes, branchesRes] = await Promise.all([
-    supabase
-      .from("gyms")
-      .select("name")
-      .eq("id", gymId)
-      .single(),
-    supabase
-      .from("branches")
-      .select("id, name")
-      .eq("gym_id", gymId)
-      .eq("is_active", true),
-  ]);
-
-  const gym = gymRes.data;
-  const branches = branchesRes.data || [];
-
   const branchContext = resolveBranchContext({
     role: authContext.role,
     authorizedBranchIds: authContext.branchIds,
     requestedBranchId,
   });
 
-  // 2. Fetch active members & payments filtered by branch context
+  // Prepare active members & payments queries filtered by branch context
   let membersQuery = supabase
     .from("members")
     .select("id, full_name, phone, branch_id")
@@ -79,10 +62,24 @@ export default async function PaymentsPage({ params, searchParams }: PaymentsPag
     paymentsQuery = paymentsQuery.in("branch_id", branchContext.effectiveBranchIds);
   }
 
-  const [membersRes, paymentsRes] = await Promise.all([
+  // Execute all queries concurrently in parallel
+  const [gymRes, branchesRes, membersRes, paymentsRes] = await Promise.all([
+    supabase
+      .from("gyms")
+      .select("name")
+      .eq("id", gymId)
+      .single(),
+    supabase
+      .from("branches")
+      .select("id, name")
+      .eq("gym_id", gymId)
+      .eq("is_active", true),
     membersQuery,
     paymentsQuery,
   ]);
+
+  const gym = gymRes.data;
+  const branches = branchesRes.data || [];
 
   const members = membersRes.data || [];
   const allPayments = paymentsRes.data || [];

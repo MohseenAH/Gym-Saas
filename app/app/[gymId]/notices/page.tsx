@@ -18,21 +18,22 @@ export default async function NoticesPage({ params }: NoticesPageProps) {
 
   const supabase = await createClient();
 
-  // Fetch branches
-  const { data: branches } = await supabase
-    .from("branches")
-    .select("id, name")
-    .eq("gym_id", gymId)
-    .eq("is_active", true);
+  // Fetch branches and notices in parallel
+  const [branchesRes, noticesRes] = await Promise.all([
+    supabase
+      .from("branches")
+      .select("id, name")
+      .eq("gym_id", gymId)
+      .eq("is_active", true),
+    supabase
+      .from("notices")
+      .select("id, title, content, priority, is_active, published_at, expires_at, branches(name)")
+      .eq("gym_id", gymId)
+      .order("published_at", { ascending: false }),
+  ]);
 
-  // Fetch notices
-  const { data: notices } = await supabase
-    .from("notices")
-    .select("id, title, content, priority, is_active, published_at, expires_at, branches(name)")
-    .eq("gym_id", gymId)
-    .order("published_at", { ascending: false });
-
-  const allNotices = notices || [];
+  const branches = branchesRes.data || [];
+  const allNotices = noticesRes.data || [];
 
   return (
     <div className="space-y-6">

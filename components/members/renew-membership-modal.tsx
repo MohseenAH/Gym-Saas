@@ -145,6 +145,53 @@ export function RenewMembershipModal({
             </select>
           </div>
 
+          {/* 3 Payment Presets */}
+          {currentPlan && (
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                Payment Status Preset
+              </label>
+              <div className="grid grid-cols-3 gap-2">
+                <button
+                  type="button"
+                  onClick={() => setAmountPaid(currentPlan.price)}
+                  className={`py-1.5 px-2 rounded-xl text-xs font-bold border transition-all ${
+                    amountPaid >= currentPlan.price
+                      ? "bg-emerald-50 border-emerald-500 text-emerald-700 shadow-2xs"
+                      : "bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100"
+                  }`}
+                >
+                  Full Payment
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const half = Math.round((currentPlan.price / 2) * 100) / 100;
+                    setAmountPaid(half > 0 ? half : 500);
+                  }}
+                  className={`py-1.5 px-2 rounded-xl text-xs font-bold border transition-all ${
+                    amountPaid > 0 && amountPaid < currentPlan.price
+                      ? "bg-amber-50 border-amber-500 text-amber-700 shadow-2xs"
+                      : "bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100"
+                  }`}
+                >
+                  Partial Payment
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setAmountPaid(0)}
+                  className={`py-1.5 px-2 rounded-xl text-xs font-bold border transition-all ${
+                    amountPaid === 0
+                      ? "bg-indigo-50 border-indigo-500 text-indigo-700 shadow-2xs"
+                      : "bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100"
+                  }`}
+                >
+                  Pay Later
+                </button>
+              </div>
+            </div>
+          )}
+
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-xs font-semibold text-slate-700 mb-1">Start Date *</label>
@@ -166,17 +213,25 @@ export function RenewMembershipModal({
                   step="any"
                   value={amountPaid}
                   onChange={(e) => setAmountPaid(Number(e.target.value))}
-                  className="w-full pl-8 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 focus:outline-hidden focus:ring-2 focus:ring-emerald-500"
+                  className="w-full pl-8 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 focus:outline-hidden focus:ring-2 focus:ring-emerald-500 font-semibold"
                 />
               </div>
             </div>
           </div>
 
-          {currentPlan && amountPaid < currentPlan.price && (
-            <div className="text-[11px] font-medium text-amber-700 bg-amber-50 border border-amber-200/60 rounded-xl p-2.5">
-              ⚠️ Partial payment detected: Remaining dues ₹{currentPlan.price - amountPaid} will be logged.
+          {currentPlan && amountPaid >= currentPlan.price ? (
+            <div className="text-[11px] font-semibold text-emerald-800 bg-emerald-50 border border-emerald-200/80 rounded-xl p-2.5">
+              ✅ Full renewal payment received. Balance due: ₹0.00
             </div>
-          )}
+          ) : currentPlan && amountPaid > 0 && amountPaid < currentPlan.price ? (
+            <div className="text-[11px] font-semibold text-amber-800 bg-amber-50 border border-amber-200/80 rounded-xl p-2.5">
+              ⚠️ Partial payment recorded: Remaining dues ₹{(currentPlan.price - amountPaid).toLocaleString("en-IN")} will be logged.
+            </div>
+          ) : currentPlan && amountPaid === 0 ? (
+            <div className="text-[11px] font-semibold text-indigo-800 bg-indigo-50 border border-indigo-200/80 rounded-xl p-2.5">
+              ⏳ Pay Later: Renewal active immediately. Full fee of ₹{currentPlan.price.toLocaleString("en-IN")} tracked as pending dues.
+            </div>
+          ) : null}
 
           <div>
             <label className="block text-xs font-semibold text-slate-700 mb-1">Payment Method</label>

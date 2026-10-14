@@ -29,40 +29,13 @@ export default async function MembersPage({ params, searchParams }: MembersPageP
 
   const supabase = await createClient();
 
-  // 1. Fetch branches, plans, and invites in parallel
-  const [branchesRes, plansRes, invitesRes] = await Promise.all([
-    supabase
-      .from("branches")
-      .select("id, name")
-      .eq("gym_id", gymId)
-      .eq("is_active", true),
-    supabase
-      .from("membership_plans")
-      .select("id, name, price, duration_days")
-      .eq("is_active", true),
-    supabase
-      .from("invitations")
-      .select("member_id, token_hash, status")
-      .eq("gym_id", gymId)
-      .eq("role", "member")
-      .eq("status", "pending"),
-  ]);
-
-  const branches = branchesRes.data || [];
-  const plans = plansRes.data || [];
-  const invites = invitesRes.data || [];
-
   const branchContext = resolveBranchContext({
     role: authContext.role,
     authorizedBranchIds: authContext.branchIds,
     requestedBranchId,
   });
 
-  const primaryBranch =
-    branches.find((b) => b.id === branchContext.selectedBranchId) || branches[0];
-  const branchId = primaryBranch?.id || "";
-
-  // 2. Fetch members and active memberships in parallel with branch filtering
+  // Prepare members query with branch filtering
   let membersQuery = supabase
     .from("members")
     .select("id, full_name, phone, email, status, created_at, user_id, branches(name)")
@@ -74,13 +47,38 @@ export default async function MembersPage({ params, searchParams }: MembersPageP
     membersQuery = membersQuery.in("branch_id", branchContext.effectiveBranchIds);
   }
 
-  const [membersRes, membershipsRes] = await Promise.all([
-    membersQuery,
-    supabase
-      .from("memberships")
-      .select("id, member_id, start_date, end_date, status, membership_plans(name, duration_days)")
-      .eq("status", "active"),
-  ]);
+  // Fetch branches, plans, invites, members, and memberships in parallel
+  const [branchesRes, plansRes, invitesRes, membersRes, membershipsRes] =
+    await Promise.all([
+      supabase
+        .from("branches")
+        .select("id, name")
+        .eq("gym_id", gymId)
+        .eq("is_active", true),
+      supabase
+        .from("membership_plans")
+        .select("id, name, price, duration_days")
+        .eq("is_active", true),
+      supabase
+        .from("invitations")
+        .select("member_id, token_hash, status")
+        .eq("gym_id", gymId)
+        .eq("role", "member")
+        .eq("status", "pending"),
+      membersQuery,
+      supabase
+        .from("memberships")
+        .select("id, member_id, start_date, end_date, status, membership_plans(name, duration_days)")
+        .eq("status", "active"),
+    ]);
+
+  const branches = branchesRes.data || [];
+  const plans = plansRes.data || [];
+  const invites = invitesRes.data || [];
+
+  const primaryBranch =
+    branches.find((b) => b.id === branchContext.selectedBranchId) || branches[0];
+  const branchId = primaryBranch?.id || "";
 
   const allMembers = membersRes.data || [];
   const memberships = membershipsRes.data || [];

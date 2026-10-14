@@ -94,6 +94,7 @@ export async function createPlanAction(input: CreatePlanInput) {
       return { success: false, error: error?.message || "Failed to create plan" };
     }
 
+    revalidatePath(`/app/${context.gymId}`, "layout");
     revalidatePath(`/app/${context.gymId}/memberships`);
     revalidatePath(`/app/${context.gymId}/members`);
     revalidatePath(`/app/${context.gymId}/settings`);
@@ -189,6 +190,7 @@ export async function updatePlanAction(input: UpdatePlanInput) {
         return { success: false, error: `Failed to create new plan version: ${insertErr?.message}` };
       }
 
+      revalidatePath(`/app/${context.gymId}`, "layout");
       revalidatePath(`/app/${context.gymId}/memberships`);
       revalidatePath(`/app/${context.gymId}/members`);
       revalidatePath(`/app/${context.gymId}/settings`);
@@ -219,6 +221,7 @@ export async function updatePlanAction(input: UpdatePlanInput) {
       return { success: false, error: updateErr.message };
     }
 
+    revalidatePath(`/app/${context.gymId}`, "layout");
     revalidatePath(`/app/${context.gymId}/memberships`);
     revalidatePath(`/app/${context.gymId}/members`);
     revalidatePath(`/app/${context.gymId}/settings`);
@@ -272,6 +275,7 @@ export async function togglePlanAction(input: TogglePlanInput) {
       return { success: false, error: updateErr.message };
     }
 
+    revalidatePath(`/app/${context.gymId}`, "layout");
     revalidatePath(`/app/${context.gymId}/memberships`);
     revalidatePath(`/app/${context.gymId}/members`);
     revalidatePath(`/app/${context.gymId}/settings`);
@@ -336,6 +340,7 @@ export async function deletePlanAction(input: DeletePlanInput) {
       return { success: false, error: deleteErr.message };
     }
 
+    revalidatePath(`/app/${context.gymId}`, "layout");
     revalidatePath(`/app/${context.gymId}/memberships`);
     revalidatePath(`/app/${context.gymId}/members`);
     revalidatePath(`/app/${context.gymId}/settings`);

@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabase/server";
+import { createClient, getCachedUser } from "@/lib/supabase/server";
 import { getAuthorizedActionContext } from "@/lib/auth/guard";
 import { evaluatePilotStatus } from "@/lib/auth/trial";
 import { SettingsViewClient } from "@/components/settings/settings-view-client";
@@ -17,41 +17,35 @@ export default async function SettingsPage({ params }: SettingsPageProps) {
 
   const supabase = await createClient();
 
-  // 1. Fetch Gym & Account
-  const { data: gym } = await supabase
-    .from("gyms")
-    .select("name, phone, account_id, accounts(subscription_tier, trial_ends_at)")
-    .eq("id", gymId)
-    .single();
+  // Parallel fetch: Gym details, Branches, Plans, and cached User
+  const [gymRes, branchesRes, plansRes, user] = await Promise.all([
+    supabase
+      .from("gyms")
+      .select("name, phone, account_id, accounts(subscription_tier, trial_ends_at)")
+      .eq("id", gymId)
+      .single(),
+    supabase
+      .from("branches")
+      .select("id, name, address, city, phone, is_active")
+      .eq("gym_id", gymId)
+      .order("created_at", { ascending: true }),
+    supabase
+      .from("membership_plans")
+      .select("id, name, duration_days, price, is_active, branch_id, branches!inner(gym_id)")
+      .eq("branches.gym_id", gymId)
+      .order("created_at", { ascending: true }),
+    getCachedUser(),
+  ]);
+
+  const gym = gymRes.data;
+  const branches = branchesRes.data || [];
+  const plans = plansRes.data || [];
 
   const accountData = gym?.accounts as { subscription_tier?: string; trial_ends_at?: string } | null;
   const pilotStatus = evaluatePilotStatus(
     accountData?.trial_ends_at,
     accountData?.subscription_tier
   );
-
-  // 2. Fetch Branches
-  const { data: branches } = await supabase
-    .from("branches")
-    .select("id, name, address, city, phone, is_active")
-    .eq("gym_id", gymId)
-    .order("created_at", { ascending: true });
-
-  // 3. Fetch Membership Plans
-  const branchIds = (branches || []).map((b) => b.id);
-  const { data: plans } =
-    branchIds.length > 0
-      ? await supabase
-          .from("membership_plans")
-          .select("id, name, duration_days, price, is_active, branch_id")
-          .in("branch_id", branchIds)
-          .order("created_at", { ascending: true })
-      : { data: [] };
-
-  // 4. Fetch User Profile
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
 
   return (
     <div className="max-w-6xl mx-auto space-y-6">

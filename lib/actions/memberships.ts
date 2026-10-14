@@ -210,6 +210,7 @@ export async function assignMembershipAction(input: AssignMembershipInput) {
       }
     }
 
+    revalidatePath(`/app/${context.gymId}`, "layout");
     revalidatePath(`/app/${context.gymId}/memberships`);
     revalidatePath(`/app/${context.gymId}/members`);
     revalidatePath(`/app/${context.gymId}/members/${validated.memberId}`);

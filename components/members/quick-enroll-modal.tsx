@@ -63,7 +63,7 @@ export function QuickEnrollModal({ gymId, branchId, plans }: QuickEnrollModalPro
       email: email.trim() || undefined,
       notes: notes.trim() || null,
       planId: selectedPlanId || null,
-      amountPaid: amountPaid ? parseFloat(amountPaid) : undefined,
+      amountPaid: amountPaid !== "" && !isNaN(parseFloat(amountPaid)) ? parseFloat(amountPaid) : undefined,
       paymentMethod: paymentMethod as "cash" | "upi" | "card" | "bank_transfer" | "cheque" | "other",
     });
 
@@ -247,41 +247,111 @@ export function QuickEnrollModal({ gymId, branchId, plans }: QuickEnrollModalPro
                   </div>
                 )}
 
-                {selectedPlanId && (
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <label className="block text-xs font-semibold text-slate-700 mb-1">
-                        Amount Paid (₹)
-                      </label>
-                      <input
-                        type="number"
-                        step="0.01"
-                        min="0"
-                        placeholder="0.00"
-                        value={amountPaid}
-                        onChange={(e) => setAmountPaid(e.target.value)}
-                        className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 focus:outline-hidden focus:ring-2 focus:ring-indigo-500 font-semibold"
-                      />
-                    </div>
+                {selectedPlanId && (() => {
+                  const plan = plans.find((p) => p.id === selectedPlanId);
+                  const planPrice = plan ? plan.price : 0;
+                  const currentPaid = parseFloat(amountPaid) || 0;
+                  const balanceDue = Math.max(0, planPrice - currentPaid);
 
-                    <div>
-                      <label className="block text-xs font-semibold text-slate-700 mb-1">
-                        Payment Method
-                      </label>
-                      <select
-                        value={paymentMethod}
-                        onChange={(e) => setPaymentMethod(e.target.value)}
-                        className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 focus:outline-hidden focus:ring-2 focus:ring-indigo-500 capitalize"
-                      >
-                        <option value="cash">Cash</option>
-                        <option value="upi">UPI / QR</option>
-                        <option value="card">Card</option>
-                        <option value="bank_transfer">Bank Transfer</option>
-                        <option value="other">Other</option>
-                      </select>
+                  return (
+                    <div className="space-y-3 pt-1">
+                      {/* 3 Payment Presets */}
+                      <div>
+                        <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                          Payment Status Preset
+                        </label>
+                        <div className="grid grid-cols-3 gap-2">
+                          <button
+                            type="button"
+                            onClick={() => setAmountPaid(String(planPrice))}
+                            className={`py-1.5 px-2 rounded-xl text-xs font-bold border transition-all ${
+                              currentPaid >= planPrice && planPrice > 0
+                                ? "bg-emerald-50 border-emerald-500 text-emerald-700 shadow-2xs"
+                                : "bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100"
+                            }`}
+                          >
+                            Full Payment
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const half = Math.round((planPrice / 2) * 100) / 100;
+                              setAmountPaid(String(half > 0 ? half : 500));
+                            }}
+                            className={`py-1.5 px-2 rounded-xl text-xs font-bold border transition-all ${
+                              currentPaid > 0 && currentPaid < planPrice
+                                ? "bg-amber-50 border-amber-500 text-amber-700 shadow-2xs"
+                                : "bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100"
+                            }`}
+                          >
+                            Partial Payment
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setAmountPaid("0")}
+                            className={`py-1.5 px-2 rounded-xl text-xs font-bold border transition-all ${
+                              currentPaid === 0
+                                ? "bg-indigo-50 border-indigo-500 text-indigo-700 shadow-2xs"
+                                : "bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100"
+                            }`}
+                          >
+                            Pay Later
+                          </button>
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <label className="block text-xs font-semibold text-slate-700 mb-1">
+                            Amount Paid Now (₹)
+                          </label>
+                          <input
+                            type="number"
+                            step="0.01"
+                            min="0"
+                            placeholder="0.00"
+                            value={amountPaid}
+                            onChange={(e) => setAmountPaid(e.target.value)}
+                            className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 focus:outline-hidden focus:ring-2 focus:ring-indigo-500 font-semibold"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-xs font-semibold text-slate-700 mb-1">
+                            Payment Method
+                          </label>
+                          <select
+                            value={paymentMethod}
+                            onChange={(e) => setPaymentMethod(e.target.value)}
+                            disabled={currentPaid === 0}
+                            className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 focus:outline-hidden focus:ring-2 focus:ring-indigo-500 capitalize disabled:opacity-50"
+                          >
+                            <option value="cash">Cash</option>
+                            <option value="upi">UPI / QR</option>
+                            <option value="card">Card</option>
+                            <option value="bank_transfer">Bank Transfer</option>
+                            <option value="other">Other</option>
+                          </select>
+                        </div>
+                      </div>
+
+                      {/* Dynamic Balance Due Banner */}
+                      {currentPaid >= planPrice && planPrice > 0 ? (
+                        <div className="text-[11px] font-semibold text-emerald-800 bg-emerald-50 border border-emerald-200/80 rounded-xl p-2.5">
+                          ✅ Full payment of ₹{currentPaid.toLocaleString("en-IN")} received. Balance due: ₹0.00
+                        </div>
+                      ) : currentPaid > 0 && currentPaid < planPrice ? (
+                        <div className="text-[11px] font-semibold text-amber-800 bg-amber-50 border border-amber-200/80 rounded-xl p-2.5">
+                          ⚠️ Partial payment of ₹{currentPaid.toLocaleString("en-IN")} recorded. Remaining dues: ₹{balanceDue.toLocaleString("en-IN")}
+                        </div>
+                      ) : (
+                        <div className="text-[11px] font-semibold text-indigo-800 bg-indigo-50 border border-indigo-200/80 rounded-xl p-2.5">
+                          ⏳ Pay Later: Active membership created. Full fee of ₹{planPrice.toLocaleString("en-IN")} logged as pending dues.
+                        </div>
+                      )}
                     </div>
-                  </div>
-                )}
+                  );
+                })()}
 
                 <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100">
                   <button

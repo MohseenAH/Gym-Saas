@@ -43,22 +43,23 @@ export default async function MemberPaymentsPage({ params }: PaymentsPageProps) 
   const gymName = branchData?.gyms?.name || "Gym";
   const branchName = branchData?.name || "Main Branch";
 
-  // Fetch active membership
-  const { data: membership } = await supabase
-    .from("memberships")
-    .select("id, end_date, status, membership_plans(name, price)")
-    .eq("member_id", member.id)
-    .eq("status", "active")
-    .maybeSingle();
+  // Parallel fetch: active membership and payment receipts
+  const [membershipRes, paymentsRes] = await Promise.all([
+    supabase
+      .from("memberships")
+      .select("id, end_date, status, membership_plans(name, price)")
+      .eq("member_id", member.id)
+      .eq("status", "active")
+      .maybeSingle(),
+    supabase
+      .from("payments")
+      .select("id, amount, payment_method, payment_status, payment_date, notes")
+      .eq("member_id", member.id)
+      .order("payment_date", { ascending: false }),
+  ]);
 
-  // Fetch payment receipts
-  const { data: payments } = await supabase
-    .from("payments")
-    .select("id, amount, payment_method, payment_status, payment_date, notes")
-    .eq("member_id", member.id)
-    .order("payment_date", { ascending: false });
-
-  const allPayments = payments || [];
+  const membership = membershipRes.data;
+  const allPayments = paymentsRes.data || [];
   const planData = membership?.membership_plans as unknown as PlanRelation | null;
   const planName = planData?.name;
   const planPrice = Number(planData?.price || 0);

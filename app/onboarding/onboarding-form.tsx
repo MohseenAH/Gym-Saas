@@ -119,12 +119,12 @@ export default function OnboardingForm({
           <input
             type="text"
             name="pilotCode"
-            placeholder="e.g. PILOT60 (leaves blank for standard 14-day trial)"
+            placeholder="e.g. PILOT60 (60-day free pilot auto-active)"
             className="w-full pl-10 pr-3.5 py-2.5 rounded-xl border border-slate-200 text-sm uppercase font-mono text-slate-900 focus:outline-hidden focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-colors"
           />
         </div>
         <p className="mt-1 text-[11px] text-slate-400">
-          Partner gyms with an invitation code unlock 60 days of Pro pilot access.
+          All registered partner gyms receive 60 days of full Pro pilot access with zero lockouts.
         </p>
       </div>
 

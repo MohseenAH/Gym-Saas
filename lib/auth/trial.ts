@@ -1,3 +1,5 @@
+export const DEFAULT_TRIAL_DAYS = 60;
+
 export type SubscriptionStatus = "trial" | "active" | "past_due" | "canceled" | "expired";
 
 export interface AccountState {
@@ -6,35 +8,30 @@ export interface AccountState {
   gracePeriodEndsAt?: Date;
 }
 
+/**
+ * Evaluates account access during the 60-day free pilot.
+ * Hard lockouts are disabled: users are never blocked or redirected out
+ * of their workspace during the production pilot phase.
+ */
 export function evaluateAccountAccess(
   account: AccountState,
   now: Date = new Date()
 ): { allowed: boolean; isExpired: boolean; daysRemaining: number } {
-  if (account.status === "active") {
-    return { allowed: true, isExpired: false, daysRemaining: Infinity };
-  }
+  const diffMs = account.trialEndsAt ? account.trialEndsAt.getTime() - now.getTime() : 0;
+  const daysRemaining = Math.max(0, Math.ceil(diffMs / (1000 * 60 * 60 * 24)));
+  const isPast = diffMs <= 0;
 
-  if (account.status === "trial") {
-    const diffMs = account.trialEndsAt.getTime() - now.getTime();
-    const daysRemaining = Math.max(0, Math.ceil(diffMs / (1000 * 60 * 60 * 24)));
-
-    if (diffMs > 0) {
-      return { allowed: true, isExpired: false, daysRemaining };
-    }
-    return { allowed: false, isExpired: true, daysRemaining: 0 };
-  }
-
-  if (account.status === "past_due" && account.gracePeriodEndsAt) {
-    const inGrace = account.gracePeriodEndsAt.getTime() > now.getTime();
-    return { allowed: inGrace, isExpired: !inGrace, daysRemaining: 0 };
-  }
-
-  return { allowed: false, isExpired: true, daysRemaining: 0 };
+  // During 60-day free pilot: NEVER hard lockout the gym workspace
+  return {
+    allowed: true, // Hard lockout disabled
+    isExpired: isPast && account.status !== "active",
+    daysRemaining: account.status === "active" ? Infinity : daysRemaining,
+  };
 }
 
 export function evaluatePilotStatus(
   trialEndsAtStr?: string | null,
-  tier: string = "starter",
+  tier: string = "pro",
   now: Date = new Date()
 ): {
   isPilot: boolean;
@@ -43,11 +40,12 @@ export function evaluatePilotStatus(
   badgeText: string;
 } {
   if (!trialEndsAtStr) {
+    // Default to active 60-day pilot access if trial date missing
     return {
-      isPilot: false,
+      isPilot: true,
       isActive: true,
-      daysRemaining: 0,
-      badgeText: tier.toUpperCase(),
+      daysRemaining: DEFAULT_TRIAL_DAYS,
+      badgeText: `60-Day Pilot Access (${DEFAULT_TRIAL_DAYS}d left)`,
     };
   }
 
@@ -60,6 +58,6 @@ export function evaluatePilotStatus(
     isPilot: true,
     isActive,
     daysRemaining,
-    badgeText: isActive ? `Pilot Access (${daysRemaining}d left)` : "Pilot Expired",
+    badgeText: isActive ? `60-Day Pilot (${daysRemaining}d left)` : "Pilot Grace Period",
   };
 }

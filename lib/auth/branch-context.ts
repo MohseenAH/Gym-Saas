@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { StaffRole } from "./roles";
 
 export interface BranchContextResolution {
@@ -7,6 +8,9 @@ export interface BranchContextResolution {
   canSelectAll: boolean;
 }
 
+/**
+ * Pure branch context calculation based on role and authorized branches.
+ */
 export function resolveBranchContext({
   role,
   authorizedBranchIds,
@@ -83,3 +87,24 @@ export function resolveBranchContext({
     canSelectAll: false,
   };
 }
+
+/**
+ * Request-level cached branch context resolution.
+ * Takes primitive arguments so React's cache() shallow key matching works reliably.
+ */
+export const getCachedBranchContext = cache(
+  (
+    role: StaffRole,
+    authorizedBranchIdsKey: string,
+    requestedBranchId?: string | null,
+    cookieBranchId?: string | null
+  ): BranchContextResolution => {
+    const authorizedBranchIds = authorizedBranchIdsKey ? authorizedBranchIdsKey.split(",") : [];
+    return resolveBranchContext({
+      role,
+      authorizedBranchIds,
+      requestedBranchId,
+      cookieBranchId,
+    });
+  }
+);

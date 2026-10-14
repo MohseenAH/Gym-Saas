@@ -59,6 +59,7 @@ export async function createExpenseAction(input: CreateExpenseInput) {
       return { success: false, error: `Failed to record expense: ${error.message}` };
     }
 
+    revalidatePath(`/app/${context.gymId}`, "layout");
     revalidatePath(`/app/${context.gymId}/expenses`);
     revalidatePath(`/app/${context.gymId}/dashboard`);
 
@@ -93,6 +94,7 @@ export async function deleteExpenseAction(params: { gymId: string; expenseId: st
       return { success: false, error: error.message };
     }
 
+    revalidatePath(`/app/${context.gymId}`, "layout");
     revalidatePath(`/app/${context.gymId}/expenses`);
     revalidatePath(`/app/${context.gymId}/dashboard`);
 

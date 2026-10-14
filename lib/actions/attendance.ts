@@ -51,6 +51,7 @@ export async function staffCheckInAction(params: {
       return { success: false, error: error.message };
     }
 
+    revalidatePath(`/app/${context.gymId}`, "layout");
     revalidatePath(`/app/${context.gymId}/attendance`);
     revalidatePath(`/app/${context.gymId}/dashboard`);
     revalidatePath(`/portal/${context.gymId}/attendance`);
@@ -124,6 +125,7 @@ export async function memberSelfCheckInAction(params: {
       return { success: false, error: error.message };
     }
 
+    revalidatePath(`/app/${params.gymId}`, "layout");
     revalidatePath(`/portal/${params.gymId}/attendance`);
     revalidatePath(`/portal/${params.gymId}/dashboard`);
     revalidatePath(`/app/${params.gymId}/attendance`);

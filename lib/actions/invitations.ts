@@ -79,6 +79,7 @@ export async function createStaffInvitationAction(data: z.infer<typeof staffInvi
     recipientPhone: phone || undefined,
   });
 
+  revalidatePath(`/app/${gymId}`, "layout");
   revalidatePath(`/app/${gymId}/staff`);
 
   return {
@@ -185,6 +186,7 @@ export async function revokeInvitationAction(params: {
       return { success: false, error: error.message };
     }
 
+    revalidatePath(`/app/${context.gymId}`, "layout");
     revalidatePath(`/app/${context.gymId}/staff`);
     return { success: true };
   } catch (err: unknown) {
@@ -216,6 +218,7 @@ export async function toggleStaffStatusAction(params: {
       return { success: false, error: error.message };
     }
 
+    revalidatePath(`/app/${context.gymId}`, "layout");
     revalidatePath(`/app/${context.gymId}/staff`);
     return { success: true };
   } catch (err: unknown) {

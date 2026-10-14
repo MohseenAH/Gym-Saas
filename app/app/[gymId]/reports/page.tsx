@@ -33,30 +33,13 @@ export default async function ReportsPage({ params, searchParams }: ReportsPageP
 
   const supabase = await createClient();
 
-  // 1. Fetch Gym & Branches in parallel
-  const [gymRes, branchesRes] = await Promise.all([
-    supabase
-      .from("gyms")
-      .select("name")
-      .eq("id", gymId)
-      .single(),
-    supabase
-      .from("branches")
-      .select("id, name")
-      .eq("gym_id", gymId)
-      .eq("is_active", true),
-  ]);
-
-  const gym = gymRes.data;
-  const branches = branchesRes.data || [];
-
   const branchContext = resolveBranchContext({
     role: authContext.role,
     authorizedBranchIds: authContext.branchIds,
     requestedBranchId,
   });
 
-  // 2. Build filtered queries
+  // Build filtered queries
   let paymentsQuery = supabase
     .from("payments")
     .select(
@@ -95,17 +78,31 @@ export default async function ReportsPage({ params, searchParams }: ReportsPageP
     attendanceQuery = attendanceQuery.in("branch_id", branchContext.effectiveBranchIds);
   }
 
-  const [paymentsRes, expensesRes, membershipsRes, attendanceRes] = await Promise.all([
-    paymentsQuery,
-    expensesQuery,
-    supabase
-      .from("memberships")
-      .select(
-        "id, member_id, start_date, end_date, status, membership_plans(name, price), members(id, full_name, phone, branch_id, branches(name))"
-      )
-      .order("end_date", { ascending: false }),
-    attendanceQuery,
-  ]);
+  const [gymRes, branchesRes, paymentsRes, expensesRes, membershipsRes, attendanceRes] =
+    await Promise.all([
+      supabase
+        .from("gyms")
+        .select("name")
+        .eq("id", gymId)
+        .single(),
+      supabase
+        .from("branches")
+        .select("id, name")
+        .eq("gym_id", gymId)
+        .eq("is_active", true),
+      paymentsQuery,
+      expensesQuery,
+      supabase
+        .from("memberships")
+        .select(
+          "id, member_id, start_date, end_date, status, membership_plans(name, price), members(id, full_name, phone, branch_id, branches(name))"
+        )
+        .order("end_date", { ascending: false }),
+      attendanceQuery,
+    ]);
+
+  const gym = gymRes.data;
+  const branches = branchesRes.data || [];
 
   const payments = paymentsRes.data || [];
   const expenses = expensesRes.data || [];

@@ -1,86 +1,93 @@
-import { createClient } from "@/lib/supabase/server";
+import { createClient, getCachedUser } from "@/lib/supabase/server";
 
 export interface PersonaDestination {
   path: string;
   type: "staff" | "member" | "selector" | "onboarding";
 }
 
+/**
+ * Deterministic redirect helper:
+ * - 0 gyms and no member profile -> /onboarding
+ * - Owner/staff of exactly 1 gym -> /app/[gymId]/dashboard (skips /select-workspace)
+ * - Owner/staff of >1 gym -> /select-workspace
+ * - Only a gym member (1 gym) -> /portal/[gymId]/dashboard
+ * - Member of >1 gym -> /select-workspace
+ */
 export async function resolvePostLoginRedirect(): Promise<PersonaDestination> {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getCachedUser();
 
   if (!user) {
     return { path: "/login", type: "onboarding" };
   }
 
-  // 1. Check directly owned gyms via accounts table
-  const { data: ownedAccounts } = await supabase
-    .from("accounts")
-    .select("id, gyms ( id, name )")
-    .eq("owner_id", user.id);
+  // Parallel fetch: owned gyms, staff gyms, and member profiles
+  const [ownedAccountsRes, rawStaffRes, memberProfilesRes] = await Promise.all([
+    supabase
+      .from("accounts")
+      .select("id, gyms ( id, name )")
+      .eq("owner_id", user.id),
+    supabase
+      .from("gym_users")
+      .select("gym_id, role, gyms ( id, name )")
+      .eq("user_id", user.id)
+      .eq("status", "active"),
+    supabase
+      .from("members")
+      .select("id, branch_id, branches ( id, gym_id, gyms ( id, name ) )")
+      .eq("user_id", user.id)
+      .eq("status", "active"),
+  ]);
 
-  // 2. Check active staff relationships
-  const { data: rawStaffMemberships } = await supabase
-    .from("gym_users")
-    .select("gym_id, role, gyms ( id, name )")
-    .eq("user_id", user.id)
-    .eq("status", "active");
-
-  interface StaffEntry {
-    gym_id: string;
-    role: string;
-    gyms?: { id: string; name: string } | null;
+  interface GymItem {
+    id: string;
+    name: string;
   }
   interface AccountWithGyms {
     id: string;
-    gyms?: { id: string; name: string }[] | null;
+    gyms?: GymItem[] | GymItem | null;
+  }
+  interface StaffEntry {
+    gym_id: string;
+    role: string;
+    gyms?: GymItem | null;
   }
 
   const staffMap = new Map<string, StaffEntry>();
-  ((ownedAccounts as unknown as AccountWithGyms[]) || []).forEach((acc) => {
-    (acc.gyms || []).forEach((g) => {
+
+  const accounts = (ownedAccountsRes.data || []) as unknown as AccountWithGyms[];
+  accounts.forEach((acc) => {
+    const list = Array.isArray(acc.gyms) ? acc.gyms : acc.gyms ? [acc.gyms] : [];
+    list.forEach((g) => {
       staffMap.set(g.id, { gym_id: g.id, role: "owner", gyms: g });
     });
   });
 
-  ((rawStaffMemberships as unknown as StaffEntry[]) || []).forEach((item) => {
+  const staffItems = (rawStaffRes.data || []) as unknown as StaffEntry[];
+  staffItems.forEach((item) => {
     if (!staffMap.has(item.gym_id)) {
       staffMap.set(item.gym_id, item);
     }
   });
 
   const staffList = Array.from(staffMap.values());
+  const memberList = memberProfilesRes.data || [];
 
-  // 3. Check active member portal relationships
-  const { data: memberProfiles } = await supabase
-    .from("members")
-    .select("id, branch_id, branches ( id, gym_id, gyms ( id, name ) )")
-    .eq("user_id", user.id)
-    .eq("status", "active");
-
-  const memberList = memberProfiles || [];
-
-  // Multi-persona or multi-gym: go to workspace selector
-  if (
-    (staffList.length > 0 && memberList.length > 0) ||
-    staffList.length > 1 ||
-    memberList.length > 1
-  ) {
-    return { path: "/select-workspace", type: "selector" };
-  }
-
-  // Single staff relationship
-  if (staffList.length === 1 && memberList.length === 0) {
+  // Rule 1: Owner or staff of exactly 1 gym -> straight to /app/[gymId]/dashboard
+  if (staffList.length === 1) {
     return {
       path: `/app/${staffList[0].gym_id}/dashboard`,
       type: "staff",
     };
   }
 
-  // Single member portal relationship
-  if (memberList.length === 1 && staffList.length === 0) {
+  // Rule 2: Owner or staff of >1 gym -> /select-workspace
+  if (staffList.length > 1) {
+    return { path: "/select-workspace", type: "selector" };
+  }
+
+  // Rule 3: Only a gym member
+  if (memberList.length === 1) {
     const branches = memberList[0].branches as unknown as { gym_id?: string } | null;
     const gymId = branches?.gym_id;
     if (gymId) {
@@ -91,6 +98,10 @@ export async function resolvePostLoginRedirect(): Promise<PersonaDestination> {
     }
   }
 
-  // No active relationships yet
+  if (memberList.length > 1) {
+    return { path: "/select-workspace", type: "selector" };
+  }
+
+  // Rule 4: Authenticated user with 0 gyms and no member profile -> /onboarding
   return { path: "/onboarding", type: "onboarding" };
 }

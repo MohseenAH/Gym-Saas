@@ -46,6 +46,7 @@ export async function createNoticeAction(input: CreateNoticeInput) {
       return { success: false, error: `Failed to post notice: ${error.message}` };
     }
 
+    revalidatePath(`/app/${context.gymId}`, "layout");
     revalidatePath(`/app/${context.gymId}/notices`);
     revalidatePath(`/app/${context.gymId}/dashboard`);
     revalidatePath(`/portal/${context.gymId}/dashboard`);
@@ -77,6 +78,7 @@ export async function toggleNoticeAction(params: { gymId: string; noticeId: stri
       return { success: false, error: error.message };
     }
 
+    revalidatePath(`/app/${context.gymId}`, "layout");
     revalidatePath(`/app/${context.gymId}/notices`);
     revalidatePath(`/app/${context.gymId}/dashboard`);
     revalidatePath(`/portal/${context.gymId}/dashboard`);
@@ -108,6 +110,7 @@ export async function deleteNoticeAction(params: { gymId: string; noticeId: stri
       return { success: false, error: error.message };
     }
 
+    revalidatePath(`/app/${context.gymId}`, "layout");
     revalidatePath(`/app/${context.gymId}/notices`);
     revalidatePath(`/app/${context.gymId}/dashboard`);
     revalidatePath(`/portal/${context.gymId}/dashboard`);

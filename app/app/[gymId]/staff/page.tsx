@@ -13,34 +13,35 @@ export default async function StaffPage({ params }: PageProps) {
 
   const supabase = await createClient();
 
-  // 1. Fetch gym details
-  const { data: gym } = await supabase
-    .from("gyms")
-    .select("name")
-    .eq("id", gymId)
-    .single();
+  // Parallel fetch: gym details, staff members, invitations, and branches
+  const [gymRes, staffRes, invitationsRes, branchesRes] = await Promise.all([
+    supabase
+      .from("gyms")
+      .select("name")
+      .eq("id", gymId)
+      .single(),
+    supabase
+      .from("gym_users")
+      .select("id, user_id, role, status, profiles(full_name, phone)")
+      .eq("gym_id", gymId)
+      .order("created_at", { ascending: true }),
+    supabase
+      .from("invitations")
+      .select("id, role, email, phone, status, expires_at, created_at")
+      .eq("gym_id", gymId)
+      .eq("type", "staff")
+      .order("created_at", { ascending: false }),
+    supabase
+      .from("branches")
+      .select("id, name")
+      .eq("gym_id", gymId)
+      .eq("is_active", true),
+  ]);
 
-  // 2. Fetch staff members in this gym
-  const { data: staffMembers } = await supabase
-    .from("gym_users")
-    .select("id, user_id, role, status, profiles(full_name, phone)")
-    .eq("gym_id", gymId)
-    .order("created_at", { ascending: true });
-
-  // 3. Fetch staff invitations
-  const { data: invitations } = await supabase
-    .from("invitations")
-    .select("id, role, email, phone, status, expires_at, created_at")
-    .eq("gym_id", gymId)
-    .eq("type", "staff")
-    .order("created_at", { ascending: false });
-
-  // 4. Fetch branches
-  const { data: branches } = await supabase
-    .from("branches")
-    .select("id, name")
-    .eq("gym_id", gymId)
-    .eq("is_active", true);
+  const gym = gymRes.data;
+  const staffMembers = staffRes.data || [];
+  const invitations = invitationsRes.data || [];
+  const branches = branchesRes.data || [];
 
   const canManageStaff = hasCapability(authContext.role, "staff:manage");
 

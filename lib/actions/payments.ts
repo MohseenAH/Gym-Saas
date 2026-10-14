@@ -98,6 +98,7 @@ export async function recordPaymentAction(input: RecordPaymentInput) {
       receiptUrl = receiptRes.directUrl;
     }
 
+    revalidatePath(`/app/${context.gymId}`, "layout");
     revalidatePath(`/app/${context.gymId}/revenue`);
     revalidatePath(`/app/${context.gymId}/payments`);
     revalidatePath(`/app/${context.gymId}/dashboard`);

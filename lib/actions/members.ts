@@ -85,8 +85,13 @@ export async function quickEnrollMemberAction(input: QuickEnrollMemberInput) {
         if (!memError && membership) {
           membershipId = membership.id;
 
-          // 3. If payment provided, record initial payment
-          if (validated.amountPaid && validated.amountPaid > 0) {
+          // 3. If payment provided, record initial payment (full, partial, or pending/pay-later)
+          if (validated.amountPaid !== undefined && validated.amountPaid !== null) {
+            const planPrice = Number(plan.price);
+            const isFull = validated.amountPaid >= planPrice;
+            const isPartial = validated.amountPaid > 0 && validated.amountPaid < planPrice;
+            const paymentStatus = isFull ? "paid" : isPartial ? "partial" : "pending";
+
             await supabase.from("payments").insert({
               gym_id: context.gymId,
               branch_id: validated.branchId,
@@ -94,7 +99,8 @@ export async function quickEnrollMemberAction(input: QuickEnrollMemberInput) {
               membership_id: membership.id,
               amount: validated.amountPaid,
               payment_method: validated.paymentMethod,
-              payment_status: validated.amountPaid >= Number(plan.price) ? "paid" : "partial",
+              payment_status: paymentStatus,
+              status: paymentStatus,
               payment_date: startDateStr,
               created_by: context.userId,
             });
@@ -128,9 +134,13 @@ export async function quickEnrollMemberAction(input: QuickEnrollMemberInput) {
     const inviteUrl = links.inviteUrl;
     const waShareUrl = links.whatsappUrl;
 
+    revalidatePath(`/app/${context.gymId}`, "layout");
     revalidatePath(`/app/${context.gymId}/members`);
+    revalidatePath(`/app/${context.gymId}/memberships`);
     revalidatePath(`/app/${context.gymId}/dashboard`);
-    revalidatePath(`/app/${context.gymId}/revenue`);
+    revalidatePath(`/app/${context.gymId}/payments`);
+    revalidatePath(`/app/${context.gymId}/attendance`);
+    revalidatePath(`/app/${context.gymId}/reports`);
 
     return {
       success: true,
@@ -187,6 +197,7 @@ export async function updateMemberAction(input: UpdateMemberInput) {
       return { success: false, error: error.message };
     }
 
+    revalidatePath(`/app/${context.gymId}`, "layout");
     revalidatePath(`/app/${context.gymId}/members`);
     revalidatePath(`/app/${context.gymId}/members/${validated.memberId}`);
     revalidatePath(`/app/${context.gymId}/dashboard`);
@@ -267,11 +278,13 @@ export async function renewMembershipAction(input: RenewMembershipInput) {
       return { success: false, error: `Failed to create membership: ${memErr?.message}` };
     }
 
-    // 5. If amount paid > 0, record payment
+    // 5. If amount paid >= 0, record payment
     let paymentId: string | null = null;
-    if (validated.amountPaid > 0) {
+    if (validated.amountPaid !== undefined && validated.amountPaid !== null) {
       const planPrice = Number(plan.price);
       const isFull = validated.amountPaid >= planPrice;
+      const isPartial = validated.amountPaid > 0 && validated.amountPaid < planPrice;
+      const paymentStatus = isFull ? "paid" : isPartial ? "partial" : "pending";
 
       const { data: payment, error: payErr } = await supabase
         .from("payments")
@@ -282,9 +295,10 @@ export async function renewMembershipAction(input: RenewMembershipInput) {
           membership_id: newMembership.id,
           amount: validated.amountPaid,
           payment_method: validated.paymentMethod,
-          payment_status: isFull ? "paid" : "partial",
+          payment_status: paymentStatus,
+          status: paymentStatus,
           payment_date: startDateStr,
-          notes: validated.notes || `Renewal fee for ${plan.name}`,
+          notes: validated.notes || (validated.amountPaid === 0 ? `Pending renewal fee for ${plan.name}` : `Renewal fee for ${plan.name}`),
           created_by: context.userId,
         })
         .select("id")
@@ -295,8 +309,10 @@ export async function renewMembershipAction(input: RenewMembershipInput) {
       }
     }
 
+    revalidatePath(`/app/${context.gymId}`, "layout");
     revalidatePath(`/app/${context.gymId}/members`);
     revalidatePath(`/app/${context.gymId}/members/${validated.memberId}`);
+    revalidatePath(`/app/${context.gymId}/memberships`);
     revalidatePath(`/app/${context.gymId}/payments`);
     revalidatePath(`/app/${context.gymId}/dashboard`);
     revalidatePath(`/portal/${context.gymId}/dashboard`);

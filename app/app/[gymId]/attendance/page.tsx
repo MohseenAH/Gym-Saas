@@ -27,29 +27,17 @@ export default async function AttendancePage({ params, searchParams }: Attendanc
 
   const supabase = await createClient();
 
-  // Fetch branches
-  const { data: branches } = await supabase
-    .from("branches")
-    .select("id, name")
-    .eq("gym_id", gymId)
-    .eq("is_active", true);
-
-  const branchList = branches || [];
   const branchContext = resolveBranchContext({
     role: authContext.role,
     authorizedBranchIds: authContext.branchIds,
     requestedBranchId,
   });
 
-  const primaryBranch =
-    branchList.find((b) => b.id === branchContext.selectedBranchId) || branchList[0];
-  const branchId = primaryBranch?.id || "";
-
   const todayStr = new Date().toISOString().split("T")[0];
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
-  // Fetch members across gym branches
+  // Prepare members query across gym branches
   let membersQuery = supabase
     .from("members")
     .select("id, full_name, phone, branch_id, status, branches(name)")
@@ -61,9 +49,7 @@ export default async function AttendancePage({ params, searchParams }: Attendanc
     membersQuery = membersQuery.in("branch_id", branchContext.effectiveBranchIds);
   }
 
-  const { data: members } = await membersQuery;
-
-  // Fetch today's check-ins with branch filtering
+  // Prepare today's check-ins query with branch filtering
   let attendanceQuery = supabase
     .from("attendance")
     .select("member_id, check_in_time")
@@ -75,22 +61,37 @@ export default async function AttendancePage({ params, searchParams }: Attendanc
     attendanceQuery = attendanceQuery.in("branch_id", branchContext.effectiveBranchIds);
   }
 
-  const { data: todayAttendance } = await attendanceQuery;
+  const [branchesRes, membersRes, todayAttendanceRes, membershipsRes] = await Promise.all([
+    supabase
+      .from("branches")
+      .select("id, name")
+      .eq("gym_id", gymId)
+      .eq("is_active", true),
+    membersQuery,
+    attendanceQuery,
+    supabase
+      .from("memberships")
+      .select("member_id, status, end_date, membership_plans(name)")
+      .eq("status", "active"),
+  ]);
 
-  const checkedInMap = new Map<string, string>();
-  (todayAttendance || []).forEach((a) => {
-    checkedInMap.set(a.member_id, a.check_in_time);
-  });
+  const branchList = branchesRes.data || [];
+  const primaryBranch =
+    branchList.find((b) => b.id === branchContext.selectedBranchId) || branchList[0];
+  const branchId = primaryBranch?.id || "";
 
-  // Fetch memberships to compute plan name and validity
-  const { data: memberships } = await supabase
-    .from("memberships")
-    .select("member_id, status, end_date, membership_plans(name)")
-    .eq("status", "active");
+  const members = membersRes.data || [];
+  const todayAttendance = todayAttendanceRes.data || [];
+  const memberships = membershipsRes.data || [];
 
   const membershipMap = new Map<string, { end_date?: string; membership_plans?: { name?: string } | null }>();
   (memberships || []).forEach((m) => {
     membershipMap.set(m.member_id, m as unknown as { end_date?: string; membership_plans?: { name?: string } | null });
+  });
+
+  const checkedInMap = new Map<string, string>();
+  (todayAttendance || []).forEach((a) => {
+    checkedInMap.set(a.member_id, a.check_in_time);
   });
 
   const formattedMembers: AttendanceMember[] = (members || []).map((m) => {
