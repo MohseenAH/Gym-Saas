@@ -151,7 +151,7 @@ export function EditMemberModal({
               <label className="block text-xs font-semibold text-slate-700 mb-1">Account Status</label>
               <select
                 value={status}
-                onChange={(e) => setStatus(e.target.value as any)}
+                onChange={(e) => setStatus(e.target.value as "active" | "inactive" | "suspended")}
                 className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 focus:outline-hidden focus:ring-2 focus:ring-indigo-500 capitalize"
               >
                 <option value="active">Active</option>

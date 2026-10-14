@@ -45,8 +45,9 @@ export async function createBranchAction(input: z.infer<typeof createBranchSchem
     revalidatePath(`/app/${context.gymId}/settings`);
     revalidatePath(`/app/${context.gymId}/dashboard`);
     return { success: true, branchId: branch.id };
-  } catch (err: any) {
-    return { success: false, error: err.message || "Failed to create branch" };
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : "Failed to create branch";
+    return { success: false, error: message };
   }
 }
 
@@ -91,7 +92,8 @@ export async function updateBranchAction(input: z.infer<typeof updateBranchSchem
     revalidatePath(`/app/${context.gymId}/branches`);
     revalidatePath(`/app/${context.gymId}/settings`);
     return { success: true };
-  } catch (err: any) {
-    return { success: false, error: err.message || "Failed to update branch" };
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : "Failed to update branch";
+    return { success: false, error: message };
   }
 }

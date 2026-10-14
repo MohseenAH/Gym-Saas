@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { resolvePostLoginRedirect } from "@/lib/auth/redirect";
 import { redirect } from "next/navigation";
 import { z } from "zod";
+import type { User } from "@supabase/supabase-js";
 
 const signupSchema = z.object({
   fullName: z.string().min(2, "Full name must be at least 2 characters"),
@@ -34,7 +35,7 @@ export async function signupOwnerAction(formData: FormData) {
   const supabase = await createClient();
 
   // 1. Try signing in first in case account was already created in earlier attempt
-  let user: any = null;
+  let user: User | null = null;
   const { data: directSignIn } = await supabase.auth.signInWithPassword({
     email,
     password,
@@ -112,7 +113,7 @@ export async function signupOwnerAction(formData: FormData) {
     };
   }
 
-  const gymId = (provisionData as any)?.gym_id;
+  const gymId = (provisionData as { gym_id?: string } | null)?.gym_id;
   if (gymId) {
     redirect(`/app/${gymId}/dashboard`);
   }

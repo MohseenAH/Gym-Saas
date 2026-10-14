@@ -4,7 +4,7 @@ import { z } from "zod";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { getAuthorizedActionContext } from "@/lib/auth/guard";
-import { generateInvitationToken, hashToken } from "@/lib/auth/invitations";
+import { generateInvitationToken, buildInvitationLinks } from "@/lib/auth/invitations";
 
 const quickEnrollMemberSchema = z.object({
   gymId: z.string().uuid("Invalid gym ID"),
@@ -118,13 +118,15 @@ export async function quickEnrollMemberAction(input: QuickEnrollMemberInput) {
       invited_by: context.userId,
     });
 
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3001";
-    const inviteUrl = `${baseUrl}/invite/member/${rawToken}`;
-    const cleanPhone = validated.phone.replace(/\D/g, "");
-    const waPhone = cleanPhone.length === 10 ? `91${cleanPhone}` : cleanPhone;
-    const waShareUrl = `https://wa.me/${waPhone}?text=${encodeURIComponent(
-      `Welcome to our gym, ${validated.fullName}! 💪\nClaim your Member Portal to track check-ins, view notices, and view your membership card here:\n${inviteUrl}`
-    )}`;
+    const links = buildInvitationLinks({
+      type: "member",
+      rawToken,
+      gymName: "our gym",
+      recipientName: validated.fullName,
+      recipientPhone: validated.phone,
+    });
+    const inviteUrl = links.inviteUrl;
+    const waShareUrl = links.whatsappUrl;
 
     revalidatePath(`/app/${context.gymId}/members`);
     revalidatePath(`/app/${context.gymId}/dashboard`);
@@ -137,8 +139,9 @@ export async function quickEnrollMemberAction(input: QuickEnrollMemberInput) {
       inviteUrl,
       waShareUrl,
     };
-  } catch (err: any) {
-    return { success: false, error: err.message || "Failed to enroll member" };
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : "Failed to enroll member";
+    return { success: false, error: message };
   }
 }
 
@@ -189,8 +192,9 @@ export async function updateMemberAction(input: UpdateMemberInput) {
     revalidatePath(`/app/${context.gymId}/dashboard`);
 
     return { success: true };
-  } catch (err: any) {
-    return { success: false, error: err.message || "Failed to update member" };
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : "Failed to update member";
+    return { success: false, error: message };
   }
 }
 
@@ -305,7 +309,8 @@ export async function renewMembershipAction(input: RenewMembershipInput) {
       endDate: endDateStr,
       planName: plan.name,
     };
-  } catch (err: any) {
-    return { success: false, error: err.message || "Failed to renew membership" };
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : "Failed to renew membership";
+    return { success: false, error: message };
   }
 }

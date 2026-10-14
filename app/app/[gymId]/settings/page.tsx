@@ -24,7 +24,7 @@ export default async function SettingsPage({ params }: SettingsPageProps) {
     .eq("id", gymId)
     .single();
 
-  const accountData = gym?.accounts as any;
+  const accountData = gym?.accounts as { subscription_tier?: string; trial_ends_at?: string } | null;
   const pilotStatus = evaluatePilotStatus(
     accountData?.trial_ends_at,
     accountData?.subscription_tier
@@ -38,11 +38,15 @@ export default async function SettingsPage({ params }: SettingsPageProps) {
     .order("created_at", { ascending: true });
 
   // 3. Fetch Membership Plans
-  const { data: plans } = await supabase
-    .from("membership_plans")
-    .select("id, name, duration_days, price, is_active")
-    .eq("gym_id", gymId)
-    .order("created_at", { ascending: true });
+  const branchIds = (branches || []).map((b) => b.id);
+  const { data: plans } =
+    branchIds.length > 0
+      ? await supabase
+          .from("membership_plans")
+          .select("id, name, duration_days, price, is_active, branch_id")
+          .in("branch_id", branchIds)
+          .order("created_at", { ascending: true })
+      : { data: [] };
 
   // 4. Fetch User Profile
   const {

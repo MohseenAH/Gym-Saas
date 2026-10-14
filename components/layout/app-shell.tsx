@@ -73,6 +73,8 @@ export function AppShell({
       <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
         <Topbar
           gymId={gymId}
+          gymName={gymName}
+          role={role}
           branches={branches}
           userEmail={userEmail}
           userName={userName}

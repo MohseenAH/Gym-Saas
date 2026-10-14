@@ -63,8 +63,9 @@ export async function createExpenseAction(input: CreateExpenseInput) {
     revalidatePath(`/app/${context.gymId}/dashboard`);
 
     return { success: true, expenseId: expense.id };
-  } catch (err: any) {
-    return { success: false, error: err.message || "An unexpected error occurred" };
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : "An unexpected error occurred";
+    return { success: false, error: message };
   }
 }
 
@@ -96,7 +97,8 @@ export async function deleteExpenseAction(params: { gymId: string; expenseId: st
     revalidatePath(`/app/${context.gymId}/dashboard`);
 
     return { success: true };
-  } catch (err: any) {
-    return { success: false, error: err.message || "Failed to delete expense" };
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : "Failed to delete expense";
+    return { success: false, error: message };
   }
 }

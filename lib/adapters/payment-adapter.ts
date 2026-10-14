@@ -55,6 +55,8 @@ export class ManualPaymentAdapter implements PaymentProvider {
   }
 
   async verifyPayment(_paymentId: string, _orderId: string): Promise<boolean> {
+    void _paymentId;
+    void _orderId;
     // Manual payments are verified directly by staff / front-desk
     return true;
   }
@@ -87,6 +89,9 @@ export class RazorpayAdapter implements PaymentProvider {
   }
 
   async verifyPayment(_paymentId: string, _orderId: string, _signature?: string): Promise<boolean> {
+    void _paymentId;
+    void _orderId;
+    void _signature;
     return true;
   }
 }

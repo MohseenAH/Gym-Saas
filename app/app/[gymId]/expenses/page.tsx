@@ -1,20 +1,31 @@
 import { createClient } from "@/lib/supabase/server";
 import { getAuthorizedActionContext } from "@/lib/auth/guard";
+import { cookies } from "next/headers";
+import { resolveBranchContext } from "@/lib/auth/branch-context";
 import { RecordExpenseModal } from "@/components/expenses/record-expense-modal";
 import { Receipt, TrendingDown, Layers, Trash2 } from "lucide-react";
 import { deleteExpenseAction } from "@/lib/actions/expenses";
 
 interface ExpensesPageProps {
   params: Promise<{ gymId: string }>;
+  searchParams?: Promise<{ branchId?: string }>;
 }
 
-export default async function ExpensesPage({ params }: ExpensesPageProps) {
+export default async function ExpensesPage({ params, searchParams }: ExpensesPageProps) {
   const { gymId } = await params;
+  const resolvedSearchParams = searchParams ? await searchParams : {};
 
-  await getAuthorizedActionContext({
+  const authContext = await getAuthorizedActionContext({
     gymId,
     capability: "expenses:manage",
   });
+
+  const cookieStore = await cookies();
+  const cookieBranch = cookieStore.get(`gymapra_branch_${gymId}`)?.value;
+  const requestedBranchId =
+    resolvedSearchParams.branchId !== undefined
+      ? resolvedSearchParams.branchId
+      : cookieBranch;
 
   const supabase = await createClient();
 
@@ -25,13 +36,26 @@ export default async function ExpensesPage({ params }: ExpensesPageProps) {
     .eq("gym_id", gymId)
     .eq("is_active", true);
 
-  // Fetch expenses
-  const { data: expenses } = await supabase
+  const branchContext = resolveBranchContext({
+    role: authContext.role,
+    authorizedBranchIds: authContext.branchIds,
+    requestedBranchId,
+  });
+
+  // Fetch expenses filtered by branch context
+  let expensesQuery = supabase
     .from("expenses")
     .select("id, branch_id, category, amount, expense_date, payment_method, description, branches(name)")
     .eq("gym_id", gymId)
     .order("expense_date", { ascending: false });
 
+  if (branchContext.selectedBranchId) {
+    expensesQuery = expensesQuery.eq("branch_id", branchContext.selectedBranchId);
+  } else if (branchContext.effectiveBranchIds.length > 0) {
+    expensesQuery = expensesQuery.in("branch_id", branchContext.effectiveBranchIds);
+  }
+
+  const { data: expenses } = await expensesQuery;
   const allExpenses = expenses || [];
 
   // Aggregations
@@ -154,7 +178,7 @@ export default async function ExpensesPage({ params }: ExpensesPageProps) {
                       </span>
                     </td>
                     <td className="p-3.5 whitespace-nowrap">
-                      {(expense.branches as any)?.name || "Main Branch"}
+                      {(expense.branches as unknown as { name?: string } | null)?.name || "Main Branch"}
                     </td>
                     <td className="p-3.5 uppercase font-medium text-slate-500">
                       {expense.payment_method}

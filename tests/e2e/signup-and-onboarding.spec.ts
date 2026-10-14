@@ -23,13 +23,13 @@ test.describe("Phase 1 E2E: Owner Signup & Workspace Provisioning", () => {
     await expect(page).toHaveURL(/\/app\/[0-9a-fA-F-]+\/dashboard/, { timeout: 30000 });
 
     // Verify Dashboard Command Center elements
-    await expect(page.getByRole("heading", { name: /Command Center & Financial P&L/i })).toBeVisible();
+    await expect(page.getByRole("heading", { name: new RegExp(owner.gymName, "i") })).toBeVisible();
     await expect(page.getByRole("link", { name: /Check-In Kiosk/i })).toBeVisible();
     await expect(page.getByRole("link", { name: /Enroll Member/i })).toBeVisible();
 
     // Verify P&L and metrics cards render
-    await expect(page.getByText("Total Revenue")).toBeVisible();
-    await expect(page.getByText("Total Expenses")).toBeVisible();
+    await expect(page.getByText("Today's Collections")).toBeVisible();
+    await expect(page.getByText("Pending Member Dues")).toBeVisible();
     await expect(page.getByText("Net Cash Flow")).toBeVisible();
   });
 

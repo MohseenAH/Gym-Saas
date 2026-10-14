@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Building2, Plus, MapPin, Phone, Users, ShieldCheck, Loader2, X } from "lucide-react";
+import { Building2, Plus, MapPin, Phone, Users, Loader2, X } from "lucide-react";
 import { createBranchAction } from "@/lib/actions/branches";
 
 export interface BranchItem {

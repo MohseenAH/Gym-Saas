@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { CreditCard, X, QrCode, Copy, Check, CheckCircle2 } from "lucide-react";
+import { CreditCard, X, QrCode, Copy, Check } from "lucide-react";
 
 interface PayDuesModalProps {
   gymName: string;

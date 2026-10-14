@@ -5,16 +5,17 @@ import {
   CreditCard,
   Receipt,
   TrendingUp,
-  TrendingDown,
   Bell,
   UserPlus,
   IndianRupee,
   Sparkles,
-  AlertCircle,
   Zap,
 } from "lucide-react";
 import Link from "next/link";
+import { cookies } from "next/headers";
 import { evaluatePilotStatus } from "@/lib/auth/trial";
+import { getAuthorizedActionContext } from "@/lib/auth/guard";
+import { resolveBranchContext } from "@/lib/auth/branch-context";
 import { BranchSelector } from "@/components/dashboard/branch-selector";
 import { ExpiringSoonAlerts, ExpiringMember } from "@/components/dashboard/expiring-soon-alerts";
 
@@ -26,115 +27,173 @@ interface PageProps {
 export default async function DashboardPage({ params, searchParams }: PageProps) {
   const { gymId } = await params;
   const resolvedSearchParams = searchParams ? await searchParams : {};
-  const selectedBranchId = resolvedSearchParams.branchId;
+
+  const authContext = await getAuthorizedActionContext({ gymId });
+  const cookieStore = await cookies();
+  const cookieBranch = cookieStore.get(`gymapra_branch_${gymId}`)?.value;
+  const requestedBranchId =
+    resolvedSearchParams.branchId !== undefined
+      ? resolvedSearchParams.branchId
+      : cookieBranch;
 
   const supabase = await createClient();
 
-  // 1. Fetch Gym & Account Pilot details
-  const { data: gym } = await supabase
-    .from("gyms")
-    .select("name, phone, account_id, accounts(subscription_tier, trial_ends_at)")
-    .eq("id", gymId)
-    .single();
+  // 1. Fetch Gym & Branches in parallel (Stage 1)
+  const [gymRes, branchesRes] = await Promise.all([
+    supabase
+      .from("gyms")
+      .select("name, phone, account_id, accounts(subscription_tier, trial_ends_at)")
+      .eq("id", gymId)
+      .single(),
+    supabase
+      .from("branches")
+      .select("id, name")
+      .eq("gym_id", gymId)
+      .eq("is_active", true),
+  ]);
 
-  const accountData = gym?.accounts as any;
+  const gym = gymRes.data;
+  const accountData = gym?.accounts as { trial_ends_at?: string; subscription_tier?: string } | null;
   const pilotStatus = evaluatePilotStatus(
     accountData?.trial_ends_at,
     accountData?.subscription_tier
   );
 
-  // 2. Fetch Branches
-  const { data: branches } = await supabase
-    .from("branches")
-    .select("id, name")
-    .eq("gym_id", gymId)
-    .eq("is_active", true);
+  const branchList = branchesRes.data || [];
+  const branchContext = resolveBranchContext({
+    role: authContext.role,
+    authorizedBranchIds: authContext.branchIds,
+    requestedBranchId,
+  });
 
-  const branchList = branches || [];
-  const isValidBranchFilter =
-    selectedBranchId && branchList.some((b) => b.id === selectedBranchId);
+  const selectedBranchId = branchContext.selectedBranchId;
+  const gymBranchIds = branchContext.effectiveBranchIds;
+  const isValidBranchFilter = !!selectedBranchId;
 
-  // 3. Active members count
+  // 2. Prepare independent queries (Stage 2)
+  const todayStr = new Date().toISOString().split("T")[0];
+
   let membersQuery = supabase
     .from("members")
     .select("id", { count: "exact", head: true })
     .eq("status", "active");
-
   if (isValidBranchFilter) {
     membersQuery = membersQuery.eq("branch_id", selectedBranchId);
+  } else if (gymBranchIds.length > 0) {
+    membersQuery = membersQuery.in("branch_id", gymBranchIds);
   }
-  const { count: membersCount } = await membersQuery;
 
-  // 4. Today's check-ins
-  const todayStr = new Date().toISOString().split("T")[0];
   let attendanceCountQuery = supabase
     .from("attendance")
     .select("id", { count: "exact", head: true })
     .eq("check_in_date", todayStr);
-
   if (isValidBranchFilter) {
     attendanceCountQuery = attendanceCountQuery.eq("branch_id", selectedBranchId);
+  } else if (gymBranchIds.length > 0) {
+    attendanceCountQuery = attendanceCountQuery.in("branch_id", gymBranchIds);
   }
-  const { count: todayCheckIns } = await attendanceCountQuery;
 
-  // 5. Payments & Collections
   let paymentsQuery = supabase
     .from("payments")
     .select("id, membership_id, amount, payment_method, payment_status, payment_date")
     .eq("gym_id", gymId);
-
   if (isValidBranchFilter) {
     paymentsQuery = paymentsQuery.eq("branch_id", selectedBranchId);
   }
-  const { data: payments } = await paymentsQuery;
 
-  const allPayments = payments || [];
-  const todayPayments = allPayments.filter((p) => p.payment_date === todayStr);
-
-  const todayCollections = todayPayments.reduce((sum, p) => sum + Number(p.amount), 0);
-  const todayCash = todayPayments
-    .filter((p) => p.payment_method === "cash")
-    .reduce((sum, p) => sum + Number(p.amount), 0);
-  const todayUpi = todayPayments
-    .filter((p) => p.payment_method === "upi")
-    .reduce((sum, p) => sum + Number(p.amount), 0);
-
-  const totalRevenue = allPayments.reduce((sum, p) => sum + Number(p.amount), 0);
-
-  // 6. Expenses
   let expensesQuery = supabase
     .from("expenses")
     .select("amount, created_at")
     .eq("gym_id", gymId);
-
   if (isValidBranchFilter) {
     expensesQuery = expensesQuery.eq("branch_id", selectedBranchId);
   }
-  const { data: expenses } = await expensesQuery;
-  const totalExpenses = (expenses || []).reduce((sum, e) => sum + Number(e.amount), 0);
 
-  // 7. Net Cash Flow
-  const netCashFlow = totalRevenue - totalExpenses;
-  const isProfitable = netCashFlow >= 0;
-
-  // 8. Active memberships & Outstanding Dues
-  const { data: rawMemberships } = await supabase
+  const membershipsQuery = supabase
     .from("memberships")
     .select(
       "id, member_id, end_date, status, membership_plans(name, price), members(id, full_name, phone, branch_id, branches(name))"
     )
     .eq("status", "active");
 
+  let noticesQuery = supabase
+    .from("notices")
+    .select("id", { count: "exact", head: true })
+    .eq("gym_id", gymId)
+    .eq("is_active", true);
+  if (isValidBranchFilter) {
+    noticesQuery = noticesQuery.eq("branch_id", selectedBranchId);
+  }
+
+  let recentAttendanceQuery = supabase
+    .from("attendance")
+    .select("id, check_in_time, check_in_method, members(full_name)")
+    .eq("check_in_date", todayStr)
+    .order("check_in_time", { ascending: false })
+    .limit(5);
+  if (isValidBranchFilter) {
+    recentAttendanceQuery = recentAttendanceQuery.eq("branch_id", selectedBranchId);
+  } else if (gymBranchIds.length > 0) {
+    recentAttendanceQuery = recentAttendanceQuery.in("branch_id", gymBranchIds);
+  }
+
+  // 3. Execute all independent queries concurrently (Stage 2)
+  const [
+    membersRes,
+    attendanceCountRes,
+    paymentsRes,
+    expensesRes,
+    membershipsRes,
+    noticesRes,
+    recentAttendanceRes,
+  ] = await Promise.all([
+    membersQuery,
+    attendanceCountQuery,
+    paymentsQuery,
+    expensesQuery,
+    membershipsQuery,
+    noticesQuery,
+    recentAttendanceQuery,
+  ]);
+
+  const membersCount = membersRes.count;
+  const todayCheckIns = attendanceCountRes.count;
+  const allPayments = paymentsRes.data || [];
+  const expenses = expensesRes.data || [];
+  const rawMemberships = membershipsRes.data || [];
+  const noticesCount = noticesRes.count;
+  const recentCheckIns = recentAttendanceRes.data || [];
+
+  // Business Correctness: Only count completed/partial payments as collected revenue
+  const validPayments = allPayments.filter(
+    (p) => p.payment_status === "paid" || p.payment_status === "partial"
+  );
+  const todayPayments = validPayments.filter((p) => p.payment_date === todayStr);
+
+  const todayCollections = Math.round(todayPayments.reduce((sum, p) => sum + Number(p.amount), 0) * 100) / 100;
+  const todayCash = Math.round(todayPayments
+    .filter((p) => p.payment_method === "cash")
+    .reduce((sum, p) => sum + Number(p.amount), 0) * 100) / 100;
+  const todayUpi = Math.round(todayPayments
+    .filter((p) => p.payment_method === "upi")
+    .reduce((sum, p) => sum + Number(p.amount), 0) * 100) / 100;
+
+  const totalRevenue = Math.round(validPayments.reduce((sum, p) => sum + Number(p.amount), 0) * 100) / 100;
+  const totalExpenses = Math.round((expenses || []).reduce((sum, e) => sum + Number(e.amount), 0) * 100) / 100;
+
+  // Net Cash Flow
+  const netCashFlow = Math.round((totalRevenue - totalExpenses) * 100) / 100;
+  const isProfitable = netCashFlow >= 0;
+
+  // Active memberships & Outstanding Dues
   const today = new Date();
   today.setHours(0, 0, 0, 0);
-  const inSevenDays = new Date(today);
-  inSevenDays.setDate(inSevenDays.getDate() + 7);
 
   let totalOutstandingDues = 0;
   const expiringMembers: ExpiringMember[] = [];
 
   const paymentSumByMembership = new Map<string, number>();
-  allPayments.forEach((p) => {
+  validPayments.forEach((p) => {
     if (p.membership_id) {
       paymentSumByMembership.set(
         p.membership_id,
@@ -143,9 +202,21 @@ export default async function DashboardPage({ params, searchParams }: PageProps)
     }
   });
 
-  const gymBranchIds = branchList.map((b) => b.id);
+  interface RawMembershipItem {
+    id: string;
+    start_date: string;
+    end_date: string;
+    members: {
+      id: string;
+      full_name: string;
+      phone: string;
+      branch_id: string;
+      branches?: { name: string } | null;
+    } | null;
+    membership_plans: { name: string; price: number } | null;
+  }
 
-  (rawMemberships || []).forEach((m: any) => {
+  ((rawMemberships as unknown as RawMembershipItem[]) || []).forEach((m) => {
     const member = m.members;
     if (!member) return;
 
@@ -181,32 +252,8 @@ export default async function DashboardPage({ params, searchParams }: PageProps)
     }
   });
 
+  totalOutstandingDues = Math.round(totalOutstandingDues * 100) / 100;
   expiringMembers.sort((a, b) => a.daysLeft - b.daysLeft);
-
-  // 9. Active notices count
-  let noticesQuery = supabase
-    .from("notices")
-    .select("id", { count: "exact", head: true })
-    .eq("gym_id", gymId)
-    .eq("is_active", true);
-
-  if (isValidBranchFilter) {
-    noticesQuery = noticesQuery.eq("branch_id", selectedBranchId);
-  }
-  const { count: noticesCount } = await noticesQuery;
-
-  // 10. Recent attendance stream (last 5)
-  let recentAttendanceQuery = supabase
-    .from("attendance")
-    .select("id, check_in_time, check_in_method, members(full_name)")
-    .eq("check_in_date", todayStr)
-    .order("check_in_time", { ascending: false })
-    .limit(5);
-
-  if (isValidBranchFilter) {
-    recentAttendanceQuery = recentAttendanceQuery.eq("branch_id", selectedBranchId);
-  }
-  const { data: recentCheckIns } = await recentAttendanceQuery;
 
   return (
     <div className="space-y-6 max-w-6xl mx-auto">
@@ -233,7 +280,7 @@ export default async function DashboardPage({ params, searchParams }: PageProps)
           <BranchSelector
             gymId={gymId}
             branches={branchList}
-            currentBranchId={selectedBranchId}
+            currentBranchId={selectedBranchId || undefined}
           />
           <Link
             href={`/app/${gymId}/attendance`}
@@ -387,7 +434,7 @@ export default async function DashboardPage({ params, searchParams }: PageProps)
                   <div className="flex items-center gap-2.5">
                     <div className="w-2 h-2 rounded-full bg-emerald-500" />
                     <span className="text-xs font-bold text-slate-900">
-                      {(ci.members as any)?.full_name || "Member"}
+                      {(ci.members as unknown as { full_name?: string } | null)?.full_name || "Member"}
                     </span>
                     <span className="text-[10px] text-slate-400 capitalize">
                       ({ci.check_in_method.replace("_", " ")})

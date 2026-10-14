@@ -68,24 +68,14 @@ export async function completeOnboardingAction(formData: FormData) {
     }
   );
 
-  if (!rpcError && rpcData) {
-    gymId = (rpcData as any).gym_id;
-    branchId = (rpcData as any).branch_id;
-  } else {
-    // Also try alternative RPC signature (p_gym_name, p_name, p_phone) if parameter naming differed
-    const { data: altRpcData, error: altRpcError } = await supabase.rpc(
-      "create_owner_account" as any,
-      {
-        p_gym_name: gymName,
-        p_name: fullName,
-        p_phone: phone,
-      } as any
-    );
+  type OnboardingRpcResult = { gym_id?: string; branch_id?: string; account_id?: string };
 
-    if (!altRpcError && altRpcData) {
-      gymId = (altRpcData as any).gym_id;
-      branchId = (altRpcData as any).branch_id;
-    } else {
+  if (!rpcError && rpcData) {
+    const data = rpcData as unknown as OnboardingRpcResult;
+    gymId = data.gym_id || null;
+    branchId = data.branch_id || null;
+  } else {
+    // Direct SQL fallback via client RLS
       // Direct SQL fallback via client RLS
       try {
         // A. Upsert profile
@@ -169,18 +159,18 @@ export async function completeOnboardingAction(formData: FormData) {
         if (gymUserErr && !gymUserErr.message.includes("duplicate")) {
           throw gymUserErr;
         }
-      } catch (fallbackErr: any) {
+      } catch (fallbackErr: unknown) {
         console.error("Direct onboarding fallback error:", fallbackErr);
+        const fallbackMsg = fallbackErr instanceof Error ? fallbackErr.message : undefined;
         return {
           success: false,
           error:
-            fallbackErr?.message ||
+            fallbackMsg ||
             rpcError?.message ||
             "Unable to set up gym workspace. Please ensure database schema is applied.",
         };
       }
     }
-  }
 
   // Update branch name if customized and not already named
   if (branchId && effectiveBranchName !== "Main Branch") {

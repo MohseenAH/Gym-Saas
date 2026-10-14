@@ -126,7 +126,7 @@ export function CreateNoticeModal({ gymId, branches }: CreateNoticeModalProps) {
                   </label>
                   <select
                     value={priority}
-                    onChange={(e) => setPriority(e.target.value as any)}
+                    onChange={(e) => setPriority(e.target.value as "normal" | "important" | "urgent")}
                     className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 focus:outline-hidden focus:ring-2 focus:ring-indigo-500 capitalize"
                   >
                     <option value="normal">Normal (Informational)</option>

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Receipt, CheckCircle2, FileText, Printer } from "lucide-react";
+import { Receipt, CheckCircle2, FileText } from "lucide-react";
 import { ReceiptModal, ReceiptData } from "@/components/payments/receipt-modal";
 
 interface PortalPaymentItem {

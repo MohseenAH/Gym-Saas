@@ -19,6 +19,8 @@ export function StaffAcceptanceClient({
   role,
   invitedEmail,
 }: Props) {
+  void gymName;
+  void role;
   const router = useRouter();
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState(invitedEmail || "");
@@ -81,14 +83,15 @@ export function StaffAcceptanceClient({
         throw new Error(acceptResult.error || "Failed to accept invitation");
       }
 
-      const gymId = (acceptResult as any).data?.gym_id;
+      const gymId = (acceptResult as { data?: { gym_id?: string } }).data?.gym_id;
       if (gymId) {
         router.push(`/app/${gymId}/dashboard`);
       } else {
         router.push("/select-workspace");
       }
-    } catch (err: any) {
-      setError(err.message || "An unexpected error occurred");
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "An unexpected error occurred";
+      setError(message);
     } finally {
       setLoading(false);
     }

@@ -7,7 +7,7 @@ import { Dumbbell, Lock, Mail, User, Building2, Phone, Loader2, CheckCircle2 } f
 
 export default function SignupPage() {
   const [state, formAction, isPending] = useActionState(
-    async (_prevState: any, formData: FormData) => {
+    async (_prevState: unknown, formData: FormData) => {
       const result = await signupOwnerAction(formData);
       return result;
     },

@@ -64,7 +64,7 @@ export function QuickEnrollModal({ gymId, branchId, plans }: QuickEnrollModalPro
       notes: notes.trim() || null,
       planId: selectedPlanId || null,
       amountPaid: amountPaid ? parseFloat(amountPaid) : undefined,
-      paymentMethod: paymentMethod as any,
+      paymentMethod: paymentMethod as "cash" | "upi" | "card" | "bank_transfer" | "cheque" | "other",
     });
 
     setLoading(false);

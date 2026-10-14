@@ -1,74 +1,122 @@
 import { createClient } from "@/lib/supabase/server";
 import { getAuthorizedActionContext } from "@/lib/auth/guard";
+import { cookies } from "next/headers";
+import { resolveBranchContext } from "@/lib/auth/branch-context";
 import { RecordPaymentModal } from "@/components/payments/record-payment-modal";
 import { PaymentsLedgerClient, PaymentLedgerItem } from "@/components/payments/payments-ledger-client";
 import { CreditCard, TrendingUp, Wallet } from "lucide-react";
 
 interface PaymentsPageProps {
   params: Promise<{ gymId: string }>;
+  searchParams?: Promise<{ branchId?: string; memberId?: string }>;
 }
 
-export default async function PaymentsPage({ params }: PaymentsPageProps) {
+export default async function PaymentsPage({ params, searchParams }: PaymentsPageProps) {
   const { gymId } = await params;
+  const resolvedSearchParams = searchParams ? await searchParams : {};
 
-  await getAuthorizedActionContext({
+  const authContext = await getAuthorizedActionContext({
     gymId,
     capability: "payments:record",
   });
 
+  const cookieStore = await cookies();
+  const cookieBranch = cookieStore.get(`gymapra_branch_${gymId}`)?.value;
+  const requestedBranchId =
+    resolvedSearchParams.branchId !== undefined
+      ? resolvedSearchParams.branchId
+      : cookieBranch;
+
   const supabase = await createClient();
 
-  // Fetch gym info
-  const { data: gym } = await supabase
-    .from("gyms")
-    .select("name")
-    .eq("id", gymId)
-    .single();
+  // 1. Fetch gym, branches, and user permissions in parallel
+  const [gymRes, branchesRes] = await Promise.all([
+    supabase
+      .from("gyms")
+      .select("name")
+      .eq("id", gymId)
+      .single(),
+    supabase
+      .from("branches")
+      .select("id, name")
+      .eq("gym_id", gymId)
+      .eq("is_active", true),
+  ]);
 
-  // Fetch branches
-  const { data: branches } = await supabase
-    .from("branches")
-    .select("id, name")
-    .eq("gym_id", gymId)
-    .eq("is_active", true);
+  const gym = gymRes.data;
+  const branches = branchesRes.data || [];
 
-  // Fetch active members for recording payments
-  const { data: members } = await supabase
+  const branchContext = resolveBranchContext({
+    role: authContext.role,
+    authorizedBranchIds: authContext.branchIds,
+    requestedBranchId,
+  });
+
+  // 2. Fetch active members & payments filtered by branch context
+  let membersQuery = supabase
     .from("members")
     .select("id, full_name, phone, branch_id")
     .eq("status", "active")
     .order("full_name");
 
-  // Fetch payments
-  const { data: payments } = await supabase
+  if (branchContext.selectedBranchId) {
+    membersQuery = membersQuery.eq("branch_id", branchContext.selectedBranchId);
+  } else if (branchContext.effectiveBranchIds.length > 0) {
+    membersQuery = membersQuery.in("branch_id", branchContext.effectiveBranchIds);
+  }
+
+  let paymentsQuery = supabase
     .from("payments")
-    .select("id, member_id, amount, payment_method, payment_status, payment_date, notes, members(id, full_name, phone, email), branches(name)")
+    .select(
+      "id, member_id, amount, payment_method, payment_status, payment_date, notes, members(id, full_name, phone, email), branches(name)"
+    )
     .eq("gym_id", gymId)
     .order("payment_date", { ascending: false });
 
-  const allPayments = payments || [];
-  const totalRevenue = allPayments.reduce((sum, p) => sum + Number(p.amount), 0);
+  if (branchContext.selectedBranchId) {
+    paymentsQuery = paymentsQuery.eq("branch_id", branchContext.selectedBranchId);
+  } else if (branchContext.effectiveBranchIds.length > 0) {
+    paymentsQuery = paymentsQuery.in("branch_id", branchContext.effectiveBranchIds);
+  }
 
-  // Method breakdown
+  const [membersRes, paymentsRes] = await Promise.all([
+    membersQuery,
+    paymentsQuery,
+  ]);
+
+  const members = membersRes.data || [];
+  const allPayments = paymentsRes.data || [];
+
+  // Business Correctness: Only count 'paid' and 'partial' payments as collected revenue
+  const validPayments = allPayments.filter(
+    (p) => p.payment_status === "paid" || p.payment_status === "partial"
+  );
+  const totalRevenue = Math.round(validPayments.reduce((sum, p) => sum + Number(p.amount), 0) * 100) / 100;
+
+  // Method breakdown (collected revenue only)
   let upiTotal = 0;
   let cashTotal = 0;
   let cardTotal = 0;
-  allPayments.forEach((p) => {
+  validPayments.forEach((p) => {
     const amt = Number(p.amount);
     if (p.payment_method === "upi") upiTotal += amt;
     else if (p.payment_method === "cash") cashTotal += amt;
     else cardTotal += amt;
   });
+  upiTotal = Math.round(upiTotal * 100) / 100;
+  cashTotal = Math.round(cashTotal * 100) / 100;
+  cardTotal = Math.round(cardTotal * 100) / 100;
 
   const formattedLedger: PaymentLedgerItem[] = allPayments.map((p) => {
-    const member = p.members as any;
+    const member = p.members as unknown as { full_name?: string; phone?: string; email?: string } | null;
+    const branch = p.branches as unknown as { name?: string } | null;
     return {
       id: p.id,
       memberId: p.member_id,
       memberName: member?.full_name || "Unknown Member",
       memberPhone: member?.phone || "",
       memberEmail: member?.email || null,
-      branchName: (p.branches as any)?.name || "Main Branch",
+      branchName: branch?.name || "Main Branch",
       amount: Number(p.amount),
       paymentMethod: p.payment_method,
       paymentStatus: p.payment_status,

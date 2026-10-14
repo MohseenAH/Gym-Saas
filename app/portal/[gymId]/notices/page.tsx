@@ -9,16 +9,6 @@ export default async function MemberNoticesPage({ params }: NoticesPageProps) {
   const { gymId } = await params;
   const supabase = await createClient();
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  const { data: member } = await supabase
-    .from("members")
-    .select("branch_id")
-    .eq("user_id", user?.id)
-    .single();
-
   // Fetch notices for gym (and specific branch or gym-wide)
   const { data: notices } = await supabase
     .from("notices")

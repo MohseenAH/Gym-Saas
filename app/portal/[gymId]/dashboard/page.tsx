@@ -1,8 +1,19 @@
 import { createClient } from "@/lib/supabase/server";
-import { UserCheck, Dumbbell, Calendar, CreditCard, Bell, Sparkles, AlertTriangle, ArrowRight } from "lucide-react";
+import { UserCheck, Dumbbell, Calendar, CreditCard, Bell, ArrowRight } from "lucide-react";
 import Link from "next/link";
 import { MemberCheckInButton } from "@/components/portal/member-checkin-button";
 import { PayDuesModal } from "@/components/portal/pay-dues-modal";
+
+interface BranchRelation {
+  name: string;
+  gyms: { name: string } | null;
+}
+
+interface PlanRelation {
+  name: string;
+  price: number;
+  duration_days: number;
+}
 
 interface PageProps {
   params: Promise<{ gymId: string }>;
@@ -30,8 +41,9 @@ export default async function MemberPortalDashboardPage({ params }: PageProps) {
     );
   }
 
-  const gymName = (member.branches as any)?.gyms?.name || "Gym";
-  const branchName = (member.branches as any)?.name || "Main Branch";
+  const branchData = member.branches as unknown as BranchRelation | null;
+  const gymName = branchData?.gyms?.name || "Gym";
+  const branchName = branchData?.name || "Main Branch";
 
   // Check today's check-in status
   const today = new Date().toISOString().split("T")[0];
@@ -69,8 +81,9 @@ export default async function MemberPortalDashboardPage({ params }: PageProps) {
     .order("published_at", { ascending: false })
     .limit(3);
 
-  const planName = (membership?.membership_plans as any)?.name || "No Active Plan";
-  const planPrice = Number((membership?.membership_plans as any)?.price || 0);
+  const planData = membership?.membership_plans as unknown as PlanRelation | null;
+  const planName = planData?.name || "No Active Plan";
+  const planPrice = Number(planData?.price || 0);
 
   return (
     <div className="space-y-6">

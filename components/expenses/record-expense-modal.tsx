@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Plus, X, Receipt, Loader2 } from "lucide-react";
-import { createExpenseAction } from "@/lib/actions/expenses";
+import { createExpenseAction, type CreateExpenseInput } from "@/lib/actions/expenses";
 
 interface RecordExpenseModalProps {
   gymId: string;
@@ -37,10 +37,10 @@ export function RecordExpenseModal({ gymId, branches }: RecordExpenseModalProps)
     const res = await createExpenseAction({
       gymId,
       branchId,
-      category: category as any,
+      category: category as CreateExpenseInput["category"],
       amount: numAmount,
       expenseDate,
-      paymentMethod: paymentMethod as any,
+      paymentMethod: paymentMethod as CreateExpenseInput["paymentMethod"],
       description: description || null,
     });
 

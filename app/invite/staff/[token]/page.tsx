@@ -46,7 +46,7 @@ export default async function StaffInvitePage({ params }: PageProps) {
             Join {verification.gym_name}
           </h1>
           <p className="text-sm text-slate-500 mt-1">
-            You've been invited to join as <span className="capitalize font-semibold text-slate-700">{verification.role}</span>
+            You&apos;ve been invited to join as <span className="capitalize font-semibold text-slate-700">{verification.role}</span>
           </p>
         </div>
 

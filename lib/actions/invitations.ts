@@ -6,6 +6,7 @@ import {
   generateInvitationToken,
   hashToken,
   buildInvitationLinks,
+  getAppBaseUrl,
 } from "@/lib/auth/invitations";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
@@ -68,7 +69,7 @@ export async function createStaffInvitationAction(data: z.infer<typeof staffInvi
     return { success: false, error: error?.message || "Failed to create invitation" };
   }
 
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3001";
+  const baseUrl = getAppBaseUrl();
   const links = buildInvitationLinks({
     baseUrl,
     type: "staff",
@@ -143,8 +144,8 @@ export async function createMemberInvitationAction(params: {
     return { success: false, error: error?.message || "Failed to generate member invite" };
   }
 
-  const gymName = (member.branches as any)?.gyms?.name || "your gym";
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3001";
+  const gymName = (member.branches as unknown as { gyms?: { name?: string } })?.gyms?.name || "your gym";
+  const baseUrl = getAppBaseUrl();
 
   const links = buildInvitationLinks({
     baseUrl,
@@ -186,8 +187,9 @@ export async function revokeInvitationAction(params: {
 
     revalidatePath(`/app/${context.gymId}/staff`);
     return { success: true };
-  } catch (err: any) {
-    return { success: false, error: err.message || "Failed to revoke invitation" };
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : "Failed to revoke invitation";
+    return { success: false, error: message };
   }
 }
 
@@ -216,8 +218,9 @@ export async function toggleStaffStatusAction(params: {
 
     revalidatePath(`/app/${context.gymId}/staff`);
     return { success: true };
-  } catch (err: any) {
-    return { success: false, error: err.message || "Failed to update staff status" };
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : "Failed to update staff status";
+    return { success: false, error: message };
   }
 }
 

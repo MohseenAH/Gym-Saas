@@ -55,7 +55,18 @@ export default async function MemberDetailPage({ params }: MemberDetailPageProps
     .eq("member_id", memberId)
     .order("start_date", { ascending: false });
 
-  const formattedMemberships = (rawMemberships || []).map((m: any) => ({
+  interface RawMemberMembership {
+    id: string;
+    plan_id: string;
+    start_date: string;
+    end_date: string;
+    status: string;
+    notes?: string | null;
+    created_at: string;
+    membership_plans: { name: string; price: number; duration_days: number } | null;
+  }
+
+  const formattedMemberships = ((rawMemberships as unknown as RawMemberMembership[]) || []).map((m) => ({
     id: m.id,
     planName: m.membership_plans?.name || "Standard Membership",
     planPrice: Number(m.membership_plans?.price || 0),
@@ -89,7 +100,17 @@ export default async function MemberDetailPage({ params }: MemberDetailPageProps
     .eq("member_id", memberId)
     .order("payment_date", { ascending: false });
 
-  const formattedPayments = (rawPayments || []).map((p: any) => ({
+  interface RawMemberPayment {
+    id: string;
+    membership_id?: string | null;
+    amount: number | string;
+    payment_method: string;
+    payment_status: string;
+    payment_date: string;
+    notes?: string | null;
+  }
+
+  const formattedPayments = ((rawPayments as unknown as RawMemberPayment[]) || []).map((p) => ({
     id: p.id,
     membershipId: p.membership_id,
     amount: Number(p.amount),
@@ -119,13 +140,23 @@ export default async function MemberDetailPage({ params }: MemberDetailPageProps
     .order("check_in_time", { ascending: false })
     .limit(50);
 
-  const formattedAttendance = (rawAttendance || []).map((a: any) => ({
+  interface RawMemberAttendance {
+    id: string;
+    check_in_date: string;
+    check_in_time: string;
+    check_in_method: string;
+    branches?: { name?: string } | null;
+  }
+
+  const formattedAttendance = ((rawAttendance as unknown as RawMemberAttendance[]) || []).map((a) => ({
     id: a.id,
     checkInDate: a.check_in_date,
     checkInTime: a.check_in_time,
     checkInMethod: a.check_in_method,
     branchName: a.branches?.name,
   }));
+
+  const memberBranch = member.branches as unknown as { name?: string } | null;
 
   return (
     <div className="max-w-7xl mx-auto pb-12">
@@ -138,7 +169,7 @@ export default async function MemberDetailPage({ params }: MemberDetailPageProps
           phone: member.phone,
           email: member.email,
           branchId: member.branch_id,
-          branchName: (member.branches as any)?.name || "Main Branch",
+          branchName: memberBranch?.name || "Main Branch",
           status: member.status,
           notes: member.notes,
           createdAt: member.created_at,

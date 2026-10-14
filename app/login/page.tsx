@@ -7,7 +7,7 @@ import { Dumbbell, Lock, Mail, Loader2 } from "lucide-react";
 
 export default function LoginPage() {
   const [state, formAction, isPending] = useActionState(
-    async (_prevState: any, formData: FormData) => {
+    async (_prevState: unknown, formData: FormData) => {
       const result = await loginAction(formData);
       return result;
     },

@@ -28,14 +28,24 @@ export async function resolvePostLoginRedirect(): Promise<PersonaDestination> {
     .eq("user_id", user.id)
     .eq("status", "active");
 
-  const staffMap = new Map<string, any>();
-  (ownedAccounts || []).forEach((acc: any) => {
-    (acc.gyms || []).forEach((g: any) => {
+  interface StaffEntry {
+    gym_id: string;
+    role: string;
+    gyms?: { id: string; name: string } | null;
+  }
+  interface AccountWithGyms {
+    id: string;
+    gyms?: { id: string; name: string }[] | null;
+  }
+
+  const staffMap = new Map<string, StaffEntry>();
+  ((ownedAccounts as unknown as AccountWithGyms[]) || []).forEach((acc) => {
+    (acc.gyms || []).forEach((g) => {
       staffMap.set(g.id, { gym_id: g.id, role: "owner", gyms: g });
     });
   });
 
-  (rawStaffMemberships || []).forEach((item: any) => {
+  ((rawStaffMemberships as unknown as StaffEntry[]) || []).forEach((item) => {
     if (!staffMap.has(item.gym_id)) {
       staffMap.set(item.gym_id, item);
     }
@@ -71,7 +81,8 @@ export async function resolvePostLoginRedirect(): Promise<PersonaDestination> {
 
   // Single member portal relationship
   if (memberList.length === 1 && staffList.length === 0) {
-    const gymId = (memberList[0].branches as any)?.gym_id;
+    const branches = memberList[0].branches as unknown as { gym_id?: string } | null;
+    const gymId = branches?.gym_id;
     if (gymId) {
       return {
         path: `/portal/${gymId}/dashboard`,

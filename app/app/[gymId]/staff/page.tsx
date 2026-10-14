@@ -44,7 +44,15 @@ export default async function StaffPage({ params }: PageProps) {
 
   const canManageStaff = hasCapability(authContext.role, "staff:manage");
 
-  const formattedStaff: StaffMember[] = (staffMembers || []).map((s: any) => ({
+  interface DbStaffMember {
+    id: string;
+    user_id: string;
+    role: StaffMember["role"];
+    status: StaffMember["status"];
+    profiles?: { full_name?: string; phone?: string } | null;
+  }
+
+  const formattedStaff: StaffMember[] = ((staffMembers as unknown as DbStaffMember[]) || []).map((s) => ({
     id: s.id,
     userId: s.user_id,
     role: s.role,
@@ -55,7 +63,17 @@ export default async function StaffPage({ params }: PageProps) {
     },
   }));
 
-  const formattedInvites: StaffInvitation[] = (invitations || []).map((inv: any) => ({
+  interface DbInvitation {
+    id: string;
+    role: StaffInvitation["role"];
+    email: string;
+    phone?: string | null;
+    status: StaffInvitation["status"];
+    expires_at: string;
+    created_at: string;
+  }
+
+  const formattedInvites: StaffInvitation[] = ((invitations as unknown as DbInvitation[]) || []).map((inv) => ({
     id: inv.id,
     role: inv.role,
     email: inv.email,

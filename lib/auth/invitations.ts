@@ -1,5 +1,39 @@
 import crypto from "crypto";
 
+export const PRODUCTION_APP_URL = "https://gym-saas-v2.vercel.app";
+export const DEFAULT_DEV_APP_URL = "http://localhost:3001";
+
+/**
+ * Resolves the public base URL for invitations and external redirects.
+ *
+ * Rules:
+ * 1. Uses `process.env.NEXT_PUBLIC_APP_URL` if defined.
+ * 2. In production (`NODE_ENV === 'production'` or `VERCEL_ENV === 'production'`),
+ *    strictly guards against generating `localhost` URLs by falling back to `PRODUCTION_APP_URL`.
+ * 3. In development / testing, defaults to `DEFAULT_DEV_APP_URL` (http://localhost:3001).
+ * 4. Always strips trailing slashes to guarantee clean path concatenation.
+ */
+export function getAppBaseUrl(): string {
+  const envUrl = process.env.NEXT_PUBLIC_APP_URL?.trim();
+
+  const isProduction =
+    process.env.NODE_ENV === "production" ||
+    process.env.VERCEL_ENV === "production";
+
+  if (envUrl) {
+    if (isProduction && (envUrl.includes("localhost") || envUrl.includes("127.0.0.1"))) {
+      return PRODUCTION_APP_URL;
+    }
+    return envUrl.replace(/\/+$/, "");
+  }
+
+  if (isProduction) {
+    return PRODUCTION_APP_URL;
+  }
+
+  return DEFAULT_DEV_APP_URL;
+}
+
 export function generateInvitationToken(): { rawToken: string; tokenHash: string } {
   const rawToken = crypto.randomBytes(32).toString("hex");
   const tokenHash = crypto.createHash("sha256").update(rawToken).digest("hex");
@@ -11,7 +45,7 @@ export function hashToken(rawToken: string): string {
 }
 
 export function buildInvitationLinks(params: {
-  baseUrl: string;
+  baseUrl?: string;
   type: "staff" | "member";
   rawToken: string;
   gymName: string;
@@ -19,12 +53,14 @@ export function buildInvitationLinks(params: {
   recipientPhone?: string;
   recipientName?: string;
 }) {
+  const cleanBase = (params.baseUrl?.trim() || getAppBaseUrl()).replace(/\/+$/, "");
+
   const invitePath =
     params.type === "staff"
       ? `/invite/staff/${params.rawToken}`
       : `/invite/member/${params.rawToken}`;
 
-  const fullUrl = `${params.baseUrl}${invitePath}`;
+  const fullUrl = `${cleanBase}${invitePath}`;
 
   const messageText =
     params.type === "staff"

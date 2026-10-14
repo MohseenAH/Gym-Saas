@@ -1,68 +1,108 @@
 import { createClient } from "@/lib/supabase/server";
 import { getAuthorizedActionContext } from "@/lib/auth/guard";
+import { cookies } from "next/headers";
+import { resolveBranchContext } from "@/lib/auth/branch-context";
 import { QuickEnrollModal } from "@/components/members/quick-enroll-modal";
 import { MembersTableClient, MemberListItem } from "@/components/members/members-table-client";
 import { Users, UserCheck, ShieldCheck, Clock } from "lucide-react";
 
 interface MembersPageProps {
   params: Promise<{ gymId: string }>;
+  searchParams?: Promise<{ branchId?: string }>;
 }
 
-export default async function MembersPage({ params }: MembersPageProps) {
+export default async function MembersPage({ params, searchParams }: MembersPageProps) {
   const { gymId } = await params;
+  const resolvedSearchParams = searchParams ? await searchParams : {};
 
-  await getAuthorizedActionContext({
+  const authContext = await getAuthorizedActionContext({
     gymId,
     capability: "members:view",
   });
 
+  const cookieStore = await cookies();
+  const cookieBranch = cookieStore.get(`gymapra_branch_${gymId}`)?.value;
+  const requestedBranchId =
+    resolvedSearchParams.branchId !== undefined
+      ? resolvedSearchParams.branchId
+      : cookieBranch;
+
   const supabase = await createClient();
 
-  // Fetch branches
-  const { data: branches } = await supabase
-    .from("branches")
-    .select("id, name")
-    .eq("gym_id", gymId)
-    .eq("is_active", true);
+  // 1. Fetch branches, plans, and invites in parallel
+  const [branchesRes, plansRes, invitesRes] = await Promise.all([
+    supabase
+      .from("branches")
+      .select("id, name")
+      .eq("gym_id", gymId)
+      .eq("is_active", true),
+    supabase
+      .from("membership_plans")
+      .select("id, name, price, duration_days")
+      .eq("is_active", true),
+    supabase
+      .from("invitations")
+      .select("member_id, token_hash, status")
+      .eq("gym_id", gymId)
+      .eq("role", "member")
+      .eq("status", "pending"),
+  ]);
 
-  const primaryBranch = branches?.[0];
+  const branches = branchesRes.data || [];
+  const plans = plansRes.data || [];
+  const invites = invitesRes.data || [];
+
+  const branchContext = resolveBranchContext({
+    role: authContext.role,
+    authorizedBranchIds: authContext.branchIds,
+    requestedBranchId,
+  });
+
+  const primaryBranch =
+    branches.find((b) => b.id === branchContext.selectedBranchId) || branches[0];
   const branchId = primaryBranch?.id || "";
 
-  // Fetch membership plans
-  const { data: plans } = await supabase
-    .from("membership_plans")
-    .select("id, name, price, duration_days")
-    .eq("is_active", true);
-
-  // Fetch members
-  const { data: members } = await supabase
+  // 2. Fetch members and active memberships in parallel with branch filtering
+  let membersQuery = supabase
     .from("members")
     .select("id, full_name, phone, email, status, created_at, user_id, branches(name)")
     .order("created_at", { ascending: false });
 
-  const allMembers = members || [];
+  if (branchContext.selectedBranchId) {
+    membersQuery = membersQuery.eq("branch_id", branchContext.selectedBranchId);
+  } else if (branchContext.effectiveBranchIds.length > 0) {
+    membersQuery = membersQuery.in("branch_id", branchContext.effectiveBranchIds);
+  }
 
-  // Fetch active memberships
-  const { data: memberships } = await supabase
-    .from("memberships")
-    .select("id, member_id, start_date, end_date, status, membership_plans(name, duration_days)")
-    .eq("status", "active");
+  const [membersRes, membershipsRes] = await Promise.all([
+    membersQuery,
+    supabase
+      .from("memberships")
+      .select("id, member_id, start_date, end_date, status, membership_plans(name, duration_days)")
+      .eq("status", "active"),
+  ]);
 
-  const membershipMap = new Map<string, any>();
-  (memberships || []).forEach((m) => {
+  const allMembers = membersRes.data || [];
+  const memberships = membershipsRes.data || [];
+
+  interface MembershipContract {
+    id: string;
+    member_id: string;
+    end_date: string;
+    membership_plans?: { name?: string } | null;
+  }
+
+  const membershipMap = new Map<string, MembershipContract>();
+  (memberships as unknown as MembershipContract[]).forEach((m) => {
     membershipMap.set(m.member_id, m);
   });
 
-  // Fetch pending invitations
-  const { data: invites } = await supabase
-    .from("invitations")
-    .select("member_id, token_hash, status")
-    .eq("gym_id", gymId)
-    .eq("role", "member")
-    .eq("status", "pending");
+  interface MemberInvite {
+    member_id?: string | null;
+  }
 
-  const inviteMap = new Map<string, any>();
-  (invites || []).forEach((inv) => {
+  const inviteMap = new Map<string, MemberInvite>();
+  (invites as unknown as MemberInvite[]).forEach((inv) => {
     if (inv.member_id) inviteMap.set(inv.member_id, inv);
   });
 
@@ -87,7 +127,7 @@ export default async function MembersPage({ params }: MembersPageProps) {
       }
 
       activePlan = {
-        name: (activeContract.membership_plans as any)?.name || "Active Plan",
+        name: activeContract.membership_plans?.name || "Active Plan",
         endDate: activeContract.end_date,
         daysLeft,
         isExpired,
@@ -95,15 +135,17 @@ export default async function MembersPage({ params }: MembersPageProps) {
       };
     }
 
+    const branch = m.branches as unknown as { name?: string } | null;
+
     return {
       id: m.id,
       fullName: m.full_name,
       phone: m.phone,
       email: m.email,
-      status: m.status as any,
+      status: m.status as "active" | "inactive" | "suspended",
       createdAt: m.created_at,
       userId: m.user_id,
-      branchName: (m.branches as any)?.name || "Main Branch",
+      branchName: branch?.name || "Main Branch",
       activePlan,
       hasPendingInvite: inviteMap.has(m.id),
     };

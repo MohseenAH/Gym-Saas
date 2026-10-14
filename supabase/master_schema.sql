@@ -169,6 +169,7 @@ CREATE TABLE IF NOT EXISTS public.payments (
     payment_status TEXT NOT NULL DEFAULT 'paid' CHECK (payment_status IN ('paid', 'partial', 'pending', 'refunded')),
     payment_date DATE NOT NULL DEFAULT CURRENT_DATE,
     notes TEXT,
+    idempotency_key TEXT,
     created_by UUID REFERENCES auth.users(id) ON DELETE SET NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
@@ -248,6 +249,7 @@ CREATE INDEX IF NOT EXISTS idx_payments_gym_id ON public.payments(gym_id);
 CREATE INDEX IF NOT EXISTS idx_payments_branch_id ON public.payments(branch_id);
 CREATE INDEX IF NOT EXISTS idx_payments_member_id ON public.payments(member_id);
 CREATE INDEX IF NOT EXISTS idx_payments_date ON public.payments(payment_date);
+CREATE UNIQUE INDEX IF NOT EXISTS payments_gym_idempotency_idx ON public.payments(gym_id, idempotency_key) WHERE idempotency_key IS NOT NULL;
 CREATE INDEX IF NOT EXISTS idx_expenses_gym_id ON public.expenses(gym_id);
 CREATE INDEX IF NOT EXISTS idx_expenses_date ON public.expenses(expense_date);
 CREATE INDEX IF NOT EXISTS idx_attendance_branch_date ON public.attendance(branch_id, check_in_date);

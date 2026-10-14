@@ -14,7 +14,7 @@ export default function OnboardingForm({
   initialPhone = "",
 }: OnboardingFormProps) {
   const [state, formAction, isPending] = useActionState(
-    async (_prevState: any, formData: FormData) => {
+    async (_prevState: unknown, formData: FormData) => {
       const result = await completeOnboardingAction(formData);
       return result;
     },

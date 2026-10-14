@@ -1,18 +1,15 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useCallback } from "react";
 import {
   FileSpreadsheet,
   TrendingUp,
-  CreditCard,
   CalendarCheck,
   Users,
   IndianRupee,
   Layers,
-  Clock,
   MessageSquare,
   Building,
-  Filter,
 } from "lucide-react";
 
 export interface ReportPayment {
@@ -83,6 +80,7 @@ export function ReportsViewClient({
   attendance,
   memberships,
 }: ReportsViewClientProps) {
+  void gymId;
   const [reportType, setReportType] = useState<
     "collections" | "attendance" | "memberships" | "dues" | "pnl"
   >("collections");
@@ -91,18 +89,21 @@ export function ReportsViewClient({
 
   const todayStr = new Date().toISOString().split("T")[0];
 
-  function filterByDate(dateStr: string) {
-    if (dateRange === "all") return true;
-    if (dateRange === "today") return dateStr === todayStr;
+  const filterByDate = useCallback(
+    (dateStr: string) => {
+      if (dateRange === "all") return true;
+      if (dateRange === "today") return dateStr === todayStr;
 
-    const d = new Date(dateStr);
-    const now = new Date();
-    const diffDays = Math.ceil((now.getTime() - d.getTime()) / (1000 * 60 * 60 * 24));
+      const d = new Date(dateStr);
+      const now = new Date();
+      const diffDays = Math.ceil((now.getTime() - d.getTime()) / (1000 * 60 * 60 * 24));
 
-    if (dateRange === "7days") return diffDays <= 7;
-    if (dateRange === "30days") return diffDays <= 30;
-    return true;
-  }
+      if (dateRange === "7days") return diffDays <= 7;
+      if (dateRange === "30days") return diffDays <= 30;
+      return true;
+    },
+    [dateRange, todayStr]
+  );
 
   // Filtered datasets
   const filteredPayments = useMemo(() => {
@@ -110,21 +111,21 @@ export function ReportsViewClient({
       if (selectedBranchId !== "all" && p.branchId !== selectedBranchId) return false;
       return filterByDate(p.paymentDate);
     });
-  }, [payments, selectedBranchId, dateRange]);
+  }, [payments, selectedBranchId, filterByDate]);
 
   const filteredExpenses = useMemo(() => {
     return expenses.filter((e) => {
       if (selectedBranchId !== "all" && e.branchId !== selectedBranchId) return false;
       return filterByDate(e.expenseDate);
     });
-  }, [expenses, selectedBranchId, dateRange]);
+  }, [expenses, selectedBranchId, filterByDate]);
 
   const filteredAttendance = useMemo(() => {
     return attendance.filter((a) => {
       if (selectedBranchId !== "all" && a.branchId !== selectedBranchId) return false;
       return filterByDate(a.checkInDate);
     });
-  }, [attendance, selectedBranchId, dateRange]);
+  }, [attendance, selectedBranchId, filterByDate]);
 
   const filteredMemberships = useMemo(() => {
     return memberships.filter((m) => {

@@ -2,7 +2,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { resolvePostLoginRedirect } from "@/lib/auth/redirect";
 import { redirect } from "next/navigation";
-import { Dumbbell, ShieldCheck, ArrowRight, Zap, Users, CreditCard } from "lucide-react";
+import { Dumbbell, ArrowRight, Zap, Users, CreditCard } from "lucide-react";
 
 export default async function HomePage() {
   const supabase = await createClient();

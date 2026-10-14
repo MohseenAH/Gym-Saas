@@ -1,6 +1,5 @@
 "use server";
 
-import { z } from "zod";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { getAuthorizedActionContext } from "@/lib/auth/guard";
@@ -57,8 +56,9 @@ export async function staffCheckInAction(params: {
     revalidatePath(`/portal/${context.gymId}/attendance`);
 
     return { success: true, checkInId: checkIn.id, checkInTime: checkIn.check_in_time };
-  } catch (err: any) {
-    return { success: false, error: err.message || "Failed to record attendance" };
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : "Failed to record attendance";
+    return { success: false, error: message };
   }
 }
 
@@ -134,7 +134,8 @@ export async function memberSelfCheckInAction(params: {
       checkInId: checkIn.id,
       checkInTime: checkIn.check_in_time,
     };
-  } catch (err: any) {
-    return { success: false, error: err.message || "Failed to self check in" };
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : "Failed to self check in";
+    return { success: false, error: message };
   }
 }

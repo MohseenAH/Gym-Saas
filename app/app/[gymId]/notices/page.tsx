@@ -112,7 +112,7 @@ export default async function NoticesPage({ params }: NoticesPageProps) {
                           {notice.priority}
                         </span>
                         <span className="px-2 py-0.5 bg-slate-100 text-slate-600 rounded-md text-[10px] font-medium">
-                          {(notice.branches as any)?.name || "All Branches"}
+                          {(notice.branches as unknown as { name?: string } | null)?.name || "All Branches"}
                         </span>
                         {!notice.is_active && (
                           <span className="px-2 py-0.5 bg-slate-200 text-slate-600 rounded-md text-[10px] font-semibold">

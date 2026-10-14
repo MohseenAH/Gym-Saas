@@ -1,5 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { getAuthorizedActionContext } from "@/lib/auth/guard";
+import { cookies } from "next/headers";
+import { resolveBranchContext } from "@/lib/auth/branch-context";
 import {
   ReportsViewClient,
   ReportPayment,
@@ -10,34 +12,52 @@ import {
 
 interface ReportsPageProps {
   params: Promise<{ gymId: string }>;
+  searchParams?: Promise<{ branchId?: string }>;
 }
 
-export default async function ReportsPage({ params }: ReportsPageProps) {
+export default async function ReportsPage({ params, searchParams }: ReportsPageProps) {
   const { gymId } = await params;
+  const resolvedSearchParams = searchParams ? await searchParams : {};
 
-  await getAuthorizedActionContext({
+  const authContext = await getAuthorizedActionContext({
     gymId,
     capability: "reports:view",
   });
 
+  const cookieStore = await cookies();
+  const cookieBranch = cookieStore.get(`gymapra_branch_${gymId}`)?.value;
+  const requestedBranchId =
+    resolvedSearchParams.branchId !== undefined
+      ? resolvedSearchParams.branchId
+      : cookieBranch;
+
   const supabase = await createClient();
 
-  // 1. Fetch Gym
-  const { data: gym } = await supabase
-    .from("gyms")
-    .select("name")
-    .eq("id", gymId)
-    .single();
+  // 1. Fetch Gym & Branches in parallel
+  const [gymRes, branchesRes] = await Promise.all([
+    supabase
+      .from("gyms")
+      .select("name")
+      .eq("id", gymId)
+      .single(),
+    supabase
+      .from("branches")
+      .select("id, name")
+      .eq("gym_id", gymId)
+      .eq("is_active", true),
+  ]);
 
-  // 2. Fetch Branches
-  const { data: branches } = await supabase
-    .from("branches")
-    .select("id, name")
-    .eq("gym_id", gymId)
-    .eq("is_active", true);
+  const gym = gymRes.data;
+  const branches = branchesRes.data || [];
 
-  // 3. Fetch Payments
-  const { data: payments } = await supabase
+  const branchContext = resolveBranchContext({
+    role: authContext.role,
+    authorizedBranchIds: authContext.branchIds,
+    requestedBranchId,
+  });
+
+  // 2. Build filtered queries
+  let paymentsQuery = supabase
     .from("payments")
     .select(
       "id, amount, payment_method, payment_status, payment_date, branch_id, membership_id, members(id, full_name, phone), branches(name)"
@@ -45,7 +65,102 @@ export default async function ReportsPage({ params }: ReportsPageProps) {
     .eq("gym_id", gymId)
     .order("payment_date", { ascending: false });
 
-  const formattedPayments: ReportPayment[] = (payments || []).map((p: any) => ({
+  if (branchContext.selectedBranchId) {
+    paymentsQuery = paymentsQuery.eq("branch_id", branchContext.selectedBranchId);
+  } else if (branchContext.effectiveBranchIds.length > 0) {
+    paymentsQuery = paymentsQuery.in("branch_id", branchContext.effectiveBranchIds);
+  }
+
+  let expensesQuery = supabase
+    .from("expenses")
+    .select("id, amount, category, expense_date, payment_method, description, branch_id, branches(name)")
+    .eq("gym_id", gymId)
+    .order("expense_date", { ascending: false });
+
+  if (branchContext.selectedBranchId) {
+    expensesQuery = expensesQuery.eq("branch_id", branchContext.selectedBranchId);
+  } else if (branchContext.effectiveBranchIds.length > 0) {
+    expensesQuery = expensesQuery.in("branch_id", branchContext.effectiveBranchIds);
+  }
+
+  let attendanceQuery = supabase
+    .from("attendance")
+    .select("id, check_in_date, check_in_time, branch_id, members(full_name), branches(name)")
+    .order("check_in_date", { ascending: false })
+    .limit(300);
+
+  if (branchContext.selectedBranchId) {
+    attendanceQuery = attendanceQuery.eq("branch_id", branchContext.selectedBranchId);
+  } else if (branchContext.effectiveBranchIds.length > 0) {
+    attendanceQuery = attendanceQuery.in("branch_id", branchContext.effectiveBranchIds);
+  }
+
+  const [paymentsRes, expensesRes, membershipsRes, attendanceRes] = await Promise.all([
+    paymentsQuery,
+    expensesQuery,
+    supabase
+      .from("memberships")
+      .select(
+        "id, member_id, start_date, end_date, status, membership_plans(name, price), members(id, full_name, phone, branch_id, branches(name))"
+      )
+      .order("end_date", { ascending: false }),
+    attendanceQuery,
+  ]);
+
+  const payments = paymentsRes.data || [];
+  const expenses = expensesRes.data || [];
+  const rawMemberships = membershipsRes.data || [];
+  const attendance = attendanceRes.data || [];
+
+  interface DbPayment {
+    id: string;
+    amount: number | string;
+    payment_method: string;
+    payment_status: string;
+    payment_date: string;
+    branch_id: string;
+    membership_id?: string | null;
+    members?: { full_name?: string; phone?: string } | null;
+    branches?: { name?: string } | null;
+  }
+
+  interface DbExpense {
+    id: string;
+    amount: number | string;
+    category: string;
+    expense_date: string;
+    payment_method: string;
+    description?: string | null;
+    branch_id: string;
+    branches?: { name?: string } | null;
+  }
+
+  interface DbAttendance {
+    id: string;
+    check_in_date: string;
+    check_in_time: string;
+    branch_id: string;
+    members?: { full_name?: string } | null;
+    branches?: { name?: string } | null;
+  }
+
+  interface DbMembership {
+    id: string;
+    member_id: string;
+    start_date: string;
+    end_date: string;
+    status: string;
+    members?: {
+      id?: string;
+      full_name?: string;
+      phone?: string;
+      branch_id?: string;
+      branches?: { name?: string } | null;
+    } | null;
+    membership_plans?: { name?: string; price?: number } | null;
+  }
+
+  const formattedPayments: ReportPayment[] = ((payments as unknown as DbPayment[]) || []).map((p) => ({
     id: p.id,
     amount: Number(p.amount),
     paymentMethod: p.payment_method,
@@ -57,14 +172,7 @@ export default async function ReportsPage({ params }: ReportsPageProps) {
     branchName: p.branches?.name || "Main Branch",
   }));
 
-  // 4. Fetch Expenses
-  const { data: expenses } = await supabase
-    .from("expenses")
-    .select("id, amount, category, expense_date, payment_method, description, branch_id, branches(name)")
-    .eq("gym_id", gymId)
-    .order("expense_date", { ascending: false });
-
-  const formattedExpenses: ReportExpense[] = (expenses || []).map((e: any) => ({
+  const formattedExpenses: ReportExpense[] = ((expenses as unknown as DbExpense[]) || []).map((e) => ({
     id: e.id,
     amount: Number(e.amount),
     category: e.category,
@@ -75,14 +183,7 @@ export default async function ReportsPage({ params }: ReportsPageProps) {
     branchName: e.branches?.name || "Main Branch",
   }));
 
-  // 5. Fetch Attendance
-  const { data: attendance } = await supabase
-    .from("attendance")
-    .select("id, check_in_date, check_in_time, branch_id, members(full_name), branches(name)")
-    .order("check_in_date", { ascending: false })
-    .limit(300);
-
-  const formattedAttendance: ReportAttendance[] = (attendance || []).map((a: any) => ({
+  const formattedAttendance: ReportAttendance[] = ((attendance as unknown as DbAttendance[]) || []).map((a) => ({
     id: a.id,
     checkInDate: a.check_in_date,
     checkInTime: a.check_in_time,
@@ -91,17 +192,10 @@ export default async function ReportsPage({ params }: ReportsPageProps) {
     branchName: a.branches?.name || "Main Branch",
   }));
 
-  // 6. Fetch Memberships & calculate Dues
-  const { data: rawMemberships } = await supabase
-    .from("memberships")
-    .select(
-      "id, member_id, start_date, end_date, status, membership_plans(name, price), members(id, full_name, phone, branch_id, branches(name))"
-    )
-    .order("end_date", { ascending: false });
-
+  // Dues calculation: only completed/partial payments reduce contract dues
   const paymentSumByMembership = new Map<string, number>();
-  (payments || []).forEach((p: any) => {
-    if (p.membership_id) {
+  ((payments as unknown as DbPayment[]) || []).forEach((p) => {
+    if (p.membership_id && (p.payment_status === "paid" || p.payment_status === "partial")) {
       paymentSumByMembership.set(
         p.membership_id,
         (paymentSumByMembership.get(p.membership_id) || 0) + Number(p.amount)
@@ -112,7 +206,14 @@ export default async function ReportsPage({ params }: ReportsPageProps) {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
-  const formattedMemberships: ReportMembership[] = (rawMemberships || []).map((m: any) => {
+  // Strict tenant filtering: only include memberships belonging to authorized branch context
+  const gymMemberships = ((rawMemberships as unknown as DbMembership[]) || []).filter((m) =>
+    branchContext.selectedBranchId
+      ? m.members?.branch_id === branchContext.selectedBranchId
+      : branchContext.effectiveBranchIds.includes(m.members?.branch_id || "")
+  );
+
+  const formattedMemberships: ReportMembership[] = gymMemberships.map((m) => {
     const planPrice = Number(m.membership_plans?.price || 0);
     const paidAmount = paymentSumByMembership.get(m.id) || 0;
     const dueAmount = Math.max(0, planPrice - paidAmount);

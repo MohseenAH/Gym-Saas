@@ -15,8 +15,6 @@ import {
   CheckCircle2,
   AlertCircle,
   Loader2,
-  IndianRupee,
-  Lock,
 } from "lucide-react";
 import {
   updateGymProfileAction,

@@ -1,18 +1,29 @@
 import { createClient } from "@/lib/supabase/server";
 import { getAuthorizedActionContext } from "@/lib/auth/guard";
+import { cookies } from "next/headers";
+import { resolveBranchContext } from "@/lib/auth/branch-context";
 import { StaffCheckInClient, AttendanceMember } from "@/components/attendance/staff-checkin-client";
 
 interface AttendancePageProps {
   params: Promise<{ gymId: string }>;
+  searchParams?: Promise<{ branchId?: string }>;
 }
 
-export default async function AttendancePage({ params }: AttendancePageProps) {
+export default async function AttendancePage({ params, searchParams }: AttendancePageProps) {
   const { gymId } = await params;
+  const resolvedSearchParams = searchParams ? await searchParams : {};
 
-  await getAuthorizedActionContext({
+  const authContext = await getAuthorizedActionContext({
     gymId,
     capability: "attendance:record",
   });
+
+  const cookieStore = await cookies();
+  const cookieBranch = cookieStore.get(`gymapra_branch_${gymId}`)?.value;
+  const requestedBranchId =
+    resolvedSearchParams.branchId !== undefined
+      ? resolvedSearchParams.branchId
+      : cookieBranch;
 
   const supabase = await createClient();
 
@@ -24,7 +35,14 @@ export default async function AttendancePage({ params }: AttendancePageProps) {
     .eq("is_active", true);
 
   const branchList = branches || [];
-  const primaryBranch = branchList[0];
+  const branchContext = resolveBranchContext({
+    role: authContext.role,
+    authorizedBranchIds: authContext.branchIds,
+    requestedBranchId,
+  });
+
+  const primaryBranch =
+    branchList.find((b) => b.id === branchContext.selectedBranchId) || branchList[0];
   const branchId = primaryBranch?.id || "";
 
   const todayStr = new Date().toISOString().split("T")[0];
@@ -32,16 +50,32 @@ export default async function AttendancePage({ params }: AttendancePageProps) {
   today.setHours(0, 0, 0, 0);
 
   // Fetch members across gym branches
-  const { data: members } = await supabase
+  let membersQuery = supabase
     .from("members")
     .select("id, full_name, phone, branch_id, status, branches(name)")
     .order("full_name");
 
-  // Fetch today's check-ins
-  const { data: todayAttendance } = await supabase
+  if (branchContext.selectedBranchId) {
+    membersQuery = membersQuery.eq("branch_id", branchContext.selectedBranchId);
+  } else if (branchContext.effectiveBranchIds.length > 0) {
+    membersQuery = membersQuery.in("branch_id", branchContext.effectiveBranchIds);
+  }
+
+  const { data: members } = await membersQuery;
+
+  // Fetch today's check-ins with branch filtering
+  let attendanceQuery = supabase
     .from("attendance")
     .select("member_id, check_in_time")
     .eq("check_in_date", todayStr);
+
+  if (branchContext.selectedBranchId) {
+    attendanceQuery = attendanceQuery.eq("branch_id", branchContext.selectedBranchId);
+  } else if (branchContext.effectiveBranchIds.length > 0) {
+    attendanceQuery = attendanceQuery.in("branch_id", branchContext.effectiveBranchIds);
+  }
+
+  const { data: todayAttendance } = await attendanceQuery;
 
   const checkedInMap = new Map<string, string>();
   (todayAttendance || []).forEach((a) => {
@@ -54,9 +88,9 @@ export default async function AttendancePage({ params }: AttendancePageProps) {
     .select("member_id, status, end_date, membership_plans(name)")
     .eq("status", "active");
 
-  const membershipMap = new Map<string, any>();
+  const membershipMap = new Map<string, { end_date?: string; membership_plans?: { name?: string } | null }>();
   (memberships || []).forEach((m) => {
-    membershipMap.set(m.member_id, m);
+    membershipMap.set(m.member_id, m as unknown as { end_date?: string; membership_plans?: { name?: string } | null });
   });
 
   const formattedMembers: AttendanceMember[] = (members || []).map((m) => {
@@ -71,15 +105,16 @@ export default async function AttendancePage({ params }: AttendancePageProps) {
       isExpired = daysLeft < 0;
     }
 
+    const branch = m.branches as unknown as { name?: string } | null;
     return {
       id: m.id,
       fullName: m.full_name,
       phone: m.phone,
       branchId: m.branch_id,
-      branchName: (m.branches as any)?.name || "Main Branch",
+      branchName: branch?.name || "Main Branch",
       status: m.status,
       hasActiveMembership: !!mem,
-      planName: mem ? (mem.membership_plans as any)?.name || "Active Plan" : undefined,
+      planName: mem ? (mem.membership_plans?.name || "Active Plan") : undefined,
       planEndDate: mem?.end_date,
       daysLeft,
       isExpired,

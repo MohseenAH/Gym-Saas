@@ -52,8 +52,9 @@ export async function createNoticeAction(input: CreateNoticeInput) {
     revalidatePath(`/portal/${context.gymId}/notices`);
 
     return { success: true, noticeId: notice.id };
-  } catch (err: any) {
-    return { success: false, error: err.message || "Failed to post notice" };
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : "Failed to post notice";
+    return { success: false, error: message };
   }
 }
 
@@ -82,8 +83,9 @@ export async function toggleNoticeAction(params: { gymId: string; noticeId: stri
     revalidatePath(`/portal/${context.gymId}/notices`);
 
     return { success: true };
-  } catch (err: any) {
-    return { success: false, error: err.message || "Failed to update notice status" };
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : "Failed to update notice status";
+    return { success: false, error: message };
   }
 }
 
@@ -112,7 +114,8 @@ export async function deleteNoticeAction(params: { gymId: string; noticeId: stri
     revalidatePath(`/portal/${context.gymId}/notices`);
 
     return { success: true };
-  } catch (err: any) {
-    return { success: false, error: err.message || "Failed to delete notice" };
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : "Failed to delete notice";
+    return { success: false, error: message };
   }
 }

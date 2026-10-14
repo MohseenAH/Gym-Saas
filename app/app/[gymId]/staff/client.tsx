@@ -7,12 +7,7 @@ import {
   UserPlus,
   ShieldCheck,
   Phone,
-  Building2,
   Clock,
-  MessageSquare,
-  XCircle,
-  Ban,
-  CheckCircle2,
 } from "lucide-react";
 import { ROLE_LABELS, StaffRole } from "@/lib/auth/roles";
 import { revokeInvitationAction, toggleStaffStatusAction } from "@/lib/actions/invitations";
@@ -61,6 +56,7 @@ export function StaffClientView({
   branches,
   canManageStaff,
 }: Props) {
+  void gymName;
   const router = useRouter();
   const [modalOpen, setModalOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<"team" | "invitations">("team");

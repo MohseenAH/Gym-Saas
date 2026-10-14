@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { createStaffInvitationAction } from "@/lib/actions/invitations";
-import { StaffRole, ROLE_LABELS } from "@/lib/auth/roles";
+import { StaffRole } from "@/lib/auth/roles";
 import {
   X,
   Copy,
@@ -12,7 +12,6 @@ import {
   Phone,
   ShieldCheck,
   Loader2,
-  ExternalLink,
 } from "lucide-react";
 
 interface Branch {
@@ -28,6 +27,8 @@ interface ModalProps {
   onSuccess?: () => void;
 }
 
+type InvitableStaffRole = Exclude<StaffRole, "owner">;
+
 export function InviteStaffModal({
   gymId,
   branches,
@@ -35,7 +36,7 @@ export function InviteStaffModal({
   onClose,
   onSuccess,
 }: ModalProps) {
-  const [role, setRole] = useState<StaffRole>("staff");
+  const [role, setRole] = useState<InvitableStaffRole>("staff");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [selectedBranches, setSelectedBranches] = useState<string[]>(
@@ -71,7 +72,7 @@ export function InviteStaffModal({
         gymId,
         email: email || undefined,
         phone: phone || undefined,
-        role: role as any,
+        role,
         branchIds: selectedBranches,
       });
 
@@ -81,8 +82,9 @@ export function InviteStaffModal({
 
       setGeneratedLinks(result.links);
       onSuccess?.();
-    } catch (err: any) {
-      setError(err.message || "An unexpected error occurred");
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "An unexpected error occurred";
+      setError(message);
     } finally {
       setLoading(false);
     }
@@ -137,7 +139,7 @@ export function InviteStaffModal({
                 </label>
                 <select
                   value={role}
-                  onChange={(e) => setRole(e.target.value as StaffRole)}
+                  onChange={(e) => setRole(e.target.value as InvitableStaffRole)}
                   className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
                 >
                   <option value="trainer">Trainer (Member View, Attendance)</option>

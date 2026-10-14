@@ -6,9 +6,6 @@ import {
   Search,
   MessageSquare,
   FileText,
-  CreditCard,
-  IndianRupee,
-  Building,
 } from "lucide-react";
 import { ReceiptModal, ReceiptData } from "@/components/payments/receipt-modal";
 

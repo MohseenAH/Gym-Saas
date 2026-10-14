@@ -38,13 +38,20 @@ export async function updateGymProfileAction(input: z.infer<typeof updateGymProf
     revalidatePath(`/app/${context.gymId}/settings`);
     revalidatePath(`/app/${context.gymId}/dashboard`);
     return { success: true };
-  } catch (err: any) {
-    return { success: false, error: err.message || "Failed to update gym profile" };
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : "Failed to update gym profile";
+    return { success: false, error: message };
   }
 }
 
+import {
+  createPlanAction as baseCreatePlanAction,
+  togglePlanAction as baseTogglePlanAction,
+} from "@/lib/actions/plans";
+
 const createPlanSchema = z.object({
   gymId: z.string().uuid("Invalid gym ID"),
+  branchId: z.string().uuid("Invalid branch ID").optional(),
   name: z.string().min(2, "Plan name must be at least 2 characters"),
   durationDays: z.number().int().min(1, "Duration must be at least 1 day"),
   price: z.number().min(0, "Price cannot be negative"),
@@ -54,34 +61,39 @@ export async function createPlanAction(input: z.infer<typeof createPlanSchema>) 
   try {
     const validated = createPlanSchema.parse(input);
 
-    const context = await getAuthorizedActionContext({
-      gymId: validated.gymId,
-      capability: "plans:manage",
-    });
+    let branchId = validated.branchId;
+    if (!branchId) {
+      const supabase = await createClient();
+      const { data: defaultBranch } = await supabase
+        .from("branches")
+        .select("id")
+        .eq("gym_id", validated.gymId)
+        .eq("is_active", true)
+        .order("is_main", { ascending: false })
+        .order("created_at", { ascending: true })
+        .limit(1)
+        .maybeSingle();
 
-    const supabase = await createClient();
-
-    const { data: newPlan, error } = await supabase
-      .from("membership_plans")
-      .insert({
-        gym_id: validated.gymId,
-        name: validated.name.trim(),
-        duration_days: validated.durationDays,
-        price: validated.price,
-        is_active: true,
-      })
-      .select("id")
-      .single();
-
-    if (error) {
-      return { success: false, error: error.message };
+      if (!defaultBranch?.id) {
+        return { success: false, error: "No active branch found to associate plan with" };
+      }
+      branchId = defaultBranch.id;
     }
 
-    revalidatePath(`/app/${context.gymId}/settings`);
-    revalidatePath(`/app/${context.gymId}/members`);
-    return { success: true, planId: newPlan.id };
-  } catch (err: any) {
-    return { success: false, error: err.message || "Failed to create membership plan" };
+    if (!branchId) {
+      return { success: false, error: "Target branch ID is required" };
+    }
+
+    return await baseCreatePlanAction({
+      gymId: validated.gymId,
+      branchId,
+      name: validated.name,
+      durationDays: validated.durationDays,
+      price: validated.price,
+    });
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : "Failed to create membership plan";
+    return { success: false, error: message };
   }
 }
 
@@ -90,29 +102,7 @@ export async function togglePlanAction(params: {
   planId: string;
   isActive: boolean;
 }) {
-  try {
-    const context = await getAuthorizedActionContext({
-      gymId: params.gymId,
-      capability: "plans:manage",
-    });
-
-    const supabase = await createClient();
-
-    const { error } = await supabase
-      .from("membership_plans")
-      .update({ is_active: params.isActive })
-      .eq("id", params.planId);
-
-    if (error) {
-      return { success: false, error: error.message };
-    }
-
-    revalidatePath(`/app/${context.gymId}/settings`);
-    revalidatePath(`/app/${context.gymId}/members`);
-    return { success: true };
-  } catch (err: any) {
-    return { success: false, error: err.message || "Failed to toggle plan status" };
-  }
+  return await baseTogglePlanAction(params);
 }
 
 export async function redeemPilotCodeAction(params: {
@@ -168,7 +158,8 @@ export async function redeemPilotCodeAction(params: {
       message: "Pilot access activated! Your gym now has 60 full days of Pro access.",
       trialEndsAt: pilotEndsAt,
     };
-  } catch (err: any) {
-    return { success: false, error: err.message || "Failed to redeem pilot code" };
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : "Failed to redeem pilot code";
+    return { success: false, error: message };
   }
 }

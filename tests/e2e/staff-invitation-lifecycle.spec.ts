@@ -63,7 +63,7 @@ test.describe("Phase 2 E2E: Staff Invitation Lifecycle & Claim Flow", () => {
 
     // Verify Staff is redirected to the gym app dashboard
     await expect(staffPage).toHaveURL(new RegExp(`/app/${gymId}/dashboard`), { timeout: 30000 });
-    await expect(staffPage.getByRole("heading", { name: /Command Center & Financial P&L/i })).toBeVisible();
+    await expect(staffPage.getByRole("heading", { name: new RegExp(owner.gymName, "i") })).toBeVisible();
 
     // 6. TEST-P2-012: Replay Attack Verification
     // Opening the same link again in another fresh context must be rejected

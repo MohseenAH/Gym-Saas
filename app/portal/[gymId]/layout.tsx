@@ -1,8 +1,13 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
-import { Dumbbell, LogOut, User, Home, CalendarCheck, CreditCard, Bell } from "lucide-react";
+import { Dumbbell, LogOut, Home, CalendarCheck, CreditCard, Bell } from "lucide-react";
 import Link from "next/link";
 import { logoutAction } from "@/lib/actions/auth";
+
+interface BranchRelation {
+  gym_id: string;
+  gyms: { name: string } | null;
+}
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -37,7 +42,8 @@ export default async function MemberPortalLayout({
     redirect("/select-workspace");
   }
 
-  const gymName = (member.branches as any)?.gyms?.name || "Member Portal";
+  const branchData = member.branches as unknown as BranchRelation | null;
+  const gymName = branchData?.gyms?.name || "Member Portal";
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col justify-between">

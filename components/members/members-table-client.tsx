@@ -4,13 +4,11 @@ import { useState, useMemo } from "react";
 import Link from "next/link";
 import {
   Search,
-  Filter,
   ArrowRight,
   MessageSquare,
   ShieldCheck,
   Clock,
   AlertCircle,
-  Building,
 } from "lucide-react";
 
 export interface MemberListItem {

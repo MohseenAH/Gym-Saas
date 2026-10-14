@@ -4,6 +4,38 @@ import Link from "next/link";
 import { Building2, UserCircle, ArrowRight, LogOut, Plus } from "lucide-react";
 import { logoutAction } from "@/lib/actions/auth";
 
+interface GymSummary {
+  id: string;
+  name: string;
+  address?: string | null;
+}
+
+interface AccountWithGyms {
+  id: string;
+  gyms: GymSummary[] | GymSummary | null;
+}
+
+interface StaffRoleEntry {
+  gym_id: string;
+  role: string;
+  gyms: GymSummary | null;
+}
+
+interface MemberPortalEntry {
+  id: string;
+  full_name: string;
+  branch_id: string;
+  branches: {
+    id: string;
+    name: string;
+    gym_id: string;
+    gyms: {
+      id: string;
+      name: string;
+    } | null;
+  } | null;
+}
+
 export default async function SelectWorkspacePage() {
   const supabase = await createClient();
   const {
@@ -28,11 +60,13 @@ export default async function SelectWorkspacePage() {
     .eq("status", "active");
 
   // Merge owned gyms and staff roles
-  const staffRolesMap = new Map<string, any>();
+  const staffRolesMap = new Map<string, StaffRoleEntry>();
 
   // Add owned gyms first with role = 'owner'
-  (ownedAccounts || []).forEach((acc: any) => {
-    (acc.gyms || []).forEach((g: any) => {
+  const accounts = (ownedAccounts || []) as unknown as AccountWithGyms[];
+  accounts.forEach((acc) => {
+    const gymsList = Array.isArray(acc.gyms) ? acc.gyms : acc.gyms ? [acc.gyms] : [];
+    gymsList.forEach((g) => {
       staffRolesMap.set(g.id, {
         gym_id: g.id,
         role: "owner",
@@ -42,7 +76,8 @@ export default async function SelectWorkspacePage() {
   });
 
   // Add any additional staff roles
-  (rawStaffRoles || []).forEach((item: any) => {
+  const staffItems = (rawStaffRoles || []) as unknown as StaffRoleEntry[];
+  staffItems.forEach((item) => {
     if (!staffRolesMap.has(item.gym_id)) {
       staffRolesMap.set(item.gym_id, item);
     }
@@ -51,11 +86,13 @@ export default async function SelectWorkspacePage() {
   const staffRoles = Array.from(staffRolesMap.values());
 
   // Fetch member portals
-  const { data: memberPortals } = await supabase
+  const { data: rawMemberPortals } = await supabase
     .from("members")
     .select("id, full_name, branch_id, branches ( id, name, gym_id, gyms ( id, name ) )")
     .eq("user_id", user.id)
     .eq("status", "active");
+
+  const memberPortals = (rawMemberPortals || []) as unknown as MemberPortalEntry[];
 
   return (
     <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
@@ -87,7 +124,7 @@ export default async function SelectWorkspacePage() {
                 Staff & Operations
               </h2>
               <div className="space-y-2">
-                {staffRoles.map((item: any) => (
+                {staffRoles.map((item) => (
                   <Link
                     key={item.gym_id}
                     href={`/app/${item.gym_id}/dashboard`}
@@ -120,7 +157,7 @@ export default async function SelectWorkspacePage() {
                 Member Portals
               </h2>
               <div className="space-y-2">
-                {memberPortals.map((m: any) => {
+                {memberPortals.map((m) => {
                   const gymId = m.branches?.gym_id;
                   const gymName = m.branches?.gyms?.name || "Gym";
                   return (

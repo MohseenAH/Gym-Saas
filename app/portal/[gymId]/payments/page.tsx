@@ -3,12 +3,22 @@ import { Calendar } from "lucide-react";
 import { PayDuesModal } from "@/components/portal/pay-dues-modal";
 import { PortalPaymentsClient } from "@/components/portal/portal-payments-client";
 
+interface BranchRelation {
+  name: string;
+  gyms: { name: string } | null;
+}
+
+interface PlanRelation {
+  name: string;
+  price: number;
+}
+
 interface PaymentsPageProps {
   params: Promise<{ gymId: string }>;
 }
 
 export default async function MemberPaymentsPage({ params }: PaymentsPageProps) {
-  const { gymId } = await params;
+  await params;
   const supabase = await createClient();
 
   const {
@@ -29,8 +39,9 @@ export default async function MemberPaymentsPage({ params }: PaymentsPageProps) 
     );
   }
 
-  const gymName = (member.branches as any)?.gyms?.name || "Gym";
-  const branchName = (member.branches as any)?.name || "Main Branch";
+  const branchData = member.branches as unknown as BranchRelation | null;
+  const gymName = branchData?.gyms?.name || "Gym";
+  const branchName = branchData?.name || "Main Branch";
 
   // Fetch active membership
   const { data: membership } = await supabase
@@ -48,8 +59,9 @@ export default async function MemberPaymentsPage({ params }: PaymentsPageProps) 
     .order("payment_date", { ascending: false });
 
   const allPayments = payments || [];
-  const planName = (membership?.membership_plans as any)?.name;
-  const planPrice = Number((membership?.membership_plans as any)?.price || 0);
+  const planData = membership?.membership_plans as unknown as PlanRelation | null;
+  const planName = planData?.name;
+  const planPrice = Number(planData?.price || 0);
 
   const formattedPayments = allPayments.map((p) => ({
     id: p.id,

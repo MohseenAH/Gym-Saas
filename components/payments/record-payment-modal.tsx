@@ -23,6 +23,11 @@ export function RecordPaymentModal({ gymId, branches, members }: RecordPaymentMo
     new Date().toISOString().split("T")[0]
   );
   const [notes, setNotes] = useState<string>("");
+  const [idempotencyKey, setIdempotencyKey] = useState<string>(() =>
+    typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
+      ? crypto.randomUUID()
+      : `pay_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`
+  );
 
   const selectedMember = members.find((m) => m.id === memberId);
   const branchId = selectedMember?.branchId || branches[0]?.id || "";
@@ -49,10 +54,11 @@ export function RecordPaymentModal({ gymId, branches, members }: RecordPaymentMo
       branchId,
       memberId,
       amount: numAmount,
-      paymentMethod: paymentMethod as any,
+      paymentMethod: paymentMethod as "cash" | "upi" | "card" | "bank_transfer" | "cheque" | "other",
       paymentDate,
       notes: notes || null,
       paymentStatus: "paid",
+      idempotencyKey,
     });
 
     setLoading(false);
@@ -65,6 +71,11 @@ export function RecordPaymentModal({ gymId, branches, members }: RecordPaymentMo
         setIsOpen(false);
         setAmount("");
         setNotes("");
+        setIdempotencyKey(
+          typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
+            ? crypto.randomUUID()
+            : `pay_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`
+        );
       }
     }
   }
@@ -74,6 +85,11 @@ export function RecordPaymentModal({ gymId, branches, members }: RecordPaymentMo
     setWaReceiptUrl(null);
     setAmount("");
     setNotes("");
+    setIdempotencyKey(
+      typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
+        ? crypto.randomUUID()
+        : `pay_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`
+    );
   }
 
   return (

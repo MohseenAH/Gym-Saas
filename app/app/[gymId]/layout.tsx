@@ -31,7 +31,7 @@ export default async function GymLayout({ children, params }: LayoutProps) {
     redirect("/select-workspace");
   }
 
-  const isAccountOwner = (gym.accounts as any)?.owner_id === user.id;
+  const isAccountOwner = (gym.accounts as unknown as { owner_id?: string } | null)?.owner_id === user.id;
   let role: StaffRole = "staff";
   let hasAccess = isAccountOwner;
 

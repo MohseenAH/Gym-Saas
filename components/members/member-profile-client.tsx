@@ -12,7 +12,6 @@ import {
   FileText,
   IndianRupee,
   MessageSquare,
-  Phone,
   RefreshCw,
   ShieldCheck,
   User,

@@ -1,21 +1,23 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import { StaffRole } from "@/lib/auth/roles";
 import { Capability, hasCapability } from "@/lib/auth/capabilities";
 import {
   LayoutDashboard,
   Users,
+  IdCard,
   CalendarCheck,
-  CreditCard,
-  Building2,
+  Receipt,
+  TrendingDown,
+  FileSpreadsheet,
   ShieldCheck,
+  Building2,
+  Bell,
   Settings,
   Dumbbell,
-  Receipt,
-  FileSpreadsheet,
-  Bell,
+  ArrowLeftRight,
 } from "lucide-react";
 
 interface NavItem {
@@ -23,6 +25,11 @@ interface NavItem {
   href: string;
   icon: React.ComponentType<{ className?: string }>;
   capability?: Capability;
+}
+
+interface NavGroup {
+  title: string;
+  items: NavItem[];
 }
 
 interface SidebarProps {
@@ -34,132 +41,182 @@ interface SidebarProps {
 
 export function Sidebar({ gymId, gymName, role, onNavigate }: SidebarProps) {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const currentBranchId = searchParams.get("branchId");
 
-  const navItems: NavItem[] = [
+  const navGroups: NavGroup[] = [
     {
-      label: "Dashboard",
-      href: `/app/${gymId}/dashboard`,
-      icon: LayoutDashboard,
+      title: "Overview",
+      items: [
+        {
+          label: "Dashboard",
+          href: `/app/${gymId}/dashboard`,
+          icon: LayoutDashboard,
+        },
+      ],
     },
     {
-      label: "Members",
-      href: `/app/${gymId}/members`,
-      icon: Users,
-      capability: "members:view",
+      title: "Gym Operations",
+      items: [
+        {
+          label: "Members",
+          href: `/app/${gymId}/members`,
+          icon: Users,
+          capability: "members:view",
+        },
+        {
+          label: "Memberships",
+          href: `/app/${gymId}/memberships`,
+          icon: IdCard,
+          capability: "members:view",
+        },
+        {
+          label: "Attendance",
+          href: `/app/${gymId}/attendance`,
+          icon: CalendarCheck,
+          capability: "attendance:record",
+        },
+      ],
     },
     {
-      label: "Attendance",
-      href: `/app/${gymId}/attendance`,
-      icon: CalendarCheck,
-      capability: "attendance:record",
+      title: "Finance & Insights",
+      items: [
+        {
+          label: "Payments",
+          href: `/app/${gymId}/payments`,
+          icon: Receipt,
+          capability: "payments:record",
+        },
+        {
+          label: "Expenses",
+          href: `/app/${gymId}/expenses`,
+          icon: TrendingDown,
+          capability: "expenses:manage",
+        },
+        {
+          label: "Reports",
+          href: `/app/${gymId}/reports`,
+          icon: FileSpreadsheet,
+          capability: "reports:view",
+        },
+      ],
     },
     {
-      label: "Payments",
-      href: `/app/${gymId}/payments`,
-      icon: CreditCard,
-      capability: "payments:record",
+      title: "Gym Management",
+      items: [
+        {
+          label: "Staff & Team",
+          href: `/app/${gymId}/staff`,
+          icon: ShieldCheck,
+          capability: "staff:manage",
+        },
+        {
+          label: "Branches",
+          href: `/app/${gymId}/branches`,
+          icon: Building2,
+          capability: "branches:manage",
+        },
+        {
+          label: "Notices",
+          href: `/app/${gymId}/notices`,
+          icon: Bell,
+          capability: "notices:view",
+        },
+      ],
     },
     {
-      label: "Staff & Team",
-      href: `/app/${gymId}/staff`,
-      icon: ShieldCheck,
-      capability: "staff:manage",
-    },
-    {
-      label: "Branches",
-      href: `/app/${gymId}/branches`,
-      icon: Building2,
-      capability: "branches:manage",
-    },
-    {
-      label: "Expenses",
-      href: `/app/${gymId}/expenses`,
-      icon: Receipt,
-      capability: "expenses:manage",
-    },
-    {
-      label: "Notices",
-      href: `/app/${gymId}/notices`,
-      icon: Bell,
-      capability: "notices:view",
-    },
-    {
-      label: "Reports",
-      href: `/app/${gymId}/reports`,
-      icon: FileSpreadsheet,
-      capability: "reports:view",
-    },
-    {
-      label: "Settings",
-      href: `/app/${gymId}/settings`,
-      icon: Settings,
-      capability: "settings:manage",
+      title: "Settings",
+      items: [
+        {
+          label: "Settings",
+          href: `/app/${gymId}/settings`,
+          icon: Settings,
+          capability: "settings:manage",
+        },
+      ],
     },
   ];
 
-  // Role-adaptive filtering: Only show routes the user is authorized to access
-  const visibleItems = navItems.filter((item) => {
-    if (!item.capability) return true;
-    return hasCapability(role, item.capability);
-  });
-
   return (
-    <aside className="w-64 bg-white border-r border-slate-200/80 flex flex-col justify-between shrink-0">
-      <div>
+    <aside className="w-64 bg-white border-r border-slate-200/80 flex flex-col justify-between shrink-0 h-full">
+      <div className="flex flex-col flex-1 min-h-0">
         {/* Brand / Gym Header */}
-        <div className="h-16 px-6 border-b border-slate-100 flex items-center gap-3">
-          <div className="p-2 bg-indigo-600 text-white rounded-xl shadow-sm">
+        <div className="h-16 px-5 border-b border-slate-100 flex items-center gap-3 shrink-0">
+          <div className="p-2 bg-indigo-600 text-white rounded-xl shadow-xs">
             <Dumbbell className="w-5 h-5" />
           </div>
           <div className="truncate">
-            <div className="font-bold text-slate-900 text-sm tracking-tight truncate">
+            <div className="font-black text-slate-900 text-sm tracking-tight truncate">
               {gymName}
             </div>
-            <div className="text-[11px] font-medium text-slate-400 capitalize">
+            <div className="text-[10px] font-semibold text-indigo-600 uppercase tracking-wider">
               {role} Workspace
             </div>
           </div>
         </div>
 
-        {/* Navigation links */}
-        <nav className="p-3 space-y-1">
-          {visibleItems.map((item) => {
-            const Icon = item.icon;
-            const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`);
+        {/* Grouped Navigation Links */}
+        <nav className="p-3 space-y-4 overflow-y-auto flex-1">
+          {navGroups.map((group) => {
+            // Filter group items by role capabilities
+            const visibleItems = group.items.filter((item) => {
+              if (!item.capability) return true;
+              return hasCapability(role, item.capability);
+            });
+
+            // Don't render empty section if role lacks access to all items
+            if (visibleItems.length === 0) return null;
 
             return (
-              <Link
-                key={item.href}
-                href={item.href}
-                onClick={onNavigate}
-                className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all ${
-                  isActive
-                    ? "bg-indigo-50 text-indigo-700 font-semibold shadow-xs"
-                    : "text-slate-600 hover:text-slate-900 hover:bg-slate-50"
-                }`}
-              >
-                <Icon
-                  className={`w-4 h-4 ${
-                    isActive ? "text-indigo-600" : "text-slate-400"
-                  }`}
-                />
-                <span>{item.label}</span>
-              </Link>
+              <div key={group.title} className="space-y-1">
+                <div className="px-3 text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">
+                  {group.title}
+                </div>
+                {visibleItems.map((item) => {
+                  const Icon = item.icon;
+                  const isActive =
+                    pathname === item.href || pathname.startsWith(`${item.href}/`);
+                  const targetHref = currentBranchId
+                    ? `${item.href}?branchId=${encodeURIComponent(currentBranchId)}`
+                    : item.href;
+
+                  return (
+                    <Link
+                      key={item.href}
+                      href={targetHref}
+                      onClick={onNavigate}
+                      className={`flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-semibold transition-all ${
+                        isActive
+                          ? "bg-indigo-50 text-indigo-700 font-bold shadow-xs border border-indigo-100/60"
+                          : "text-slate-600 hover:text-slate-900 hover:bg-slate-50"
+                      }`}
+                    >
+                      <Icon
+                        className={`w-4 h-4 shrink-0 ${
+                          isActive ? "text-indigo-600" : "text-slate-400"
+                        }`}
+                      />
+                      <span className="truncate">{item.label}</span>
+                    </Link>
+                  );
+                })}
+              </div>
             );
           })}
         </nav>
       </div>
 
-      {/* Switcher & Version */}
-      <div className="p-4 border-t border-slate-100">
+      {/* Switcher & Version Footer */}
+      <div className="p-3 border-t border-slate-100 shrink-0">
         <Link
           href="/select-workspace"
-          className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-xs font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-50 border border-slate-200/70 transition-all"
+          className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold text-slate-600 hover:text-slate-900 hover:bg-slate-50 border border-slate-200/80 transition-all shadow-2xs"
         >
-          Switch Gym / Portal
+          <ArrowLeftRight className="w-3.5 h-3.5 text-slate-400" />
+          <span>Switch Workspace</span>
         </Link>
-        <div className="mt-2 text-center text-[10px] text-slate-400">
-          GymApra OS v2.0
+        <div className="mt-2 text-center text-[10px] text-slate-400 font-medium">
+          GymApra OS &bull; V2.0 Production
         </div>
       </div>
     </aside>
