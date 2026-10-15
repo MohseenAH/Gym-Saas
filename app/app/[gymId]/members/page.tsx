@@ -47,14 +47,9 @@ export default async function MembersPage({ params, searchParams }: MembersPageP
     membersQuery = membersQuery.in("branch_id", branchContext.effectiveBranchIds);
   }
 
-  // Fetch branches, plans, invites, members, and memberships in parallel
-  const [branchesRes, plansRes, invitesRes, membersRes, membershipsRes] =
+  // Fetch plans, invites, members, and memberships in parallel
+  const [plansRes, invitesRes, membersRes, membershipsRes] =
     await Promise.all([
-      supabase
-        .from("branches")
-        .select("id, name")
-        .eq("gym_id", gymId)
-        .eq("is_active", true),
       supabase
         .from("membership_plans")
         .select("id, name, price, duration_days")
@@ -72,7 +67,7 @@ export default async function MembersPage({ params, searchParams }: MembersPageP
         .eq("status", "active"),
     ]);
 
-  const branches = branchesRes.data || [];
+  const branches = authContext.branches;
   const plans = plansRes.data || [];
   const invites = invitesRes.data || [];
 

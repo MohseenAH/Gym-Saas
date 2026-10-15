@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabase/server";
+import { createClient, getCachedUser } from "@/lib/supabase/server";
 import { CalendarCheck, Flame, Clock, CheckCircle } from "lucide-react";
 import { MemberCheckInButton } from "@/components/portal/member-checkin-button";
 
@@ -8,11 +8,8 @@ interface AttendancePageProps {
 
 export default async function MemberAttendancePage({ params }: AttendancePageProps) {
   const { gymId } = await params;
+  const user = await getCachedUser();
   const supabase = await createClient();
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
 
   const { data: member } = await supabase
     .from("members")

@@ -70,7 +70,6 @@ export async function createPlanAction(input: z.infer<typeof createPlanSchema>) 
         .select("id")
         .eq("gym_id", validated.gymId)
         .eq("is_active", true)
-        .order("is_main", { ascending: false })
         .order("created_at", { ascending: true })
         .limit(1)
         .maybeSingle();

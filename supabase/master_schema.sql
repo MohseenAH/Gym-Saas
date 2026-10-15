@@ -580,6 +580,11 @@ CREATE POLICY "accounts_owner_all" ON public.accounts FOR ALL USING (owner_id = 
 DROP POLICY IF EXISTS "gyms_staff_select" ON public.gyms;
 CREATE POLICY "gyms_staff_select" ON public.gyms FOR SELECT USING (public.is_gym_staff(id));
 
+DROP POLICY IF EXISTS "gyms_owner_select" ON public.gyms;
+CREATE POLICY "gyms_owner_select" ON public.gyms FOR SELECT USING (
+  EXISTS (SELECT 1 FROM public.accounts WHERE id = public.gyms.account_id AND owner_id = auth.uid())
+);
+
 DROP POLICY IF EXISTS "gyms_owner_update" ON public.gyms;
 CREATE POLICY "gyms_owner_update" ON public.gyms FOR UPDATE USING (
   EXISTS (SELECT 1 FROM public.accounts WHERE id = public.gyms.account_id AND owner_id = auth.uid())
@@ -598,8 +603,23 @@ CREATE POLICY "gyms_member_select" ON public.gyms FOR SELECT USING (
 DROP POLICY IF EXISTS "branches_staff_select" ON public.branches;
 CREATE POLICY "branches_staff_select" ON public.branches FOR SELECT USING (public.is_gym_staff(gym_id));
 
+DROP POLICY IF EXISTS "branches_owner_select" ON public.branches;
+CREATE POLICY "branches_owner_select" ON public.branches FOR SELECT USING (
+  EXISTS (
+    SELECT 1 FROM public.gyms g
+    JOIN public.accounts a ON g.account_id = a.id
+    WHERE g.id = public.branches.gym_id AND a.owner_id = auth.uid()
+  )
+);
+
 DROP POLICY IF EXISTS "branches_owner_all" ON public.branches;
-CREATE POLICY "branches_owner_all" ON public.branches FOR ALL USING (public.is_gym_staff(gym_id));
+CREATE POLICY "branches_owner_all" ON public.branches FOR ALL USING (
+  EXISTS (
+    SELECT 1 FROM public.gyms g
+    JOIN public.accounts a ON g.account_id = a.id
+    WHERE g.id = public.branches.gym_id AND a.owner_id = auth.uid()
+  )
+);
 
 DROP POLICY IF EXISTS "branches_member_select" ON public.branches;
 CREATE POLICY "branches_member_select" ON public.branches FOR SELECT USING (

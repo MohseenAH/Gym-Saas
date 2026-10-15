@@ -156,6 +156,19 @@ DROP POLICY IF EXISTS "profiles_select_authenticated" ON public.profiles;
 CREATE POLICY "profiles_select_authenticated" ON public.profiles
   FOR SELECT USING (auth.role() = 'authenticated');
 
+-- 2.1b Gyms & Branches (Ensure owners always have direct select & manage access)
+DROP POLICY IF EXISTS "gyms_owner_select" ON public.gyms;
+CREATE POLICY "gyms_owner_select" ON public.gyms
+  FOR SELECT USING (public.is_gym_owner(id));
+
+DROP POLICY IF EXISTS "branches_owner_select" ON public.branches;
+CREATE POLICY "branches_owner_select" ON public.branches
+  FOR SELECT USING (public.is_gym_owner(gym_id));
+
+DROP POLICY IF EXISTS "branches_owner_all" ON public.branches;
+CREATE POLICY "branches_owner_all" ON public.branches
+  FOR ALL USING (public.is_gym_owner(gym_id));
+
 -- 2.2 Gym Users (Zero-recursion using security definer helpers)
 DROP POLICY IF EXISTS "gym_users_select" ON public.gym_users;
 CREATE POLICY "gym_users_select" ON public.gym_users

@@ -13,13 +13,8 @@ export default async function StaffPage({ params }: PageProps) {
 
   const supabase = await createClient();
 
-  // Parallel fetch: gym details, staff members, invitations, and branches
-  const [gymRes, staffRes, invitationsRes, branchesRes] = await Promise.all([
-    supabase
-      .from("gyms")
-      .select("name")
-      .eq("id", gymId)
-      .single(),
+  // Parallel fetch: staff members and invitations
+  const [staffRes, invitationsRes] = await Promise.all([
     supabase
       .from("gym_users")
       .select("id, user_id, role, status, profiles(full_name, phone)")
@@ -31,17 +26,12 @@ export default async function StaffPage({ params }: PageProps) {
       .eq("gym_id", gymId)
       .eq("type", "staff")
       .order("created_at", { ascending: false }),
-    supabase
-      .from("branches")
-      .select("id, name")
-      .eq("gym_id", gymId)
-      .eq("is_active", true),
   ]);
 
-  const gym = gymRes.data;
+  const gym = authContext.gym;
   const staffMembers = staffRes.data || [];
   const invitations = invitationsRes.data || [];
-  const branches = branchesRes.data || [];
+  const branches = authContext.branches;
 
   const canManageStaff = hasCapability(authContext.role, "staff:manage");
 

@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabase/server";
+import { createClient, getCachedUser } from "@/lib/supabase/server";
 import { UserCheck, Dumbbell, Calendar, CreditCard, Bell, ArrowRight } from "lucide-react";
 import Link from "next/link";
 import { MemberCheckInButton } from "@/components/portal/member-checkin-button";
@@ -21,11 +21,8 @@ interface PageProps {
 
 export default async function MemberPortalDashboardPage({ params }: PageProps) {
   const { gymId } = await params;
+  const user = await getCachedUser();
   const supabase = await createClient();
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
 
   const { data: member } = await supabase
     .from("members")

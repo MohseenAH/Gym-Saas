@@ -48,18 +48,10 @@ export default async function ExpensesPage({ params, searchParams }: ExpensesPag
     expensesQuery = expensesQuery.in("branch_id", branchContext.effectiveBranchIds);
   }
 
-  const [branchesRes, expensesRes] = await Promise.all([
-    supabase
-      .from("branches")
-      .select("id, name")
-      .eq("gym_id", gymId)
-      .eq("is_active", true),
-    expensesQuery,
-  ]);
+  const { data: expenses } = await expensesQuery;
 
-  const branches = branchesRes.data || [];
-  const expenses = expensesRes.data || [];
-  const allExpenses = expenses;
+  const branches = authContext.branches;
+  const allExpenses = expenses || [];
 
   // Aggregations
   const totalExpense = allExpenses.reduce((sum, e) => sum + Number(e.amount), 0);

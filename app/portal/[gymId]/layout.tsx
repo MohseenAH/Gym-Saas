@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabase/server";
+import { createClient, getCachedUser } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { Dumbbell, LogOut, Home, CalendarCheck, CreditCard, Bell } from "lucide-react";
 import Link from "next/link";
@@ -19,15 +19,13 @@ export default async function MemberPortalLayout({
   params,
 }: LayoutProps) {
   const { gymId } = await params;
-  const supabase = await createClient();
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getCachedUser();
 
   if (!user) {
     redirect(`/login?redirect=/portal/${gymId}/dashboard`);
   }
+
+  const supabase = await createClient();
 
   // Verify member profile in this gym
   const { data: member, error } = await supabase

@@ -1,4 +1,4 @@
-import { createClient, getCachedUser } from "@/lib/supabase/server";
+import { getCachedUser } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { AppShell } from "@/components/layout/app-shell";
 import { getAuthorizedActionContext, AuthorizationError } from "@/lib/auth/guard";
@@ -28,34 +28,23 @@ export default async function GymLayout({ children, params }: LayoutProps) {
     throw err;
   }
 
-  const supabase = await createClient();
+  const metadataName =
+    typeof user.user_metadata?.full_name === "string"
+      ? user.user_metadata.full_name
+      : undefined;
 
-  // 3. Parallel fetch gym name, branches, and user profile
-  const [gymRes, branchesRes, profileRes] = await Promise.all([
-    supabase.from("gyms").select("id, name").eq("id", gymId).maybeSingle(),
-    supabase.from("branches").select("id, name").eq("gym_id", gymId).eq("is_active", true),
-    supabase.from("profiles").select("full_name").eq("id", user.id).maybeSingle(),
-  ]);
-
-  const gym = gymRes.data;
-  if (!gym) {
-    redirect("/select-workspace");
-  }
-
-  const branches = branchesRes.data || [];
-  const profile = profileRes.data;
   const userName =
-    profile?.full_name ||
-    user.user_metadata?.full_name ||
+    authContext.profile?.full_name ||
+    metadataName ||
     user.email?.split("@")[0] ||
     "User";
 
   return (
     <AppShell
       gymId={gymId}
-      gymName={gym.name || "Gym Workspace"}
+      gymName={authContext.gym.name || "Gym Workspace"}
       role={authContext.role}
-      branches={branches}
+      branches={authContext.branches}
       userEmail={user.email || ""}
       userName={userName}
     >

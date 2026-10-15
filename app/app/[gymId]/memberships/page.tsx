@@ -48,14 +48,9 @@ export default async function MembershipsPage({
 
   const supabase = await createClient();
 
-  // 1. Fetch branches, membership plans, payments, and members in parallel
-  const [branchesRes, plansRes, paymentsRes, membersRes, membershipsRes] =
+  // 1. Fetch membership plans, payments, members, and memberships in parallel
+  const [plansRes, paymentsRes, membersRes, membershipsRes] =
     await Promise.all([
-      supabase
-        .from("branches")
-        .select("id, name")
-        .eq("gym_id", gymId)
-        .eq("is_active", true),
       supabase
         .from("membership_plans")
         .select(
@@ -80,7 +75,7 @@ export default async function MembershipsPage({
         .order("end_date", { ascending: false }),
     ]);
 
-  const branches = branchesRes.data || [];
+  const branches = authContext.branches;
   const rawPlans = (plansRes.data || []) as unknown as Array<{
     id: string;
     name: string;

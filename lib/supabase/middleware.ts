@@ -2,8 +2,14 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
 export async function updateSession(request: NextRequest) {
+  // Strip incoming x-verified-user header to prevent spoofing
+  const requestHeaders = new Headers(request.headers);
+  requestHeaders.delete("x-verified-user");
+
   let supabaseResponse = NextResponse.next({
-    request,
+    request: {
+      headers: requestHeaders,
+    },
   });
 
   const pathname = request.nextUrl.pathname;
@@ -52,7 +58,9 @@ export async function updateSession(request: NextRequest) {
           request.cookies.set(name, value)
         );
         supabaseResponse = NextResponse.next({
-          request,
+          request: {
+            headers: requestHeaders,
+          },
         });
         cookiesToSet.forEach(({ name, value, options }) =>
           supabaseResponse.cookies.set(name, value, options)
@@ -61,9 +69,37 @@ export async function updateSession(request: NextRequest) {
     },
   });
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  // Verify claims locally or with minimal hop
+  const { data } = await supabase.auth.getClaims();
+  const claims = data?.claims;
+
+  const user =
+    claims && claims.sub
+      ? {
+          id: claims.sub as string,
+          email: (claims.email as string) || undefined,
+          user_metadata: (claims.user_metadata as Record<string, unknown>) || {},
+        }
+      : null;
+
+  if (user) {
+    requestHeaders.set(
+      "x-verified-user",
+      JSON.stringify({
+        id: user.id,
+        email: user.email,
+        user_metadata: user.user_metadata,
+      })
+    );
+
+    const existingCookies = supabaseResponse.cookies.getAll();
+    supabaseResponse = NextResponse.next({
+      request: {
+        headers: requestHeaders,
+      },
+    });
+    existingCookies.forEach((c) => supabaseResponse.cookies.set(c));
+  }
 
   if (!user && isProtectedPath) {
     const redirectUrl = request.nextUrl.clone();

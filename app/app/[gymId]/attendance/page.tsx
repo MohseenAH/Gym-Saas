@@ -61,12 +61,7 @@ export default async function AttendancePage({ params, searchParams }: Attendanc
     attendanceQuery = attendanceQuery.in("branch_id", branchContext.effectiveBranchIds);
   }
 
-  const [branchesRes, membersRes, todayAttendanceRes, membershipsRes] = await Promise.all([
-    supabase
-      .from("branches")
-      .select("id, name")
-      .eq("gym_id", gymId)
-      .eq("is_active", true),
+  const [membersRes, todayAttendanceRes, membershipsRes] = await Promise.all([
     membersQuery,
     attendanceQuery,
     supabase
@@ -75,7 +70,7 @@ export default async function AttendancePage({ params, searchParams }: Attendanc
       .eq("status", "active"),
   ]);
 
-  const branchList = branchesRes.data || [];
+  const branchList = authContext.branches;
   const primaryBranch =
     branchList.find((b) => b.id === branchContext.selectedBranchId) || branchList[0];
   const branchId = primaryBranch?.id || "";

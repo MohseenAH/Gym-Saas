@@ -1,14 +1,11 @@
 import Link from "next/link";
-import { createClient } from "@/lib/supabase/server";
+import { getCachedUser } from "@/lib/supabase/server";
 import { resolvePostLoginRedirect } from "@/lib/auth/redirect";
 import { redirect } from "next/navigation";
 import { Dumbbell, ArrowRight, Zap, Users, CreditCard } from "lucide-react";
 
 export default async function HomePage() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getCachedUser();
 
   if (user) {
     const destination = await resolvePostLoginRedirect();

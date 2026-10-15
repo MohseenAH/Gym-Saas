@@ -13,7 +13,6 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { cookies } from "next/headers";
-import { evaluatePilotStatus } from "@/lib/auth/trial";
 import { getAuthorizedActionContext } from "@/lib/auth/guard";
 import { resolveBranchContext } from "@/lib/auth/branch-context";
 import { BranchSelector } from "@/components/dashboard/branch-selector";
@@ -116,10 +115,8 @@ export default async function DashboardPage({ params, searchParams }: PageProps)
     recentAttendanceQuery = recentAttendanceQuery.in("branch_id", gymBranchIds);
   }
 
-  // Execute ALL page queries concurrently in parallel
+  // Execute all dashboard queries concurrently in parallel
   const [
-    gymRes,
-    branchesRes,
     membersRes,
     attendanceCountRes,
     paymentsRes,
@@ -128,16 +125,6 @@ export default async function DashboardPage({ params, searchParams }: PageProps)
     noticesRes,
     recentAttendanceRes,
   ] = await Promise.all([
-    supabase
-      .from("gyms")
-      .select("name, phone, account_id, accounts(subscription_tier, trial_ends_at)")
-      .eq("id", gymId)
-      .single(),
-    supabase
-      .from("branches")
-      .select("id, name")
-      .eq("gym_id", gymId)
-      .eq("is_active", true),
     membersQuery,
     attendanceCountQuery,
     paymentsQuery,
@@ -147,13 +134,9 @@ export default async function DashboardPage({ params, searchParams }: PageProps)
     recentAttendanceQuery,
   ]);
 
-  const gym = gymRes.data;
-  const accountData = gym?.accounts as { trial_ends_at?: string; subscription_tier?: string } | null;
-  const pilotStatus = evaluatePilotStatus(
-    accountData?.trial_ends_at,
-    accountData?.subscription_tier
-  );
-  const branchList = branchesRes.data || [];
+  const gym = authContext.gym;
+  const pilotStatus = authContext.trialStatus;
+  const branchList = authContext.branches;
 
   const membersCount = membersRes.count;
   const todayCheckIns = attendanceCountRes.count;

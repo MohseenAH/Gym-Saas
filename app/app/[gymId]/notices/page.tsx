@@ -11,29 +11,22 @@ interface NoticesPageProps {
 export default async function NoticesPage({ params }: NoticesPageProps) {
   const { gymId } = await params;
 
-  await getAuthorizedActionContext({
+  const authContext = await getAuthorizedActionContext({
     gymId,
     capability: "notices:view",
   });
 
   const supabase = await createClient();
 
-  // Fetch branches and notices in parallel
-  const [branchesRes, noticesRes] = await Promise.all([
-    supabase
-      .from("branches")
-      .select("id, name")
-      .eq("gym_id", gymId)
-      .eq("is_active", true),
-    supabase
-      .from("notices")
-      .select("id, title, content, priority, is_active, published_at, expires_at, branches(name)")
-      .eq("gym_id", gymId)
-      .order("published_at", { ascending: false }),
-  ]);
+  // Fetch notices
+  const { data: allNoticesData } = await supabase
+    .from("notices")
+    .select("id, title, content, priority, is_active, published_at, expires_at, branches(name)")
+    .eq("gym_id", gymId)
+    .order("published_at", { ascending: false });
 
-  const branches = branchesRes.data || [];
-  const allNotices = noticesRes.data || [];
+  const branches = authContext.branches;
+  const allNotices = allNoticesData || [];
 
   return (
     <div className="space-y-6">

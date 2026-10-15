@@ -104,7 +104,11 @@ export async function signupOwnerAction(formData: FormData) {
 
   if (provisionError) {
     if (provisionError.message.includes("Owner account already exists")) {
-      const destination = await resolvePostLoginRedirect();
+      const destination = await resolvePostLoginRedirect(supabase, {
+        id: user.id,
+        email: user.email,
+        user_metadata: user.user_metadata,
+      });
       redirect(destination.path);
     }
     return {
@@ -141,12 +145,14 @@ export async function loginAction(formData: FormData) {
   }
 
   const { email, password } = validation.data;
+  const redirectParam = formData.get("redirect") as string | null;
   const supabase = await createClient();
 
-  const { error: signInError } = await supabase.auth.signInWithPassword({
-    email,
-    password,
-  });
+  const { data: signInData, error: signInError } =
+    await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
 
   if (signInError) {
     return {
@@ -155,8 +161,28 @@ export async function loginAction(formData: FormData) {
     };
   }
 
+  const user = signInData.user;
+  const cachedUser = user
+    ? {
+        id: user.id,
+        email: user.email,
+        user_metadata: user.user_metadata,
+      }
+    : null;
+
+  // Safe redirect param handling
+  if (
+    redirectParam &&
+    (redirectParam.startsWith("/app") ||
+      redirectParam.startsWith("/portal") ||
+      redirectParam.startsWith("/select-workspace") ||
+      redirectParam.startsWith("/onboarding"))
+  ) {
+    redirect(redirectParam);
+  }
+
   // Dynamic persona routing
-  const destination = await resolvePostLoginRedirect();
+  const destination = await resolvePostLoginRedirect(supabase, cachedUser);
   redirect(destination.path);
 }
 

@@ -12,6 +12,13 @@ const nextConfig: NextConfig = {
   turbopack: {
     root: __dirname,
   },
+  experimental: {
+    staleTimes: {
+      dynamic: 30,
+      static: 180,
+    },
+    optimizePackageImports: ["lucide-react"],
+  },
 };
 
 export default nextConfig;

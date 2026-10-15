@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabase/server";
+import { createClient, getCachedUser } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { Building2, UserCircle, ArrowRight, LogOut, Plus } from "lucide-react";
@@ -37,14 +37,13 @@ interface MemberPortalEntry {
 }
 
 export default async function SelectWorkspacePage() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getCachedUser();
 
   if (!user) {
     redirect("/login");
   }
+
+  const supabase = await createClient();
 
   // 1. Fetch gyms owned directly via accounts table
   const { data: ownedAccounts } = await supabase

@@ -1,18 +1,17 @@
-import { createClient } from "@/lib/supabase/server";
+import { createClient, getCachedUser } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import OnboardingForm from "./onboarding-form";
 import { logoutAction } from "@/lib/actions/auth";
 import { Dumbbell, LogOut } from "lucide-react";
 
 export default async function OnboardingPage() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getCachedUser();
 
   if (!user) {
     redirect("/login?redirect=/onboarding");
   }
+
+  const supabase = await createClient();
 
   // Preload profile if already saved
   const { data: profile } = await supabase

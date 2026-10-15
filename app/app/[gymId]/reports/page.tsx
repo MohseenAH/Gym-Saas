@@ -78,18 +78,8 @@ export default async function ReportsPage({ params, searchParams }: ReportsPageP
     attendanceQuery = attendanceQuery.in("branch_id", branchContext.effectiveBranchIds);
   }
 
-  const [gymRes, branchesRes, paymentsRes, expensesRes, membershipsRes, attendanceRes] =
+  const [paymentsRes, expensesRes, membershipsRes, attendanceRes] =
     await Promise.all([
-      supabase
-        .from("gyms")
-        .select("name")
-        .eq("id", gymId)
-        .single(),
-      supabase
-        .from("branches")
-        .select("id, name")
-        .eq("gym_id", gymId)
-        .eq("is_active", true),
       paymentsQuery,
       expensesQuery,
       supabase
@@ -101,8 +91,8 @@ export default async function ReportsPage({ params, searchParams }: ReportsPageP
       attendanceQuery,
     ]);
 
-  const gym = gymRes.data;
-  const branches = branchesRes.data || [];
+  const gym = authContext.gym;
+  const branches = authContext.branches;
 
   const payments = paymentsRes.data || [];
   const expenses = expensesRes.data || [];

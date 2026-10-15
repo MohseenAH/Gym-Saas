@@ -13,17 +13,12 @@ export default async function BranchesPage({ params }: PageProps) {
 
   const supabase = await createClient();
 
-  // 1. Fetch branches
-  const { data: branches } = await supabase
-    .from("branches")
-    .select("id, name, address, city, phone, is_active")
-    .eq("gym_id", gymId)
-    .order("created_at", { ascending: true });
-
-  // 2. Fetch member counts per branch
+  // 1. Fetch member counts per branch
   const { data: members } = await supabase
     .from("members")
     .select("branch_id");
+
+  const branches = authContext.branches;
 
   const memberCountByBranch = new Map<string, number>();
   (members || []).forEach((m) => {

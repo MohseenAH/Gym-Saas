@@ -62,24 +62,14 @@ export default async function PaymentsPage({ params, searchParams }: PaymentsPag
     paymentsQuery = paymentsQuery.in("branch_id", branchContext.effectiveBranchIds);
   }
 
-  // Execute all queries concurrently in parallel
-  const [gymRes, branchesRes, membersRes, paymentsRes] = await Promise.all([
-    supabase
-      .from("gyms")
-      .select("name")
-      .eq("id", gymId)
-      .single(),
-    supabase
-      .from("branches")
-      .select("id, name")
-      .eq("gym_id", gymId)
-      .eq("is_active", true),
+  // Execute all payments queries concurrently in parallel
+  const [membersRes, paymentsRes] = await Promise.all([
     membersQuery,
     paymentsQuery,
   ]);
 
-  const gym = gymRes.data;
-  const branches = branchesRes.data || [];
+  const gym = authContext.gym;
+  const branches = authContext.branches;
 
   const members = membersRes.data || [];
   const allPayments = paymentsRes.data || [];

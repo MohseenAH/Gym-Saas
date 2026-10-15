@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabase/server";
+import { createClient, getCachedUser } from "@/lib/supabase/server";
 import { Calendar } from "lucide-react";
 import { PayDuesModal } from "@/components/portal/pay-dues-modal";
 import { PortalPaymentsClient } from "@/components/portal/portal-payments-client";
@@ -19,11 +19,8 @@ interface PaymentsPageProps {
 
 export default async function MemberPaymentsPage({ params }: PaymentsPageProps) {
   await params;
+  const user = await getCachedUser();
   const supabase = await createClient();
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
 
   const { data: member } = await supabase
     .from("members")

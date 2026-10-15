@@ -10,18 +10,16 @@ interface MemberDetailPageProps {
 export default async function MemberDetailPage({ params }: MemberDetailPageProps) {
   const { gymId, memberId } = await params;
 
-  await getAuthorizedActionContext({
+  const authContext = await getAuthorizedActionContext({
     gymId,
     capability: "members:view",
   });
 
   const supabase = await createClient();
 
-  // Parallel fetch: member dossier, gym info, branches, plans, memberships, payments, and attendance
+  // Parallel fetch: member dossier, plans, memberships, payments, and attendance
   const [
     memberRes,
-    gymRes,
-    branchesRes,
     plansRes,
     membershipsRes,
     paymentsRes,
@@ -32,16 +30,6 @@ export default async function MemberDetailPage({ params }: MemberDetailPageProps
       .select("id, branch_id, user_id, full_name, phone, email, status, notes, created_at, branches(id, name)")
       .eq("id", memberId)
       .single(),
-    supabase
-      .from("gyms")
-      .select("name")
-      .eq("id", gymId)
-      .single(),
-    supabase
-      .from("branches")
-      .select("id, name")
-      .eq("gym_id", gymId)
-      .eq("is_active", true),
     supabase
       .from("membership_plans")
       .select("id, name, price, duration_days")
@@ -70,8 +58,8 @@ export default async function MemberDetailPage({ params }: MemberDetailPageProps
     notFound();
   }
 
-  const gym = gymRes.data;
-  const branches = branchesRes.data || [];
+  const gym = authContext.gym;
+  const branches = authContext.branches;
   const plans = plansRes.data || [];
   const rawMemberships = membershipsRes.data || [];
   const rawPayments = paymentsRes.data || [];
@@ -181,7 +169,7 @@ export default async function MemberDetailPage({ params }: MemberDetailPageProps
           createdAt: member.created_at,
           userId: member.user_id,
         }}
-        branches={(branches || []).map((b) => ({ id: b.id, name: b.name }))}
+        branches={(branches || []).map((b: { id: string; name: string }) => ({ id: b.id, name: b.name }))}
         plans={(plans || []).map((p) => ({
           id: p.id,
           name: p.name,
