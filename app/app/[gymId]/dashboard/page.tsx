@@ -240,22 +240,22 @@ export default async function DashboardPage({ params, searchParams }: PageProps)
   expiringMembers.sort((a, b) => a.daysLeft - b.daysLeft);
 
   return (
-    <div className="space-y-6 max-w-6xl mx-auto">
+    <div className="space-y-6 max-w-6xl mx-auto text-foreground">
       {/* Welcome Banner & Pilot Badge */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-6 rounded-2xl border border-slate-200/80 shadow-xs">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-card p-6 rounded-3xl border border-border shadow-xs text-card-foreground">
         <div>
           <div className="flex items-center gap-2.5 flex-wrap">
-            <h1 className="text-xl font-black text-slate-900 tracking-tight">
+            <h1 className="text-2xl font-black text-foreground tracking-tight">
               {gym?.name || "GymApra Command Center"}
             </h1>
             {pilotStatus.isPilot && (
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-indigo-50 text-indigo-700 border border-indigo-200/80">
-                <Sparkles className="w-3.5 h-3.5 text-indigo-600" />
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-primary/10 text-primary border border-primary/20">
+                <Sparkles className="w-3.5 h-3.5 text-primary" />
                 {pilotStatus.badgeText}
               </span>
             )}
           </div>
-          <p className="text-xs text-slate-500 mt-1">
+          <p className="text-xs text-muted-foreground mt-1.5">
             Real-time daily collections, outstanding member dues, attendance, and Indian gym operations
           </p>
         </div>
@@ -268,16 +268,16 @@ export default async function DashboardPage({ params, searchParams }: PageProps)
           />
           <Link
             href={`/app/${gymId}/attendance`}
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold shadow-xs transition-colors"
+            className="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-primary hover:opacity-95 text-primary-foreground text-xs font-bold shadow-xs transition-opacity"
           >
-            <CalendarCheck className="w-3.5 h-3.5" />
+            <CalendarCheck className="w-4 h-4" />
             Check-In Kiosk
           </Link>
           <Link
             href={`/app/${gymId}/members`}
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-semibold transition-colors"
+            className="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-muted hover:bg-muted/80 text-foreground text-xs font-bold border border-border transition-colors"
           >
-            <UserPlus className="w-3.5 h-3.5" />
+            <UserPlus className="w-4 h-4" />
             Enroll Member
           </Link>
         </div>
@@ -286,102 +286,102 @@ export default async function DashboardPage({ params, searchParams }: PageProps)
       {/* Row 1: Priority Cash & Financial Metrics */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         {/* Today's Collections */}
-        <div className="p-5 bg-white rounded-2xl border border-slate-200/80 shadow-xs relative overflow-hidden">
+        <div className="p-6 bg-card rounded-3xl border border-border shadow-xs relative overflow-hidden text-card-foreground">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+            <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
               Today&apos;s Collections
             </span>
-            <div className="p-2 rounded-xl bg-emerald-50 text-emerald-600">
+            <div className="p-2.5 rounded-2xl bg-emerald-500/10 text-emerald-600">
               <Zap className="w-4 h-4" />
             </div>
           </div>
-          <div className="mt-3 text-2xl font-black text-emerald-600 tracking-tight">
+          <div className="mt-3 text-3xl font-black text-emerald-600 tracking-tight">
             ₹{todayCollections.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
           </div>
-          <div className="mt-2 flex items-center gap-3 text-[11px] font-semibold text-slate-500">
-            <span className="px-2 py-0.5 rounded-md bg-slate-100">
+          <div className="mt-2.5 flex items-center gap-2 text-[11px] font-semibold text-muted-foreground">
+            <span className="px-2.5 py-0.5 rounded-lg bg-muted text-foreground border border-border/60">
               Cash: ₹{todayCash.toLocaleString("en-IN")}
             </span>
-            <span className="px-2 py-0.5 rounded-md bg-slate-100">
+            <span className="px-2.5 py-0.5 rounded-lg bg-muted text-foreground border border-border/60">
               UPI: ₹{todayUpi.toLocaleString("en-IN")}
             </span>
           </div>
         </div>
 
         {/* Outstanding Member Dues */}
-        <div className="p-5 bg-white rounded-2xl border border-slate-200/80 shadow-xs">
+        <div className="p-6 bg-card rounded-3xl border border-border shadow-xs text-card-foreground">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+            <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
               Pending Member Dues
             </span>
-            <div className="p-2 rounded-xl bg-amber-50 text-amber-600">
+            <div className="p-2.5 rounded-2xl bg-amber-500/10 text-amber-600">
               <IndianRupee className="w-4 h-4" />
             </div>
           </div>
-          <div className="mt-3 text-2xl font-black text-amber-600 tracking-tight">
+          <div className="mt-3 text-3xl font-black text-amber-600 tracking-tight">
             ₹{totalOutstandingDues.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
           </div>
-          <div className="mt-1 text-xs text-slate-400">
+          <div className="mt-2 text-xs text-muted-foreground">
             Uncollected balance on active contracts
           </div>
         </div>
 
         {/* Net Cash Flow (P&L) */}
-        <div className="p-5 bg-white rounded-2xl border border-slate-200/80 shadow-xs">
+        <div className="p-6 bg-card rounded-3xl border border-border shadow-xs text-card-foreground">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+            <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
               Net Cash Flow
             </span>
             <div
-              className={`p-2 rounded-xl ${
-                isProfitable ? "bg-emerald-50 text-emerald-600" : "bg-red-50 text-red-600"
+              className={`p-2.5 rounded-2xl ${
+                isProfitable ? "bg-emerald-500/10 text-emerald-600" : "bg-rose-500/10 text-rose-600"
               }`}
             >
               <TrendingUp className="w-4 h-4" />
             </div>
           </div>
           <div
-            className={`mt-3 text-2xl font-black tracking-tight ${
-              isProfitable ? "text-emerald-700" : "text-red-700"
+            className={`mt-3 text-3xl font-black tracking-tight ${
+              isProfitable ? "text-emerald-600" : "text-rose-600"
             }`}
           >
             {isProfitable ? "+" : ""}₹{netCashFlow.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
           </div>
-          <div className="mt-1 text-xs text-slate-400">
-            Revenue (₹{totalRevenue.toLocaleString("en-IN")}) &minus; Expenses (₹{totalExpenses.toLocaleString("en-IN")})
+          <div className="mt-2 text-xs text-muted-foreground">
+            Rev ₹{totalRevenue.toLocaleString("en-IN")} &minus; Exp ₹{totalExpenses.toLocaleString("en-IN")}
           </div>
         </div>
       </div>
 
       {/* Row 2: Operational Stats Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="p-5 bg-white rounded-2xl border border-slate-200/80 shadow-xs flex items-center gap-4">
-          <div className="p-3 bg-indigo-50 text-indigo-600 rounded-xl">
+        <div className="p-6 bg-card rounded-3xl border border-border shadow-xs flex items-center gap-4 text-card-foreground">
+          <div className="p-3.5 bg-primary/10 text-primary rounded-2xl shadow-2xs">
             <Users className="w-6 h-6" />
           </div>
           <div>
-            <div className="text-2xl font-black text-slate-900">{membersCount || 0}</div>
-            <div className="text-xs text-slate-500 font-medium">Active Enrolled Members</div>
+            <div className="text-2xl font-black text-foreground">{membersCount || 0}</div>
+            <div className="text-xs text-muted-foreground font-medium">Active Enrolled Members</div>
           </div>
         </div>
 
-        <div className="p-5 bg-white rounded-2xl border border-slate-200/80 shadow-xs flex items-center gap-4">
-          <div className="p-3 bg-emerald-50 text-emerald-600 rounded-xl">
+        <div className="p-6 bg-card rounded-3xl border border-border shadow-xs flex items-center gap-4 text-card-foreground">
+          <div className="p-3.5 bg-emerald-500/10 text-emerald-600 rounded-2xl shadow-2xs">
             <CalendarCheck className="w-6 h-6" />
           </div>
           <div>
-            <div className="text-2xl font-black text-slate-900">{todayCheckIns || 0}</div>
-            <div className="text-xs text-slate-500 font-medium">Workouts Checked-in Today</div>
+            <div className="text-2xl font-black text-foreground">{todayCheckIns || 0}</div>
+            <div className="text-xs text-muted-foreground font-medium">Workouts Checked-in Today</div>
           </div>
         </div>
 
-        <div className="p-5 bg-white rounded-2xl border border-slate-200/80 shadow-xs flex items-center gap-4">
-          <div className="p-3 bg-amber-50 text-amber-600 rounded-xl">
+        <div className="p-6 bg-card rounded-3xl border border-border shadow-xs flex items-center gap-4 text-card-foreground">
+          <div className="p-3.5 bg-amber-500/10 text-amber-600 rounded-2xl shadow-2xs">
             <Bell className="w-6 h-6" />
           </div>
           <div>
-            <div className="text-2xl font-black text-slate-900">{noticesCount || 0}</div>
-            <div className="text-xs text-slate-500 font-medium">Active Member Notices</div>
+            <div className="text-2xl font-black text-foreground">{noticesCount || 0}</div>
+            <div className="text-xs text-muted-foreground font-medium">Active Member Notices</div>
           </div>
         </div>
       </div>
@@ -396,35 +396,35 @@ export default async function DashboardPage({ params, searchParams }: PageProps)
       {/* Row 4: Today's Live Attendance Feed & Quick Modules */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Today's Live Stream */}
-        <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-xs">
+        <div className="bg-card p-6 rounded-3xl border border-border shadow-xs text-card-foreground">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-sm font-bold text-slate-900">Today&apos;s Live Check-Ins</h2>
+            <h2 className="text-sm font-bold text-foreground">Today&apos;s Live Check-Ins</h2>
             <Link
               href={`/app/${gymId}/attendance`}
-              className="text-xs font-semibold text-indigo-600 hover:text-indigo-700"
+              className="text-xs font-bold text-primary hover:underline"
             >
               Full Roster →
             </Link>
           </div>
 
           {!recentCheckIns || recentCheckIns.length === 0 ? (
-            <div className="py-8 text-center text-xs text-slate-400">
+            <div className="py-8 text-center text-xs text-muted-foreground">
               No members have checked in today yet.
             </div>
           ) : (
-            <div className="divide-y divide-slate-100">
+            <div className="divide-y divide-border">
               {recentCheckIns.map((ci) => (
-                <div key={ci.id} className="py-2.5 flex items-center justify-between">
-                  <div className="flex items-center gap-2.5">
-                    <div className="w-2 h-2 rounded-full bg-emerald-500" />
-                    <span className="text-xs font-bold text-slate-900">
+                <div key={ci.id} className="py-3 flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
+                    <span className="text-xs font-bold text-foreground">
                       {(ci.members as unknown as { full_name?: string } | null)?.full_name || "Member"}
                     </span>
-                    <span className="text-[10px] text-slate-400 capitalize">
+                    <span className="text-[10px] text-muted-foreground capitalize">
                       ({ci.check_in_method.replace("_", " ")})
                     </span>
                   </div>
-                  <span className="text-[11px] font-semibold text-slate-500">
+                  <span className="text-[11px] font-semibold text-muted-foreground">
                     {new Date(ci.check_in_time).toLocaleTimeString([], {
                       hour: "2-digit",
                       minute: "2-digit",
@@ -436,59 +436,59 @@ export default async function DashboardPage({ params, searchParams }: PageProps)
           )}
         </div>
 
-        {/* Quick Operations Links */}
-        <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-xs">
-          <h2 className="text-sm font-bold text-slate-900 mb-4">Quick Operations Hub</h2>
+        {/* Quick Operations Hub */}
+        <div className="bg-card p-6 rounded-3xl border border-border shadow-xs text-card-foreground">
+          <h2 className="text-sm font-bold text-foreground mb-4">Quick Operations Hub</h2>
           <div className="grid grid-cols-2 gap-3">
             <Link
               href={`/app/${gymId}/payments`}
-              className="group p-3.5 rounded-xl border border-slate-100 hover:border-emerald-200 hover:bg-emerald-50/20 transition-all flex flex-col justify-between"
+              className="group p-4 rounded-2xl border border-border hover:border-emerald-500/40 hover:bg-emerald-500/5 transition-all flex flex-col justify-between"
             >
-              <div className="p-2 w-fit rounded-lg bg-emerald-50 text-emerald-600 mb-2">
+              <div className="p-2.5 w-fit rounded-xl bg-emerald-500/10 text-emerald-600 mb-3 shadow-2xs">
                 <CreditCard className="w-4 h-4" />
               </div>
               <div>
-                <div className="text-xs font-bold text-slate-900">Record Payment</div>
-                <div className="text-[11px] text-slate-400">Collect fees & send WhatsApp receipt</div>
+                <div className="text-xs font-bold text-foreground group-hover:text-emerald-600 transition-colors">Record Payment</div>
+                <div className="text-[11px] text-muted-foreground mt-0.5">Collect fees & send WhatsApp receipt</div>
               </div>
             </Link>
 
             <Link
               href={`/app/${gymId}/expenses`}
-              className="group p-3.5 rounded-xl border border-slate-100 hover:border-red-200 hover:bg-red-50/20 transition-all flex flex-col justify-between"
+              className="group p-4 rounded-2xl border border-border hover:border-rose-500/40 hover:bg-rose-500/5 transition-all flex flex-col justify-between"
             >
-              <div className="p-2 w-fit rounded-lg bg-red-50 text-red-600 mb-2">
+              <div className="p-2.5 w-fit rounded-xl bg-rose-500/10 text-rose-600 mb-3 shadow-2xs">
                 <Receipt className="w-4 h-4" />
               </div>
               <div>
-                <div className="text-xs font-bold text-slate-900">Track Expense</div>
-                <div className="text-[11px] text-slate-400">Log bills, rent, and salaries</div>
+                <div className="text-xs font-bold text-foreground group-hover:text-rose-600 transition-colors">Track Expense</div>
+                <div className="text-[11px] text-muted-foreground mt-0.5">Log bills, rent, and salaries</div>
               </div>
             </Link>
 
             <Link
               href={`/app/${gymId}/notices`}
-              className="group p-3.5 rounded-xl border border-slate-100 hover:border-amber-200 hover:bg-amber-50/20 transition-all flex flex-col justify-between"
+              className="group p-4 rounded-2xl border border-border hover:border-amber-500/40 hover:bg-amber-500/5 transition-all flex flex-col justify-between"
             >
-              <div className="p-2 w-fit rounded-lg bg-amber-50 text-amber-600 mb-2">
+              <div className="p-2.5 w-fit rounded-xl bg-amber-500/10 text-amber-600 mb-3 shadow-2xs">
                 <Bell className="w-4 h-4" />
               </div>
               <div>
-                <div className="text-xs font-bold text-slate-900">Post Notice</div>
-                <div className="text-[11px] text-slate-400">Broadcast to member portals</div>
+                <div className="text-xs font-bold text-foreground group-hover:text-amber-600 transition-colors">Post Notice</div>
+                <div className="text-[11px] text-muted-foreground mt-0.5">Broadcast to member portals</div>
               </div>
             </Link>
 
             <Link
               href={`/app/${gymId}/members`}
-              className="group p-3.5 rounded-xl border border-slate-100 hover:border-indigo-200 hover:bg-indigo-50/20 transition-all flex flex-col justify-between"
+              className="group p-4 rounded-2xl border border-border hover:border-primary/40 hover:bg-primary/5 transition-all flex flex-col justify-between"
             >
-              <div className="p-2 w-fit rounded-lg bg-indigo-50 text-indigo-600 mb-2">
+              <div className="p-2.5 w-fit rounded-xl bg-primary/10 text-primary mb-3 shadow-2xs">
                 <UserPlus className="w-4 h-4" />
               </div>
               <div>
-                <div className="text-xs font-bold text-slate-900">Manage Members</div>
-                <div className="text-[11px] text-slate-400">Directory & WhatsApp invites</div>
+                <div className="text-xs font-bold text-foreground group-hover:text-primary transition-colors">Manage Members</div>
+                <div className="text-[11px] text-muted-foreground mt-0.5">Directory & WhatsApp invites</div>
               </div>
             </Link>
           </div>

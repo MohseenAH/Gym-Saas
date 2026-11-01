@@ -30,7 +30,7 @@ export default async function MemberPaymentsPage({ params }: PaymentsPageProps) 
 
   if (!member) {
     return (
-      <div className="p-8 text-center text-xs text-slate-500">
+      <div className="p-8 text-center text-xs text-muted-foreground font-medium">
         Member record not found.
       </div>
     );
@@ -74,8 +74,8 @@ export default async function MemberPaymentsPage({ params }: PaymentsPageProps) 
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-black text-slate-900 tracking-tight">Payments & Invoices</h1>
-          <p className="text-xs text-slate-500 mt-1">
+          <h1 className="text-2xl font-black text-foreground tracking-tight">Payments & Invoices</h1>
+          <p className="text-xs text-muted-foreground mt-1">
             View past membership receipts, print invoices, and pay upcoming dues
           </p>
         </div>
@@ -92,20 +92,20 @@ export default async function MemberPaymentsPage({ params }: PaymentsPageProps) 
 
       {/* Current Membership Plan Card */}
       {membership && (
-        <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="bg-card p-5 rounded-3xl border border-border shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <div className="p-3 bg-emerald-50 text-emerald-600 rounded-xl">
+            <div className="p-3 bg-primary/10 text-primary rounded-2xl">
               <Calendar className="w-6 h-6" />
             </div>
             <div>
-              <div className="text-sm font-bold text-slate-900">{planName}</div>
-              <div className="text-xs text-slate-500">
+              <div className="text-sm font-bold text-foreground">{planName}</div>
+              <div className="text-xs text-muted-foreground mt-0.5">
                 Active until {membership.end_date}
               </div>
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <span className="px-3 py-1 bg-emerald-50 text-emerald-700 rounded-full text-xs font-bold border border-emerald-200">
+            <span className="px-3 py-1 bg-emerald-500/10 text-emerald-500 rounded-full text-xs font-bold border border-emerald-500/20 uppercase tracking-wider">
               Active Plan
             </span>
           </div>

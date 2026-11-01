@@ -12,6 +12,7 @@ import {
   RefreshCw,
   ExternalLink,
   Users,
+  Building2,
 } from "lucide-react";
 import { staffCheckInAction } from "@/lib/actions/attendance";
 
@@ -85,23 +86,58 @@ export function StaffCheckInClient({
 
     setLoadingMemberId(null);
     if (!res.success) {
-      setFeedback({ type: "error", text: res.error || "Failed to check in" });
+      if (res.alreadyCheckedIn) {
+        const timeStr = res.checkInTime
+          ? new Date(res.checkInTime).toLocaleTimeString([], {
+              hour: "2-digit",
+              minute: "2-digit",
+            })
+          : "earlier today";
+        setFeedback({
+          type: "success",
+          text: `${member.fullName} is already checked in for today (${timeStr})`,
+        });
+        setMembers((prev) =>
+          prev.map((m) =>
+            m.id === member.id
+              ? { ...m, checkedInToday: true, checkInTime: res.checkInTime }
+              : m
+          )
+        );
+      } else {
+        if (res.isExpired) {
+          setMembers((prev) =>
+            prev.map((m) =>
+              m.id === member.id
+                ? { ...m, isExpired: true, hasActiveMembership: false }
+                : m
+            )
+          );
+        }
+        setFeedback({ type: "error", text: res.error || "Failed to check in" });
+      }
     } else {
+      const checkInTime = res.checkInTime || new Date().toISOString();
+      const timeStr = new Date(checkInTime).toLocaleTimeString([], {
+        hour: "2-digit",
+        minute: "2-digit",
+      });
       setFeedback({
         type: "success",
-        text: `Checked in ${member.fullName} at ${new Date(res.checkInTime).toLocaleTimeString([], {
-          hour: "2-digit",
-          minute: "2-digit",
-        })}`,
+        text: res.alreadyCheckedIn
+          ? `${member.fullName} is already checked in for today (${timeStr})`
+          : `Checked in ${member.fullName} at ${timeStr}`,
       });
-      setCount((prev) => prev + 1);
+      if (!member.checkedInToday) {
+        setCount((prev) => prev + 1);
+      }
       setMembers((prev) =>
         prev.map((m) =>
           m.id === member.id
             ? {
                 ...m,
                 checkedInToday: true,
-                checkInTime: res.checkInTime,
+                checkInTime: checkInTime,
               }
             : m
         )
@@ -109,118 +145,119 @@ export function StaffCheckInClient({
     }
   }
 
+  const waitingCount = members.filter((m) => !m.checkedInToday).length;
+
   return (
-    <div className="space-y-6">
-      {/* Top Banner Stats */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs flex items-center gap-4">
-          <div className="p-3 bg-emerald-50 text-emerald-600 rounded-xl">
-            <UserCheck className="w-6 h-6" />
-          </div>
-          <div>
-            <div className="text-2xl font-black text-slate-900">{count}</div>
-            <div className="text-xs text-slate-500 font-medium">Checked-in Today</div>
-          </div>
-        </div>
-
-        <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs flex items-center gap-4">
-          <div className="p-3 bg-indigo-50 text-indigo-600 rounded-xl">
-            <Clock className="w-6 h-6" />
-          </div>
-          <div>
-            <div className="text-sm font-bold text-slate-900">
-              {new Date().toLocaleDateString("en-IN", {
-                weekday: "long",
-                month: "short",
-                day: "numeric",
-              })}
-            </div>
-            <div className="text-xs text-slate-500 font-medium">Front-Desk Live Ledger</div>
-          </div>
-        </div>
-
-        <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs flex items-center gap-4">
-          <div className="p-3 bg-slate-100 text-slate-600 rounded-xl">
-            <Users className="w-6 h-6" />
-          </div>
-          <div>
-            <div className="text-2xl font-black text-slate-900">{members.length}</div>
-            <div className="text-xs text-slate-500 font-medium">Total Registered Members</div>
-          </div>
-        </div>
-      </div>
-
+    <div className="space-y-6 text-foreground">
+      {/* Top Feedback Banner */}
       {feedback && (
         <div
-          className={`p-3.5 rounded-xl text-xs font-semibold flex items-center gap-2.5 animate-in fade-in duration-200 ${
+          className={`p-4 rounded-2xl text-xs font-bold flex items-center justify-between animate-in fade-in ${
             feedback.type === "success"
-              ? "bg-emerald-50 border border-emerald-200 text-emerald-800"
-              : "bg-red-50 border border-red-200 text-red-800"
+              ? "bg-emerald-500/10 border border-emerald-500/20 text-emerald-600"
+              : "bg-rose-500/10 border border-rose-500/20 text-rose-600"
           }`}
         >
-          {feedback.type === "success" ? (
-            <CheckCircle className="w-4 h-4 shrink-0 text-emerald-600" />
-          ) : (
-            <AlertCircle className="w-4 h-4 shrink-0 text-red-600" />
-          )}
           <span>{feedback.text}</span>
+          <button
+            onClick={() => setFeedback(null)}
+            className="hover:opacity-75 cursor-pointer ml-4 font-bold"
+          >
+            ✕
+          </button>
         </div>
       )}
 
-      {/* Member Check-in List & Filter Bar */}
-      <div className="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden">
-        <div className="p-4 border-b border-slate-100 flex flex-col md:flex-row md:items-center justify-between gap-3">
-          {/* Search */}
-          <div className="relative flex-1 max-w-sm">
-            <Search className="w-4 h-4 absolute left-3 top-2.5 text-slate-400" />
+      {/* KPI Counters Header */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="bg-card p-6 rounded-3xl border border-border shadow-xs text-card-foreground">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Checked-In Today</span>
+            <div className="p-2.5 rounded-2xl bg-emerald-500/10 text-emerald-600">
+              <CheckCircle className="w-5 h-5" />
+            </div>
+          </div>
+          <div className="text-3xl font-black text-emerald-600 mt-2">{count}</div>
+          <div className="text-[11px] text-muted-foreground mt-1">Verified workout visits</div>
+        </div>
+
+        <div className="bg-card p-6 rounded-3xl border border-border shadow-xs text-card-foreground">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Waiting Check-In</span>
+            <div className="p-2.5 rounded-2xl bg-primary/10 text-primary">
+              <Clock className="w-5 h-5" />
+            </div>
+          </div>
+          <div className="text-3xl font-black text-foreground mt-2">{waitingCount}</div>
+          <div className="text-[11px] text-muted-foreground mt-1">Members not yet checked in</div>
+        </div>
+
+        <div className="bg-card p-6 rounded-3xl border border-border shadow-xs text-card-foreground">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Total Enrolled</span>
+            <div className="p-2.5 rounded-2xl bg-muted text-muted-foreground">
+              <Users className="w-5 h-5" />
+            </div>
+          </div>
+          <div className="text-3xl font-black text-foreground mt-2">{members.length}</div>
+          <div className="text-[11px] text-muted-foreground mt-1">Registered roster</div>
+        </div>
+      </div>
+
+      {/* Kiosk Controls & Search */}
+      <div className="bg-card rounded-3xl border border-border shadow-xs overflow-hidden text-card-foreground">
+        <div className="p-5 border-b border-border flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
+          {/* Kiosk-Style Search Bar */}
+          <div className="relative flex-1 max-w-lg">
+            <Search className="w-4 h-4 absolute left-4 top-4 text-muted-foreground pointer-events-none" />
             <input
               type="text"
-              placeholder="Search member by name or phone..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full pl-9 pr-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 focus:outline-hidden focus:ring-2 focus:ring-indigo-500 font-medium"
+              placeholder="Kiosk Search: Member Name or 10-Digit Phone..."
+              className="w-full h-12 pl-11 pr-4 bg-muted/40 border border-input rounded-2xl text-sm font-semibold text-foreground focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:border-primary transition-all placeholder:text-muted-foreground"
             />
           </div>
 
-          {/* Quick Filters */}
+          {/* Filter Pills */}
           <div className="flex items-center gap-2 flex-wrap">
-            <div className="flex items-center bg-slate-100 p-0.5 rounded-xl text-xs">
+            <div className="flex items-center bg-muted/60 p-1 rounded-2xl text-xs border border-border/60">
               <button
                 onClick={() => setStatusFilter("all")}
-                className={`px-3 py-1 rounded-lg font-bold transition-colors ${
+                className={`px-3 py-1.5 rounded-xl font-bold transition-all cursor-pointer ${
                   statusFilter === "all"
-                    ? "bg-white text-slate-900 shadow-2xs"
-                    : "text-slate-600 hover:text-slate-900"
+                    ? "bg-card text-foreground shadow-2xs border border-border"
+                    : "text-muted-foreground hover:text-foreground"
                 }`}
               >
-                All
+                All ({members.length})
               </button>
               <button
                 onClick={() => setStatusFilter("not_checked_in")}
-                className={`px-3 py-1 rounded-lg font-bold transition-colors ${
+                className={`px-3 py-1.5 rounded-xl font-bold transition-all cursor-pointer ${
                   statusFilter === "not_checked_in"
-                    ? "bg-white text-indigo-700 shadow-2xs"
-                    : "text-slate-600 hover:text-slate-900"
+                    ? "bg-card text-primary shadow-2xs border border-border"
+                    : "text-muted-foreground hover:text-foreground"
                 }`}
               >
                 Waiting
               </button>
               <button
                 onClick={() => setStatusFilter("checked_in")}
-                className={`px-3 py-1 rounded-lg font-bold transition-colors ${
+                className={`px-3 py-1.5 rounded-xl font-bold transition-all cursor-pointer ${
                   statusFilter === "checked_in"
-                    ? "bg-white text-emerald-700 shadow-2xs"
-                    : "text-slate-600 hover:text-slate-900"
+                    ? "bg-card text-emerald-600 shadow-2xs border border-border"
+                    : "text-muted-foreground hover:text-foreground"
                 }`}
               >
                 Checked In ({count})
               </button>
               <button
                 onClick={() => setStatusFilter("expired")}
-                className={`px-3 py-1 rounded-lg font-bold transition-colors ${
+                className={`px-3 py-1.5 rounded-xl font-bold transition-all cursor-pointer ${
                   statusFilter === "expired"
-                    ? "bg-white text-red-700 shadow-2xs"
-                    : "text-slate-600 hover:text-slate-900"
+                    ? "bg-card text-rose-600 shadow-2xs border border-border"
+                    : "text-muted-foreground hover:text-foreground"
                 }`}
               >
                 Expired Plan
@@ -231,7 +268,7 @@ export function StaffCheckInClient({
               <select
                 value={selectedBranchId}
                 onChange={(e) => setSelectedBranchId(e.target.value)}
-                className="px-2.5 py-1 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 font-semibold focus:outline-hidden"
+                className="h-11 px-3 bg-muted/40 border border-input rounded-xl text-xs text-foreground font-semibold focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary/40 cursor-pointer"
               >
                 <option value="all">All Branches</option>
                 {branches.map((b) => (
@@ -244,23 +281,24 @@ export function StaffCheckInClient({
           </div>
         </div>
 
-        <div className="divide-y divide-slate-100">
+        {/* Members Check-in Feed */}
+        <div className="divide-y divide-border">
           {filtered.length === 0 ? (
-            <div className="p-8 text-center text-xs text-slate-400">
-              No matching members found.
+            <div className="p-12 text-center text-xs text-muted-foreground">
+              No matching members found for the current query.
             </div>
           ) : (
             filtered.map((member) => (
               <div
                 key={member.id}
-                className="p-4 flex items-center justify-between hover:bg-slate-50/60 transition-colors"
+                className="p-4 sm:p-5 flex items-center justify-between hover:bg-muted/30 transition-colors"
               >
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-3.5">
                   <div
-                    className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold text-xs ${
+                    className={`w-11 h-11 rounded-2xl flex items-center justify-center font-bold text-xs shadow-2xs ${
                       member.checkedInToday
-                        ? "bg-emerald-100 text-emerald-700"
-                        : "bg-slate-100 text-slate-600"
+                        ? "bg-emerald-500/10 text-emerald-600 border border-emerald-500/20"
+                        : "bg-primary/10 text-primary border border-primary/20"
                     }`}
                   >
                     {member.fullName
@@ -273,35 +311,35 @@ export function StaffCheckInClient({
                     <div className="flex items-center gap-2">
                       <Link
                         href={`/app/${gymId}/members/${member.id}`}
-                        className="text-sm font-bold text-slate-900 hover:text-indigo-600 transition-colors flex items-center gap-1 group"
+                        className="text-sm font-bold text-foreground hover:text-primary transition-colors flex items-center gap-1 group"
                       >
                         {member.fullName}
-                        <ExternalLink className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity text-slate-400" />
+                        <ExternalLink className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 transition-opacity text-primary" />
                       </Link>
-                      <span className="text-[11px] text-slate-400">
+                      <span className="text-[11px] text-muted-foreground">
                         • {member.branchName}
                       </span>
                     </div>
 
-                    <div className="flex items-center gap-2 text-xs text-slate-500 mt-0.5">
-                      <span>{member.phone}</span>
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1 flex-wrap">
+                      <span className="font-semibold text-foreground/80">{member.phone}</span>
                       <span>•</span>
                       {member.hasActiveMembership ? (
                         member.isExpired ? (
-                          <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-red-50 text-red-700 font-bold text-[11px] border border-red-200/60">
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-rose-500/10 text-rose-600 font-bold text-[11px] border border-rose-500/20">
                             Expired ({member.planEndDate})
                           </span>
                         ) : member.daysLeft !== undefined && member.daysLeft <= 7 ? (
-                          <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-amber-50 text-amber-700 font-bold text-[11px] border border-amber-200/60">
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-600 font-bold text-[11px] border border-amber-500/20">
                             {member.planName} &bull; {member.daysLeft}d left
                           </span>
                         ) : (
-                          <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-emerald-50 text-emerald-700 font-bold text-[11px] border border-emerald-200/60">
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 font-bold text-[11px] border border-emerald-500/20">
                             {member.planName} &bull; Active
                           </span>
                         )
                       ) : (
-                        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-slate-100 text-slate-600 font-bold text-[11px]">
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-muted text-muted-foreground font-bold text-[11px] border border-border">
                           No Active Plan
                         </span>
                       )}
@@ -310,21 +348,9 @@ export function StaffCheckInClient({
                 </div>
 
                 <div className="flex items-center gap-2">
-                  {/* If expired or no plan, show quick renew link */}
-                  {(!member.hasActiveMembership || member.isExpired) && (
-                    <Link
-                      href={`/app/${gymId}/members/${member.id}`}
-                      className="hidden sm:inline-flex items-center gap-1 px-2.5 py-1.5 bg-amber-50 hover:bg-amber-100 text-amber-800 rounded-xl text-xs font-bold border border-amber-200/60 transition-colors"
-                      title="Open Profile to Renew Plan"
-                    >
-                      <RefreshCw className="w-3 h-3" />
-                      <span>Renew</span>
-                    </Link>
-                  )}
-
                   {member.checkedInToday ? (
-                    <div className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 text-emerald-700 rounded-xl text-xs font-bold border border-emerald-200/60">
-                      <CheckCircle className="w-3.5 h-3.5 text-emerald-600" />
+                    <div className="flex items-center gap-1.5 h-11 px-4 bg-emerald-500/10 text-emerald-600 rounded-xl text-xs font-bold border border-emerald-500/20">
+                      <CheckCircle className="w-4 h-4 text-emerald-600" />
                       <span>
                         {member.checkInTime
                           ? new Date(member.checkInTime).toLocaleTimeString([], {
@@ -334,18 +360,38 @@ export function StaffCheckInClient({
                           : "Checked In"}
                       </span>
                     </div>
+                  ) : !member.hasActiveMembership || member.isExpired ? (
+                    <div className="flex items-center gap-2">
+                      <Link
+                        href={`/app/${gymId}/members/${member.id}`}
+                        className="flex items-center gap-1.5 h-11 px-4 bg-amber-500/15 hover:bg-amber-500/25 text-amber-700 dark:text-amber-400 border border-amber-500/30 rounded-xl text-xs font-bold transition-all shadow-2xs cursor-pointer"
+                        title="Open Member Profile to Renew Plan"
+                      >
+                        <RefreshCw className="w-3.5 h-3.5 text-amber-600" />
+                        <span>Renew to Check In</span>
+                      </Link>
+                      <button
+                        type="button"
+                        disabled
+                        title="Membership is expired or inactive. Renewal required before check in."
+                        className="hidden md:flex items-center gap-1.5 h-11 px-4 bg-muted text-muted-foreground border border-border rounded-xl text-xs font-semibold cursor-not-allowed opacity-50"
+                      >
+                        <UserCheck className="w-4 h-4" />
+                        <span>Check In</span>
+                      </button>
+                    </div>
                   ) : (
                     <button
                       onClick={() => handleCheckIn(member)}
                       disabled={loadingMemberId === member.id}
-                      className="flex items-center gap-1.5 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition-all shadow-xs disabled:opacity-50"
+                      className="flex items-center gap-2 h-11 px-5 bg-primary hover:opacity-95 text-primary-foreground rounded-xl text-xs font-bold shadow-md shadow-primary/20 transition-all cursor-pointer disabled:opacity-50 active:scale-[0.98]"
                     >
                       {loadingMemberId === member.id ? (
-                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        <Loader2 className="w-4 h-4 animate-spin" />
                       ) : (
-                        <UserCheck className="w-3.5 h-3.5" />
+                        <UserCheck className="w-4 h-4" />
                       )}
-                      <span>1-Tap Check In</span>
+                      <span>Check In</span>
                     </button>
                   )}
                 </div>

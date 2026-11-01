@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { ROLE_LABELS, StaffRole } from "@/lib/auth/roles";
 import { revokeInvitationAction, toggleStaffStatusAction } from "@/lib/actions/invitations";
+import { getStatusBadgeClass } from "@/lib/utils";
 
 export interface StaffMember {
   id: string;
@@ -78,12 +79,12 @@ export function StaffClientView({
   return (
     <div className="space-y-6 max-w-6xl mx-auto">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-6 rounded-2xl border border-slate-200/80 shadow-xs">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-card p-6 rounded-3xl border border-border shadow-xs">
         <div>
-          <h1 className="text-xl font-bold text-slate-900 tracking-tight">
+          <h1 className="text-xl font-bold text-foreground tracking-tight">
             Team & Staff Directory
           </h1>
-          <p className="text-xs text-slate-500 mt-0.5">
+          <p className="text-xs text-muted-foreground mt-0.5">
             Manage your team members, branch authorizations, and staff invitations
           </p>
         </div>
@@ -91,7 +92,7 @@ export function StaffClientView({
         {canManageStaff && (
           <button
             onClick={() => setModalOpen(true)}
-            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold shadow-xs transition-colors"
+            className="h-11 inline-flex items-center gap-2 px-4 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-bold shadow-xs transition-all active:scale-[0.98]"
           >
             <UserPlus className="w-4 h-4" /> Invite Staff Member
           </button>
@@ -99,13 +100,13 @@ export function StaffClientView({
       </div>
 
       {/* Navigation Tabs */}
-      <div className="flex items-center gap-2 border-b border-slate-200 pb-2">
+      <div className="flex items-center gap-2 border-b border-border pb-2">
         <button
           onClick={() => setActiveTab("team")}
-          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-colors ${
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all ${
             activeTab === "team"
-              ? "bg-indigo-600 text-white shadow-xs"
-              : "text-slate-600 hover:bg-slate-100"
+              ? "bg-primary text-primary-foreground shadow-xs ring-1 ring-primary/25"
+              : "text-muted-foreground hover:bg-muted hover:text-foreground"
           }`}
         >
           <ShieldCheck className="w-4 h-4" />
@@ -114,10 +115,10 @@ export function StaffClientView({
 
         <button
           onClick={() => setActiveTab("invitations")}
-          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-colors ${
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all ${
             activeTab === "invitations"
-              ? "bg-indigo-600 text-white shadow-xs"
-              : "text-slate-600 hover:bg-slate-100"
+              ? "bg-primary text-primary-foreground shadow-xs ring-1 ring-primary/25"
+              : "text-muted-foreground hover:bg-muted hover:text-foreground"
           }`}
         >
           <Clock className="w-4 h-4" />
@@ -127,10 +128,10 @@ export function StaffClientView({
 
       {/* Tab 1: Active Team */}
       {activeTab === "team" && (
-        <div className="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden">
+        <div className="bg-card rounded-2xl border border-border shadow-xs overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
-              <thead className="bg-slate-50 border-b border-slate-100 font-semibold uppercase tracking-wider text-slate-500">
+              <thead className="bg-muted/40 border-b border-border font-semibold uppercase tracking-wider text-muted-foreground">
                 <tr>
                   <th className="px-6 py-3.5">Staff Member</th>
                   <th className="px-6 py-3.5">Role</th>
@@ -139,39 +140,39 @@ export function StaffClientView({
                   {canManageStaff && <th className="px-6 py-3.5 text-right">Access Control</th>}
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100 text-slate-700">
+              <tbody className="divide-y divide-border text-foreground">
                 {staffList.map((member) => (
-                  <tr key={member.id} className="hover:bg-slate-50/50 transition-colors">
+                  <tr key={member.id} className="hover:bg-muted/30 transition-colors">
                     <td className="px-6 py-4">
-                      <div className="font-bold text-slate-900">
+                      <div className="font-bold text-foreground">
                         {member.profiles?.full_name || "Staff Member"}
                       </div>
                     </td>
                     <td className="px-6 py-4">
-                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium bg-slate-100 text-slate-800 capitalize border border-slate-200/60">
-                        <ShieldCheck className="w-3.5 h-3.5 text-slate-500" />
+                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium bg-muted text-foreground capitalize border border-border">
+                        <ShieldCheck className="w-3.5 h-3.5 text-primary" />
                         {ROLE_LABELS[member.role] || member.role}
                       </span>
                     </td>
                     <td className="px-6 py-4">
                       <span
-                        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold ${
+                        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-bold uppercase tracking-wider ${
                           member.status === "active"
-                            ? "bg-emerald-50 text-emerald-700 border border-emerald-200/60"
-                            : "bg-red-50 text-red-700 border border-red-200/60"
+                            ? "bg-emerald-500/10 text-emerald-500 border border-emerald-500/20"
+                            : "bg-rose-500/10 text-rose-500 border border-rose-500/20"
                         }`}
                       >
                         {member.status}
                       </span>
                     </td>
-                    <td className="px-6 py-4 text-xs text-slate-500">
+                    <td className="px-6 py-4 text-xs text-muted-foreground">
                       {member.profiles?.phone ? (
                         <div className="flex items-center gap-1.5">
-                          <Phone className="w-3 h-3 text-slate-400" />
+                          <Phone className="w-3 h-3 text-muted-foreground" />
                           <span>{member.profiles.phone}</span>
                         </div>
                       ) : (
-                        <span className="text-slate-400">—</span>
+                        <span className="text-muted-foreground">—</span>
                       )}
                     </td>
                     {canManageStaff && (
@@ -179,10 +180,10 @@ export function StaffClientView({
                         {member.role !== "owner" && (
                           <button
                             onClick={() => handleToggleStatus(member.id, member.status)}
-                            className={`px-3 py-1 rounded-xl text-xs font-semibold transition-colors ${
+                            className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-colors ${
                               member.status === "active"
-                                ? "bg-red-50 hover:bg-red-100 text-red-700"
-                                : "bg-emerald-50 hover:bg-emerald-100 text-emerald-700"
+                                ? "bg-rose-500/10 hover:bg-rose-500/20 text-rose-500 border border-rose-500/20"
+                                : "bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-500 border border-emerald-500/20"
                             }`}
                           >
                             {member.status === "active" ? "Suspend Access" : "Reactivate"}
@@ -200,10 +201,10 @@ export function StaffClientView({
 
       {/* Tab 2: Pending Invitations */}
       {activeTab === "invitations" && (
-        <div className="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden">
+        <div className="bg-card rounded-2xl border border-border shadow-xs overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
-              <thead className="bg-slate-50 border-b border-slate-100 font-semibold uppercase tracking-wider text-slate-500">
+              <thead className="bg-muted/40 border-b border-border font-semibold uppercase tracking-wider text-muted-foreground">
                 <tr>
                   <th className="px-6 py-3.5">Recipient Identifier</th>
                   <th className="px-6 py-3.5">Assigned Role</th>
@@ -212,38 +213,38 @@ export function StaffClientView({
                   {canManageStaff && <th className="px-6 py-3.5 text-right">Action</th>}
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100 text-slate-700">
+              <tbody className="divide-y divide-border text-foreground">
                 {invitations.length === 0 ? (
                   <tr>
-                    <td colSpan={5} className="p-8 text-center text-slate-400">
+                    <td colSpan={5} className="p-10 text-center text-muted-foreground font-medium">
                       No invitations found. Click &quot;Invite Staff Member&quot; to issue an invitation link.
                     </td>
                   </tr>
                 ) : (
                   invitations.map((inv) => (
-                    <tr key={inv.id} className="hover:bg-slate-50/50 transition-colors">
-                      <td className="px-6 py-4 font-semibold text-slate-900">
+                    <tr key={inv.id} className="hover:bg-muted/30 transition-colors">
+                      <td className="px-6 py-4 font-semibold text-foreground">
                         {inv.email.includes("@wa.invite") ? inv.email.replace("@wa.invite", " (Phone)") : inv.email}
                       </td>
                       <td className="px-6 py-4">
-                        <span className="capitalize font-semibold text-slate-700">
+                        <span className="capitalize font-semibold text-foreground">
                           {ROLE_LABELS[inv.role] || inv.role}
                         </span>
                       </td>
                       <td className="px-6 py-4">
                         <span
-                          className={`px-2 py-0.5 rounded-full text-[11px] font-bold uppercase ${
+                          className={`px-2.5 py-0.5 rounded-full text-[11px] font-bold uppercase tracking-wider ${
                             inv.status === "pending"
-                              ? "bg-amber-50 text-amber-700 border border-amber-200/60"
+                              ? "bg-amber-500/10 text-amber-500 border border-amber-500/20"
                               : inv.status === "accepted"
-                              ? "bg-emerald-50 text-emerald-700"
-                              : "bg-slate-100 text-slate-500"
+                              ? "bg-emerald-500/10 text-emerald-500"
+                              : "bg-muted text-muted-foreground"
                           }`}
                         >
                           {inv.status}
                         </span>
                       </td>
-                      <td className="px-6 py-4 text-slate-500">
+                      <td className="px-6 py-4 text-muted-foreground">
                         {new Date(inv.expiresAt).toLocaleDateString()}
                       </td>
                       {canManageStaff && (
@@ -251,7 +252,7 @@ export function StaffClientView({
                           {inv.status === "pending" && (
                             <button
                               onClick={() => handleRevoke(inv.id)}
-                              className="px-3 py-1 bg-red-50 hover:bg-red-100 text-red-700 rounded-xl text-xs font-semibold transition-colors"
+                              className="px-3 py-1.5 bg-rose-500/10 hover:bg-rose-500/20 text-rose-500 border border-rose-500/20 rounded-xl text-xs font-semibold transition-colors"
                             >
                               Revoke
                             </button>

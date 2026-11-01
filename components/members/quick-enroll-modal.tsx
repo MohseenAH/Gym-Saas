@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { UserPlus, X, Loader2, CheckCircle2, MessageSquare, Copy, Check } from "lucide-react";
+import { UserPlus, X, Loader2, CheckCircle2, MessageSquare, Copy, Check, IndianRupee } from "lucide-react";
 import { quickEnrollMemberAction } from "@/lib/actions/members";
 
 interface Plan {
@@ -102,30 +102,30 @@ export function QuickEnrollModal({ gymId, branchId, plans }: QuickEnrollModalPro
     <>
       <button
         onClick={() => setIsOpen(true)}
-        className="flex items-center gap-2 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-sm font-semibold shadow-sm transition-all"
+        className="flex items-center gap-2 h-11 px-4 py-2.5 bg-primary hover:opacity-95 text-primary-foreground rounded-xl text-sm font-bold shadow-md shadow-primary/20 transition-all cursor-pointer"
       >
         <UserPlus className="w-4 h-4" />
         Quick Enroll Member
       </button>
 
       {isOpen && (
-        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-xl border border-slate-100 animate-in fade-in zoom-in-95 duration-150 max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between pb-4 border-b border-slate-100">
-              <div className="flex items-center gap-2.5">
-                <div className="p-2 bg-indigo-50 text-indigo-600 rounded-xl">
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-card text-card-foreground rounded-3xl max-w-lg w-full p-6 sm:p-7 shadow-2xl border border-border animate-in fade-in zoom-in-95 duration-150 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between pb-4 border-b border-border">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 bg-primary/10 text-primary rounded-2xl shadow-2xs">
                   <UserPlus className="w-5 h-5" />
                 </div>
                 <div>
-                  <h3 className="text-base font-bold text-slate-900">Quick Member Onboarding</h3>
-                  <p className="text-xs text-slate-500">
-                    Add member, assign plan & generate portal invite in 30 seconds
+                  <h3 className="text-base font-black text-foreground">Quick Member Onboarding</h3>
+                  <p className="text-xs text-muted-foreground">
+                    Add member, assign plan & generate portal invite in 30s
                   </p>
                 </div>
               </div>
               <button
                 onClick={handleClose}
-                className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100"
+                className="p-1.5 rounded-xl text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -133,22 +133,22 @@ export function QuickEnrollModal({ gymId, branchId, plans }: QuickEnrollModalPro
 
             {createdInviteUrl ? (
               <div className="mt-6 text-center space-y-4">
-                <div className="mx-auto w-12 h-12 bg-emerald-50 text-emerald-600 rounded-full flex items-center justify-center">
-                  <CheckCircle2 className="w-6 h-6" />
+                <div className="mx-auto w-14 h-14 bg-emerald-500/10 text-emerald-600 rounded-full flex items-center justify-center border border-emerald-500/20">
+                  <CheckCircle2 className="w-7 h-7" />
                 </div>
                 <div>
-                  <h4 className="text-base font-bold text-slate-900">Member Enrolled Successfully!</h4>
-                  <p className="text-xs text-slate-500 mt-1">
-                    Send the Member Portal claim link to {fullName}&apos;s smartphone
+                  <h4 className="text-lg font-black text-foreground">Member Enrolled Successfully!</h4>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Send the Member Portal claim link to {fullName}&apos;s phone
                   </p>
                 </div>
 
-                <div className="pt-2 flex flex-col gap-2">
+                <div className="pt-2 flex flex-col gap-2.5">
                   <input
                     type="text"
                     readOnly
                     value={createdInviteUrl}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono text-slate-700 outline-none truncate text-center select-all"
+                    className="w-full h-11 px-3 bg-muted/50 border border-input rounded-xl text-xs font-mono text-foreground outline-hidden truncate text-center select-all"
                   />
 
                   {createdWaUrl && (
@@ -156,7 +156,7 @@ export function QuickEnrollModal({ gymId, branchId, plans }: QuickEnrollModalPro
                       href={createdWaUrl}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="flex items-center justify-center gap-2 w-full py-2.5 px-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition-all shadow-xs"
+                      className="flex items-center justify-center gap-2 w-full h-12 px-4 bg-[#25D366] hover:bg-[#20ba59] text-white rounded-xl text-xs font-bold transition-all shadow-md cursor-pointer active:scale-[0.99]"
                     >
                       <MessageSquare className="w-4 h-4" />
                       Send Portal Link via WhatsApp
@@ -165,31 +165,31 @@ export function QuickEnrollModal({ gymId, branchId, plans }: QuickEnrollModalPro
 
                   <button
                     onClick={handleCopy}
-                    className="flex items-center justify-center gap-2 w-full py-2 px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-semibold transition-all"
+                    className="flex items-center justify-center gap-2 w-full h-11 px-4 bg-muted hover:bg-muted/80 text-foreground border border-border rounded-xl text-xs font-bold transition-all cursor-pointer"
                   >
-                    {copied ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
+                    {copied ? <Check className="w-4 h-4 text-emerald-600" /> : <Copy className="w-4 h-4" />}
                     {copied ? "Link Copied!" : "Copy Portal Claim Link"}
                   </button>
 
                   <button
                     onClick={handleClose}
-                    className="w-full py-2 text-xs font-semibold text-slate-500 hover:text-slate-800"
+                    className="w-full py-2.5 text-xs font-bold text-muted-foreground hover:text-foreground cursor-pointer"
                   >
                     Done & Close
                   </button>
                 </div>
               </div>
             ) : (
-              <form onSubmit={handleSubmit} className="mt-4 space-y-4">
+              <form onSubmit={handleSubmit} className="mt-5 space-y-4">
                 {error && (
-                  <div className="p-3 bg-red-50 border border-red-200 text-red-700 rounded-xl text-xs">
+                  <div className="p-3.5 bg-rose-500/10 border border-rose-500/20 text-rose-600 rounded-xl text-xs font-semibold">
                     {error}
                   </div>
                 )}
 
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-xs font-semibold text-slate-700 mb-1">
+                    <label className="block text-xs font-bold uppercase tracking-wider text-muted-foreground mb-1.5">
                       Full Name *
                     </label>
                     <input
@@ -198,27 +198,28 @@ export function QuickEnrollModal({ gymId, branchId, plans }: QuickEnrollModalPro
                       placeholder="e.g. Rahul Sharma"
                       value={fullName}
                       onChange={(e) => setFullName(e.target.value)}
-                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 focus:outline-hidden focus:ring-2 focus:ring-indigo-500"
+                      className="w-full h-11 px-3.5 bg-muted/40 border border-input rounded-xl text-sm text-foreground focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:border-primary transition-all"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-xs font-semibold text-slate-700 mb-1">
+                    <label className="block text-xs font-bold uppercase tracking-wider text-muted-foreground mb-1.5">
                       Phone Number *
                     </label>
                     <input
                       type="tel"
+                      inputMode="tel"
                       required
                       placeholder="e.g. 9876543210"
                       value={phone}
                       onChange={(e) => setPhone(e.target.value)}
-                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 focus:outline-hidden focus:ring-2 focus:ring-indigo-500"
+                      className="w-full h-11 px-3.5 bg-muted/40 border border-input rounded-xl text-sm text-foreground focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:border-primary transition-all"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">
+                  <label className="block text-xs font-bold uppercase tracking-wider text-muted-foreground mb-1.5">
                     Email Address (Optional)
                   </label>
                   <input
@@ -226,20 +227,20 @@ export function QuickEnrollModal({ gymId, branchId, plans }: QuickEnrollModalPro
                     placeholder="e.g. rahul@example.com"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 focus:outline-hidden focus:ring-2 focus:ring-indigo-500"
+                    className="w-full h-11 px-3.5 bg-muted/40 border border-input rounded-xl text-sm text-foreground focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:border-primary transition-all"
                   />
                 </div>
 
                 {/* Plan Selection */}
                 {plans.length > 0 && (
-                  <div className="pt-2 border-t border-slate-100">
-                    <label className="block text-xs font-semibold text-slate-700 mb-1">
+                  <div className="pt-2 border-t border-border">
+                    <label className="block text-xs font-bold uppercase tracking-wider text-muted-foreground mb-1.5">
                       Assign Membership Plan
                     </label>
                     <select
                       value={selectedPlanId}
                       onChange={(e) => handlePlanChange(e.target.value)}
-                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 focus:outline-hidden focus:ring-2 focus:ring-indigo-500"
+                      className="w-full h-11 px-3.5 bg-muted/40 border border-input rounded-xl text-sm text-foreground focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:border-primary transition-all font-semibold cursor-pointer"
                     >
                       <option value="">No Plan (Register Member Only)</option>
                       {plans.map((p) => (
@@ -254,121 +255,136 @@ export function QuickEnrollModal({ gymId, branchId, plans }: QuickEnrollModalPro
                 {selectedPlanId && (() => {
                   const plan = plans.find((p) => p.id === selectedPlanId);
                   const planPrice = plan ? plan.price : 0;
+                  const currentDiscount = parseFloat(discount) || 0;
                   const currentPaid = parseFloat(amountPaid) || 0;
-                  const balanceDue = Math.max(0, planPrice - currentPaid);
+                  const effectiveTotal = Math.max(0, planPrice - currentDiscount);
+                  const balanceDue = Math.max(0, effectiveTotal - currentPaid);
 
                   return (
-                    <div className="space-y-3 pt-1">
-                      {/* 3 Payment Presets */}
+                    <div className="space-y-3.5 pt-1">
+                      {/* Segmented Payment Method Selector */}
                       <div>
-                        <label className="block text-xs font-semibold text-slate-700 mb-1.5">
-                          Payment Status Preset
+                        <label className="block text-xs font-bold uppercase tracking-wider text-muted-foreground mb-1.5">
+                          Payment Mode
                         </label>
-                        <div className="grid grid-cols-3 gap-2">
-                          <button
-                            type="button"
-                            onClick={() => setAmountPaid(String(planPrice))}
-                            className={`py-1.5 px-2 rounded-xl text-xs font-bold border transition-all ${
-                              currentPaid >= planPrice && planPrice > 0
-                                ? "bg-emerald-50 border-emerald-500 text-emerald-700 shadow-2xs"
-                                : "bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100"
-                            }`}
-                          >
-                            Full Payment
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              const half = Math.round((planPrice / 2) * 100) / 100;
-                              setAmountPaid(String(half > 0 ? half : 500));
-                            }}
-                            className={`py-1.5 px-2 rounded-xl text-xs font-bold border transition-all ${
-                              currentPaid > 0 && currentPaid < planPrice
-                                ? "bg-amber-50 border-amber-500 text-amber-700 shadow-2xs"
-                                : "bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100"
-                            }`}
-                          >
-                            Partial Payment
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => setAmountPaid("0")}
-                            className={`py-1.5 px-2 rounded-xl text-xs font-bold border transition-all ${
-                              currentPaid === 0
-                                ? "bg-indigo-50 border-indigo-500 text-indigo-700 shadow-2xs"
-                                : "bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100"
-                            }`}
-                          >
-                            Pay Later
-                          </button>
+                        <div className="grid grid-cols-4 gap-2">
+                          {(["cash", "upi", "card", "pay_later"] as const).map((method) => {
+                            const isPayLater = method === "pay_later";
+                            const isSelected = isPayLater
+                              ? currentPaid === 0
+                              : paymentMethod === method && currentPaid > 0;
+                            return (
+                              <button
+                                key={method}
+                                type="button"
+                                onClick={() => {
+                                  if (isPayLater) {
+                                    setAmountPaid("0");
+                                  } else {
+                                    setPaymentMethod(method);
+                                    if (currentPaid === 0) {
+                                      setAmountPaid(String(effectiveTotal));
+                                    }
+                                  }
+                                }}
+                                className={`h-11 rounded-xl text-xs font-bold border transition-all cursor-pointer capitalize flex items-center justify-center ${
+                                  isSelected
+                                    ? "bg-primary/10 border-primary text-primary shadow-2xs"
+                                    : "bg-muted/40 border-border text-muted-foreground hover:text-foreground hover:bg-muted"
+                                }`}
+                              >
+                                {method === "pay_later" ? "Pay Later" : method.toUpperCase()}
+                              </button>
+                            );
+                          })}
                         </div>
                       </div>
 
-                      <div className="grid grid-cols-2 gap-3">
-                        <div>
-                          <label className="block text-xs font-semibold text-slate-700 mb-1">
+                      {/* Currency Input (Large Bold) */}
+                      <div>
+                        <div className="flex items-center justify-between mb-1.5">
+                          <label className="block text-xs font-bold uppercase tracking-wider text-muted-foreground">
                             Amount Paid Now (₹)
                           </label>
+                          <span className="text-[11px] text-muted-foreground">
+                            Plan Price: ₹{planPrice}
+                          </span>
+                        </div>
+                        <div className="relative">
+                          <IndianRupee className="w-5 h-5 absolute left-3.5 top-3.5 text-muted-foreground" />
                           <input
                             type="number"
+                            inputMode="decimal"
                             step="0.01"
                             min="0"
                             placeholder="0.00"
                             value={amountPaid}
                             onChange={(e) => setAmountPaid(e.target.value)}
-                            className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 focus:outline-hidden focus:ring-2 focus:ring-indigo-500 font-semibold"
+                            className="w-full h-12 pl-10 pr-4 bg-muted/40 border border-input rounded-xl text-2xl font-bold tracking-tight text-foreground focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:border-primary transition-all"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <label className="block text-xs font-bold uppercase tracking-wider text-muted-foreground mb-1">
+                            Discount (₹)
+                          </label>
+                          <input
+                            type="number"
+                            inputMode="decimal"
+                            step="0.01"
+                            min="0"
+                            placeholder="0.00"
+                            value={discount}
+                            onChange={(e) => setDiscount(e.target.value)}
+                            className="w-full h-11 px-3 bg-muted/40 border border-input rounded-xl text-sm text-foreground focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:border-primary font-semibold"
                           />
                         </div>
 
                         <div>
-                          <label className="block text-xs font-semibold text-slate-700 mb-1">
-                            Payment Method
+                          <label className="block text-xs font-bold uppercase tracking-wider text-muted-foreground mb-1">
+                            Net Total (₹)
                           </label>
-                          <select
-                            value={paymentMethod}
-                            onChange={(e) => setPaymentMethod(e.target.value)}
-                            disabled={currentPaid === 0}
-                            className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 focus:outline-hidden focus:ring-2 focus:ring-indigo-500 capitalize disabled:opacity-50"
-                          >
-                            <option value="cash">Cash</option>
-                            <option value="upi">UPI / QR</option>
-                            <option value="card">Card</option>
-                            <option value="bank_transfer">Bank Transfer</option>
-                            <option value="other">Other</option>
-                          </select>
+                          <div className="h-11 px-3.5 bg-muted/60 border border-border rounded-xl flex items-center text-sm font-bold text-foreground">
+                            ₹{effectiveTotal.toLocaleString("en-IN")}
+                          </div>
                         </div>
                       </div>
 
                       {/* Dynamic Balance Due Banner */}
-                      {currentPaid >= planPrice && planPrice > 0 ? (
-                        <div className="text-[11px] font-semibold text-emerald-800 bg-emerald-50 border border-emerald-200/80 rounded-xl p-2.5">
-                          ✅ Full payment of ₹{currentPaid.toLocaleString("en-IN")} received. Balance due: ₹0.00
+                      {currentPaid >= effectiveTotal && effectiveTotal > 0 ? (
+                        <div className="text-xs font-bold text-emerald-600 bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-3 flex items-center gap-2">
+                          <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                          <span>Full payment of ₹{currentPaid.toLocaleString("en-IN")} recorded. Zero balance due.</span>
                         </div>
-                      ) : currentPaid > 0 && currentPaid < planPrice ? (
-                        <div className="text-[11px] font-semibold text-amber-800 bg-amber-50 border border-amber-200/80 rounded-xl p-2.5">
-                          ⚠️ Partial payment of ₹{currentPaid.toLocaleString("en-IN")} recorded. Remaining dues: ₹{balanceDue.toLocaleString("en-IN")}
+                      ) : currentPaid > 0 && currentPaid < effectiveTotal ? (
+                        <div className="text-xs font-bold text-amber-600 bg-amber-500/10 border border-amber-500/20 rounded-xl p-3 flex items-center gap-2">
+                          <IndianRupee className="w-4 h-4 text-amber-600 shrink-0" />
+                          <span>Partial payment of ₹{currentPaid.toLocaleString("en-IN")} recorded. Balance due: ₹{balanceDue.toLocaleString("en-IN")}</span>
                         </div>
                       ) : (
-                        <div className="text-[11px] font-semibold text-indigo-800 bg-indigo-50 border border-indigo-200/80 rounded-xl p-2.5">
-                          ⏳ Pay Later: Active membership created. Full fee of ₹{planPrice.toLocaleString("en-IN")} logged as pending dues.
+                        <div className="text-xs font-bold text-primary bg-primary/10 border border-primary/20 rounded-xl p-3 flex items-center gap-2">
+                          <IndianRupee className="w-4 h-4 text-primary shrink-0" />
+                          <span>Pay Later: Plan assigned. Full ₹{effectiveTotal.toLocaleString("en-IN")} recorded as pending dues.</span>
                         </div>
                       )}
                     </div>
                   );
                 })()}
 
-                <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100">
+                <div className="flex items-center justify-end gap-3 pt-3 border-t border-border">
                   <button
                     type="button"
                     onClick={handleClose}
-                    className="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition-colors"
+                    className="h-11 px-4 text-xs font-bold text-muted-foreground hover:bg-muted rounded-xl transition-colors cursor-pointer"
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
                     disabled={loading}
-                    className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-xl shadow-xs transition-colors disabled:opacity-50"
+                    className="flex items-center gap-2 h-11 px-5 bg-primary hover:opacity-95 text-primary-foreground text-xs font-bold rounded-xl shadow-md shadow-primary/25 transition-all disabled:opacity-50 cursor-pointer"
                   >
                     {loading && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
                     Complete Registration

@@ -1,9 +1,21 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { getAuthorizedActionContext } from "@/lib/auth/guard";
-import { getTodayIST } from "@/lib/utils";
+import { getTodayIST, isMembershipValidForAttendance } from "@/lib/utils";
+
+const staffCheckInSchema = z.object({
+  gymId: z.string().uuid("Invalid gym ID"),
+  branchId: z.string().uuid("Invalid branch ID"),
+  memberId: z.string().uuid("Invalid member ID"),
+});
+
+const memberSelfCheckInSchema = z.object({
+  gymId: z.string().uuid("Invalid gym ID"),
+  memberId: z.string().uuid("Invalid member ID").optional(),
+});
 
 export async function staffCheckInAction(params: {
   gymId: string;
@@ -11,6 +23,14 @@ export async function staffCheckInAction(params: {
   memberId: string;
 }) {
   try {
+    const parseResult = staffCheckInSchema.safeParse(params);
+    if (!parseResult.success) {
+      return {
+        success: false,
+        error: parseResult.error.issues[0]?.message || "Invalid input parameters",
+      };
+    }
+
     const context = await getAuthorizedActionContext({
       gymId: params.gymId,
       capability: "attendance:record",
@@ -20,7 +40,39 @@ export async function staffCheckInAction(params: {
     const supabase = await createClient();
     const today = getTodayIST();
 
-    // Check if already checked in
+    // 1. Verify member belongs to this gym workspace
+    const { data: member, error: memberError } = await supabase
+      .from("members")
+      .select("id, branch_id, status, branches!inner(gym_id)")
+      .eq("id", params.memberId)
+      .eq("branches.gym_id", params.gymId)
+      .maybeSingle();
+
+    if (memberError || !member) {
+      return { success: false, error: "Member not found in this gym workspace" };
+    }
+
+    // 2. Active plan gating: Verify active contract where status = 'active' and end_date >= today
+    const { data: activeMembership } = await supabase
+      .from("memberships")
+      .select("id, status, end_date, membership_plans(name)")
+      .eq("member_id", params.memberId)
+      .eq("status", "active")
+      .gte("end_date", today)
+      .order("end_date", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    const gate = isMembershipValidForAttendance(activeMembership, today);
+    if (!gate.isValid) {
+      return {
+        success: false,
+        error: "Membership expired or inactive. Please renew plan before checking in.",
+        isExpired: true,
+      };
+    }
+
+    // 3. Pre-check for existing check-in today
     const { data: existing } = await supabase
       .from("attendance")
       .select("id, check_in_time")
@@ -32,10 +84,12 @@ export async function staffCheckInAction(params: {
       return {
         success: false,
         error: "Member has already checked in today",
+        alreadyCheckedIn: true,
         checkInTime: existing.check_in_time,
       };
     }
 
+    // 4. Insert attendance record
     const { data: checkIn, error } = await supabase
       .from("attendance")
       .insert({
@@ -49,6 +103,27 @@ export async function staffCheckInAction(params: {
       .single();
 
     if (error) {
+      // Gracefully resolve Postgres 23505 unique constraint conflict
+      if (
+        error.code === "23505" ||
+        error.message?.toLowerCase().includes("duplicate") ||
+        error.message?.toLowerCase().includes("unique")
+      ) {
+        const { data: dupCheckIn } = await supabase
+          .from("attendance")
+          .select("id, check_in_time")
+          .eq("member_id", params.memberId)
+          .eq("check_in_date", today)
+          .maybeSingle();
+
+        return {
+          success: true,
+          alreadyCheckedIn: true,
+          checkInId: dupCheckIn?.id,
+          checkInTime: dupCheckIn?.check_in_time,
+          message: "Member is already checked in for today",
+        };
+      }
       return { success: false, error: error.message };
     }
 
@@ -66,9 +141,17 @@ export async function staffCheckInAction(params: {
 
 export async function memberSelfCheckInAction(params: {
   gymId: string;
-  memberId: string;
+  memberId?: string;
 }) {
   try {
+    const parseResult = memberSelfCheckInSchema.safeParse(params);
+    if (!parseResult.success) {
+      return {
+        success: false,
+        error: parseResult.error.issues[0]?.message || "Invalid input parameters",
+      };
+    }
+
     const supabase = await createClient();
     const {
       data: { user },
@@ -79,22 +162,46 @@ export async function memberSelfCheckInAction(params: {
       return { success: false, error: "Authentication required to check in" };
     }
 
-    // Verify member record belongs to this authenticated user
+    // 1. Anti-tampering: Derive member strictly from auth user ID and gym context
     const { data: member, error: memberError } = await supabase
       .from("members")
       .select("id, branch_id, status, branches!inner(gym_id)")
-      .eq("id", params.memberId)
       .eq("user_id", user.id)
+      .eq("branches.gym_id", params.gymId)
       .eq("status", "active")
-      .single();
+      .maybeSingle();
 
     if (memberError || !member) {
       return { success: false, error: "Active member record not found or unauthorized" };
     }
 
+    if (params.memberId && params.memberId !== member.id) {
+      return { success: false, error: "Unauthorized check-in attempt for another member" };
+    }
+
     const today = getTodayIST();
 
-    // Check for existing check-in today
+    // 2. Active plan gating: Verify active contract where status = 'active' and end_date >= today
+    const { data: activeMembership } = await supabase
+      .from("memberships")
+      .select("id, status, end_date, membership_plans(name)")
+      .eq("member_id", member.id)
+      .eq("status", "active")
+      .gte("end_date", today)
+      .order("end_date", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    const gate = isMembershipValidForAttendance(activeMembership, today);
+    if (!gate.isValid) {
+      return {
+        success: false,
+        error: "Membership expired or inactive. Please renew plan before checking in.",
+        isExpired: true,
+      };
+    }
+
+    // 3. Pre-check for existing check-in today
     const { data: existing } = await supabase
       .from("attendance")
       .select("id, check_in_time")
@@ -111,6 +218,7 @@ export async function memberSelfCheckInAction(params: {
       };
     }
 
+    // 4. Insert self check-in record
     const { data: checkIn, error } = await supabase
       .from("attendance")
       .insert({
@@ -123,6 +231,27 @@ export async function memberSelfCheckInAction(params: {
       .single();
 
     if (error) {
+      // Gracefully resolve Postgres 23505 unique constraint conflict
+      if (
+        error.code === "23505" ||
+        error.message?.toLowerCase().includes("duplicate") ||
+        error.message?.toLowerCase().includes("unique")
+      ) {
+        const { data: dupCheckIn } = await supabase
+          .from("attendance")
+          .select("id, check_in_time")
+          .eq("member_id", member.id)
+          .eq("check_in_date", today)
+          .maybeSingle();
+
+        return {
+          success: true,
+          alreadyCheckedIn: true,
+          checkInId: dupCheckIn?.id,
+          checkInTime: dupCheckIn?.check_in_time,
+          message: "You have already checked in today!",
+        };
+      }
       return { success: false, error: error.message };
     }
 

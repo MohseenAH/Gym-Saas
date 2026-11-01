@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { CheckCircle2, Loader2, Dumbbell, Sparkles } from "lucide-react";
+import { CheckCircle2, Loader2, Dumbbell, Sparkles, AlertCircle } from "lucide-react";
 import { memberSelfCheckInAction } from "@/lib/actions/attendance";
 
 interface MemberCheckInButtonProps {
@@ -20,6 +20,7 @@ export function MemberCheckInButton({
   const [checkedIn, setCheckedIn] = useState(initialCheckedIn);
   const [time, setTime] = useState<string | undefined>(checkInTime);
   const [loading, setLoading] = useState(false);
+  const [isExpired, setIsExpired] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
 
   async function handleCheckIn() {
@@ -34,7 +35,14 @@ export function MemberCheckInButton({
     });
 
     setLoading(false);
-    if (!res.success) {
+    if (res.alreadyCheckedIn) {
+      setCheckedIn(true);
+      if (res.checkInTime) setTime(res.checkInTime);
+      setMessage(res.message || "You have already checked in today!");
+    } else if (!res.success) {
+      if (res.isExpired) {
+        setIsExpired(true);
+      }
       setMessage(res.error || "Failed to check in");
     } else {
       setCheckedIn(true);
@@ -45,17 +53,17 @@ export function MemberCheckInButton({
 
   if (checkedIn) {
     return (
-      <div className="bg-emerald-50 border border-emerald-200/80 rounded-2xl p-5 text-center shadow-xs">
-        <div className="w-12 h-12 bg-emerald-600 text-white rounded-full flex items-center justify-center mx-auto mb-2 shadow-xs">
+      <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-3xl p-6 text-center shadow-xs">
+        <div className="w-12 h-12 bg-emerald-500 text-white rounded-full flex items-center justify-center mx-auto mb-2 shadow-xs">
           <CheckCircle2 className="w-6 h-6" />
         </div>
-        <h4 className="text-sm font-bold text-slate-900">You&apos;re Checked In for Today!</h4>
-        <p className="text-xs text-emerald-700 font-medium mt-0.5">
+        <h4 className="text-sm font-bold text-foreground">You&apos;re Checked In for Today!</h4>
+        <p className="text-xs text-emerald-600 dark:text-emerald-400 font-semibold mt-0.5">
           {time
             ? `Recorded at ${new Date(time).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`
             : "Workout Attendance Logged"}
         </p>
-        <div className="mt-2 inline-flex items-center gap-1.5 px-3 py-1 bg-white text-emerald-800 rounded-lg text-[11px] font-semibold border border-emerald-100">
+        <div className="mt-3 inline-flex items-center gap-1.5 px-3 py-1 bg-card text-foreground rounded-full text-[11px] font-bold border border-border">
           <Sparkles className="w-3.5 h-3.5 text-amber-500" />
           Keep crushing your goals!
         </div>
@@ -64,25 +72,35 @@ export function MemberCheckInButton({
   }
 
   return (
-    <div className="bg-white border border-slate-200/80 rounded-2xl p-5 text-center shadow-xs">
-      <div className="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-full flex items-center justify-center mx-auto mb-2">
+    <div className="bg-card border border-border rounded-3xl p-6 text-center shadow-xs">
+      <div className="w-12 h-12 bg-primary/10 text-primary rounded-2xl flex items-center justify-center mx-auto mb-3">
         <Dumbbell className="w-6 h-6" />
       </div>
-      <h4 className="text-sm font-bold text-slate-900">Arrived at the Gym?</h4>
-      <p className="text-xs text-slate-500 mt-0.5 mb-3">
+      <h4 className="text-base font-bold text-foreground">Arrived at the Gym?</h4>
+      <p className="text-xs text-muted-foreground mt-0.5 mb-4">
         Tap the button below to log your daily attendance
       </p>
 
-      {message && (
-        <div className="mb-3 p-2 bg-red-50 text-red-700 text-xs rounded-xl border border-red-200">
+      {isExpired ? (
+        <div className="mb-4 p-4 bg-amber-500/10 border border-amber-500/20 text-amber-500 text-xs rounded-2xl text-left">
+          <p className="font-bold flex items-center gap-2 mb-1">
+            <AlertCircle className="w-4 h-4 text-amber-500 shrink-0" />
+            Membership Expired or Inactive
+          </p>
+          <p className="text-muted-foreground">
+            Your membership contract is no longer active. Please renew your plan or visit the front desk to restore check-in access.
+          </p>
+        </div>
+      ) : message ? (
+        <div className="mb-3 p-3 bg-destructive/10 text-destructive text-xs rounded-2xl border border-destructive/20 font-medium">
           {message}
         </div>
-      )}
+      ) : null}
 
       <button
         onClick={handleCheckIn}
         disabled={loading}
-        className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-sm font-bold shadow-sm transition-all disabled:opacity-50"
+        className="w-full sm:w-auto h-12 inline-flex items-center justify-center gap-2 px-8 bg-primary hover:bg-primary/90 text-primary-foreground rounded-2xl text-sm font-black shadow-md transition-all disabled:opacity-50 active:scale-[0.98]"
       >
         {loading ? (
           <Loader2 className="w-4 h-4 animate-spin" />

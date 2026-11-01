@@ -147,12 +147,12 @@ export default async function MembersPage({ params, searchParams }: MembersPageP
   const activeMembersCount = allMembers.filter((m) => m.status === "active").length;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 max-w-7xl mx-auto text-foreground">
       {/* Top Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-black text-slate-900 tracking-tight">Member Management</h1>
-          <p className="text-xs text-slate-500 mt-1">
+          <h1 className="text-2xl font-black text-foreground tracking-tight">Member Management</h1>
+          <p className="text-xs text-muted-foreground mt-1">
             Enroll new members, monitor expiring subscriptions, and access 360&deg; member records
           </p>
         </div>
@@ -170,45 +170,45 @@ export default async function MembersPage({ params, searchParams }: MembersPageP
 
       {/* KPI Stats */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs flex items-center gap-4">
-          <div className="p-3 bg-indigo-50 text-indigo-600 rounded-xl">
+        <div className="bg-card p-6 rounded-3xl border border-border shadow-xs flex items-center gap-4 text-card-foreground">
+          <div className="p-3.5 bg-primary/10 text-primary rounded-2xl shadow-2xs">
             <Users className="w-6 h-6" />
           </div>
           <div>
-            <div className="text-2xl font-black text-slate-900">{allMembers.length}</div>
-            <div className="text-xs text-slate-500 font-medium">Total Registered Members</div>
+            <div className="text-3xl font-black text-foreground">{allMembers.length}</div>
+            <div className="text-xs text-muted-foreground font-medium">Total Registered Members</div>
           </div>
         </div>
 
-        <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs flex items-center gap-4">
-          <div className="p-3 bg-emerald-50 text-emerald-600 rounded-xl">
+        <div className="bg-card p-6 rounded-3xl border border-border shadow-xs flex items-center gap-4 text-card-foreground">
+          <div className="p-3.5 bg-emerald-500/10 text-emerald-600 rounded-2xl shadow-2xs">
             <UserCheck className="w-6 h-6" />
           </div>
           <div>
-            <div className="text-2xl font-black text-slate-900">{activeMembersCount}</div>
-            <div className="text-xs text-slate-500 font-medium">Active Subscriptions</div>
+            <div className="text-3xl font-black text-foreground">{activeMembersCount}</div>
+            <div className="text-xs text-muted-foreground font-medium">Active Subscriptions</div>
           </div>
         </div>
 
-        <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs flex items-center gap-4">
-          <div className="p-3 bg-amber-50 text-amber-600 rounded-xl">
+        <div className="bg-card p-6 rounded-3xl border border-border shadow-xs flex items-center gap-4 text-card-foreground">
+          <div className="p-3.5 bg-amber-500/10 text-amber-600 rounded-2xl shadow-2xs">
             <Clock className="w-6 h-6" />
           </div>
           <div>
-            <div className="text-2xl font-black text-slate-900">{expiringSoonCount}</div>
-            <div className="text-xs text-slate-500 font-medium">Expiring Within 7 Days</div>
+            <div className="text-3xl font-black text-foreground">{expiringSoonCount}</div>
+            <div className="text-xs text-muted-foreground font-medium">Expiring Within 7 Days</div>
           </div>
         </div>
 
-        <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs flex items-center gap-4">
-          <div className="p-3 bg-blue-50 text-blue-600 rounded-xl">
+        <div className="bg-card p-6 rounded-3xl border border-border shadow-xs flex items-center gap-4 text-card-foreground">
+          <div className="p-3.5 bg-blue-500/10 text-blue-600 rounded-2xl shadow-2xs">
             <ShieldCheck className="w-6 h-6" />
           </div>
           <div>
-            <div className="text-2xl font-black text-slate-900">
+            <div className="text-3xl font-black text-foreground">
               {allMembers.filter((m) => m.user_id).length}
             </div>
-            <div className="text-xs text-slate-500 font-medium">Portal Accounts Claimed</div>
+            <div className="text-xs text-muted-foreground font-medium">Portal Accounts Claimed</div>
           </div>
         </div>
       </div>

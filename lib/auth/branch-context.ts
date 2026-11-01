@@ -39,8 +39,14 @@ export function resolveBranchContext({
     };
   }
 
-  // If candidate is "all" or null/empty
-  if (!candidateBranchId || candidateBranchId === "all") {
+  // If candidate is "all", null, undefined, or empty/whitespace
+  if (
+    !candidateBranchId ||
+    candidateBranchId === "all" ||
+    candidateBranchId === "null" ||
+    candidateBranchId === "undefined" ||
+    !candidateBranchId.trim()
+  ) {
     if (canSelectAll) {
       return {
         selectedBranchId: null,

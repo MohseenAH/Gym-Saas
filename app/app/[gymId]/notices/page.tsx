@@ -33,8 +33,8 @@ export default async function NoticesPage({ params }: NoticesPageProps) {
       {/* Top Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-black text-slate-900 tracking-tight">Gym Notice Board</h1>
-          <p className="text-xs text-slate-500 mt-1">
+          <h1 className="text-2xl font-black text-foreground tracking-tight">Gym Notice Board</h1>
+          <p className="text-xs text-muted-foreground mt-1">
             Broadcast operational updates, holiday schedules, and notices to member portals
           </p>
         </div>
@@ -44,12 +44,12 @@ export default async function NoticesPage({ params }: NoticesPageProps) {
       {/* Notice List */}
       <div className="space-y-3">
         {allNotices.length === 0 ? (
-          <div className="bg-white p-12 text-center rounded-2xl border border-slate-200/80 shadow-xs">
-            <div className="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-full flex items-center justify-center mx-auto mb-3">
+          <div className="bg-card p-12 text-center rounded-3xl border border-border shadow-xs">
+            <div className="w-12 h-12 bg-primary/10 text-primary rounded-full flex items-center justify-center mx-auto mb-3">
               <Bell className="w-6 h-6" />
             </div>
-            <h3 className="text-sm font-bold text-slate-900">No Announcements Posted</h3>
-            <p className="text-xs text-slate-500 max-w-sm mx-auto mt-1">
+            <h3 className="text-sm font-bold text-foreground">No Announcements Posted</h3>
+            <p className="text-xs text-muted-foreground max-w-sm mx-auto mt-1">
               Keep your members informed! Post holiday notices, equipment maintenance alerts, or special event announcements.
             </p>
           </div>
@@ -61,25 +61,25 @@ export default async function NoticesPage({ params }: NoticesPageProps) {
             return (
               <div
                 key={notice.id}
-                className={`bg-white p-5 rounded-2xl border shadow-xs transition-all ${
+                className={`p-5 rounded-3xl border shadow-xs transition-all ${
                   !notice.is_active
-                    ? "opacity-60 border-slate-200"
+                    ? "opacity-60 bg-muted/20 border-border"
                     : isUrgent
-                    ? "border-red-300 bg-red-50/20"
+                    ? "border-rose-500/30 bg-rose-500/5 dark:bg-rose-500/10"
                     : isImportant
-                    ? "border-amber-300 bg-amber-50/20"
-                    : "border-slate-200/80"
+                    ? "border-amber-500/30 bg-amber-500/5 dark:bg-amber-500/10"
+                    : "border-border bg-card"
                 }`}
               >
                 <div className="flex items-start justify-between gap-4">
-                  <div className="flex items-start gap-3">
+                  <div className="flex items-start gap-3.5">
                     <div
-                      className={`p-2.5 rounded-xl shrink-0 mt-0.5 ${
+                      className={`p-2.5 rounded-2xl shrink-0 mt-0.5 ${
                         isUrgent
-                          ? "bg-red-100 text-red-700"
+                          ? "bg-rose-500/15 text-rose-500"
                           : isImportant
-                          ? "bg-amber-100 text-amber-700"
-                          : "bg-indigo-50 text-indigo-600"
+                          ? "bg-amber-500/15 text-amber-500"
+                          : "bg-primary/10 text-primary"
                       }`}
                     >
                       {isUrgent ? (
@@ -93,33 +93,33 @@ export default async function NoticesPage({ params }: NoticesPageProps) {
 
                     <div>
                       <div className="flex items-center gap-2 flex-wrap">
-                        <h3 className="text-base font-bold text-slate-900">{notice.title}</h3>
+                        <h3 className="text-base font-bold text-foreground">{notice.title}</h3>
                         <span
-                          className={`px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider ${
+                          className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
                             isUrgent
-                              ? "bg-red-100 text-red-800"
+                              ? "bg-rose-500/15 text-rose-500 border border-rose-500/20"
                               : isImportant
-                              ? "bg-amber-100 text-amber-800"
-                              : "bg-slate-100 text-slate-700"
+                              ? "bg-amber-500/15 text-amber-500 border border-amber-500/20"
+                              : "bg-muted text-muted-foreground border border-border"
                           }`}
                         >
                           {notice.priority}
                         </span>
-                        <span className="px-2 py-0.5 bg-slate-100 text-slate-600 rounded-md text-[10px] font-medium">
+                        <span className="px-2.5 py-0.5 bg-muted text-muted-foreground rounded-full text-[10px] font-semibold">
                           {(notice.branches as unknown as { name?: string } | null)?.name || "All Branches"}
                         </span>
                         {!notice.is_active && (
-                          <span className="px-2 py-0.5 bg-slate-200 text-slate-600 rounded-md text-[10px] font-semibold">
+                          <span className="px-2.5 py-0.5 bg-muted text-muted-foreground rounded-full text-[10px] font-bold">
                             Archived
                           </span>
                         )}
                       </div>
 
-                      <p className="text-xs text-slate-600 mt-2 leading-relaxed whitespace-pre-line">
+                      <p className="text-xs text-muted-foreground mt-2 leading-relaxed whitespace-pre-line">
                         {notice.content}
                       </p>
 
-                      <div className="flex items-center gap-3 text-[11px] text-slate-400 mt-3">
+                      <div className="flex items-center gap-3 text-[11px] text-muted-foreground mt-3">
                         <span>
                           Posted: {new Date(notice.published_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
                         </span>
@@ -149,7 +149,7 @@ export default async function NoticesPage({ params }: NoticesPageProps) {
                     >
                       <button
                         type="submit"
-                        className="p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-xl transition-colors"
+                        className="p-2 text-muted-foreground hover:text-foreground hover:bg-muted rounded-xl transition-colors"
                         title={notice.is_active ? "Archive Notice" : "Reactivate Notice"}
                       >
                         {notice.is_active ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
@@ -167,7 +167,7 @@ export default async function NoticesPage({ params }: NoticesPageProps) {
                     >
                       <button
                         type="submit"
-                        className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-colors"
+                        className="p-2 text-muted-foreground hover:text-rose-500 hover:bg-rose-500/10 rounded-xl transition-colors"
                         title="Delete Notice"
                       >
                         <Trash2 className="w-4 h-4" />

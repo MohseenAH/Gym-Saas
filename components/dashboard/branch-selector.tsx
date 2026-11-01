@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter, useSearchParams } from "next/navigation";
-import { Building } from "lucide-react";
+import { Building2 } from "lucide-react";
 
 interface BranchSelectorProps {
   gymId: string;
@@ -31,16 +31,16 @@ export function BranchSelector({
 
   return (
     <div className="flex items-center gap-2">
-      <div className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-50 border border-slate-200/80 rounded-xl text-xs font-semibold text-slate-700">
-        <Building className="w-3.5 h-3.5 text-slate-400" />
+      <div className="flex items-center gap-2 px-3 py-1.5 bg-muted/60 border border-border rounded-xl text-xs font-semibold text-foreground">
+        <Building2 className="w-3.5 h-3.5 text-primary" />
         <select
           value={currentBranchId || "all"}
           onChange={(e) => handleChange(e.target.value)}
-          className="bg-transparent focus:outline-hidden text-slate-900 font-bold"
+          className="bg-transparent focus:outline-hidden text-foreground font-bold cursor-pointer"
         >
           <option value="all">All Branches (Consolidated)</option>
           {branches.map((b) => (
-            <option key={b.id} value={b.id}>
+            <option key={b.id} value={b.id} className="bg-card text-card-foreground">
               {b.name}
             </option>
           ))}

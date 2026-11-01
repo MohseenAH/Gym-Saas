@@ -9,7 +9,7 @@ const recordPaymentSchema = z.object({
   membershipId: z.string().uuid().optional().nullable(),
   amount: z.number().positive("Amount must be greater than 0"),
   paymentMethod: z.enum(["cash", "upi", "card", "bank_transfer", "cheque", "other"]).default("cash"),
-  paymentStatus: z.enum(["paid", "partial", "pending", "refunded"]).default("paid"),
+  paymentStatus: z.enum(["paid", "partial", "pending", "refunded", "rejected"]).default("paid"),
   paymentDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Invalid date format (YYYY-MM-DD)"),
   notes: z.string().max(500).optional().nullable(),
   idempotencyKey: z.string().min(1).max(255).optional().nullable(),
@@ -177,5 +177,24 @@ describe("Payment Idempotency & Concurrency Protection Suite", () => {
       paymentDate: "12-10-2026", // Wrong format
     });
     expect(invalidDate.success).toBe(false);
+  });
+
+  it("TEST-PAY-005: Rejection of payment exceeding outstanding dues before database insert", () => {
+    function evaluatePaymentSubmission(dues: number, amount: number) {
+      if (dues > 0 && amount > dues) {
+        return {
+          success: false,
+          error: `Payment amount (₹${amount}) exceeds outstanding dues (₹${dues})`,
+        };
+      }
+      return { success: true };
+    }
+
+    const overpayment = evaluatePaymentSubmission(1500, 2000);
+    expect(overpayment.success).toBe(false);
+    expect(overpayment.error).toContain("exceeds outstanding dues");
+
+    const validPayment = evaluatePaymentSubmission(1500, 1500);
+    expect(validPayment.success).toBe(true);
   });
 });

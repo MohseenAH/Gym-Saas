@@ -12,7 +12,7 @@ import {
   Building,
   Download,
 } from "lucide-react";
-import { getTodayIST } from "@/lib/utils";
+import { getTodayIST, getStatusBadgeClass } from "@/lib/utils";
 
 export interface ReportPayment {
   id: string;
@@ -308,17 +308,17 @@ export function ReportsViewClient({
   return (
     <div className="space-y-6">
       {/* Top Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-white p-6 rounded-2xl border border-slate-200/80 shadow-xs">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-card p-6 rounded-3xl border border-border shadow-xs">
         <div>
-          <div className="flex items-center gap-2.5">
-            <div className="p-2 bg-indigo-50 text-indigo-600 rounded-xl">
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 bg-primary/10 text-primary rounded-xl">
               <FileSpreadsheet className="w-5 h-5" />
             </div>
-            <h1 className="text-xl font-black text-slate-900 tracking-tight">
+            <h1 className="text-xl font-black text-foreground tracking-tight">
               Business & Financial Reports
             </h1>
           </div>
-          <p className="text-xs text-slate-500 mt-1">
+          <p className="text-xs text-muted-foreground mt-1">
             Reconciled collections, member dues, attendance volume, and operational cash movement
           </p>
         </div>
@@ -326,7 +326,7 @@ export function ReportsViewClient({
         {/* Filters */}
         <div className="flex items-center gap-2 flex-wrap">
           {/* Date range filter */}
-          <div className="flex items-center bg-slate-100 p-0.5 rounded-xl text-xs">
+          <div className="flex items-center bg-muted p-1 rounded-xl text-xs">
             {(
               [
                 { id: "today", label: "Today" },
@@ -338,10 +338,10 @@ export function ReportsViewClient({
               <button
                 key={opt.id}
                 onClick={() => setDateRange(opt.id)}
-                className={`px-3 py-1 rounded-lg font-bold transition-colors ${
+                className={`px-3 py-1.5 rounded-lg font-bold transition-all ${
                   dateRange === opt.id
-                    ? "bg-white text-slate-900 shadow-2xs"
-                    : "text-slate-600 hover:text-slate-900"
+                    ? "bg-card text-foreground shadow-2xs"
+                    : "text-muted-foreground hover:text-foreground"
                 }`}
               >
                 {opt.label}
@@ -351,16 +351,16 @@ export function ReportsViewClient({
 
           {/* Branch filter */}
           {branches.length > 1 && (
-            <div className="flex items-center gap-1.5 px-3 py-1 bg-slate-50 border border-slate-200/80 rounded-xl text-xs font-semibold text-slate-700">
-              <Building className="w-3.5 h-3.5 text-slate-400" />
+            <div className="flex items-center gap-2 h-10 px-3 bg-muted/40 border border-border rounded-xl text-xs font-semibold text-foreground">
+              <Building className="w-3.5 h-3.5 text-muted-foreground" />
               <select
                 value={selectedBranchId}
                 onChange={(e) => setSelectedBranchId(e.target.value)}
-                className="bg-transparent focus:outline-hidden font-bold text-slate-900"
+                className="bg-transparent focus:outline-hidden font-bold text-foreground cursor-pointer"
               >
-                <option value="all">All Branches</option>
+                <option value="all" className="bg-card text-card-foreground">All Branches</option>
                 {branches.map((b) => (
-                  <option key={b.id} value={b.id}>
+                  <option key={b.id} value={b.id} className="bg-card text-card-foreground">
                     {b.name}
                   </option>
                 ))}
@@ -371,7 +371,7 @@ export function ReportsViewClient({
           {/* Export CSV Button */}
           <button
             onClick={handleExportCsv}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold transition-all shadow-xs"
+            className="inline-flex items-center gap-2 h-10 px-4 bg-foreground text-background hover:opacity-90 rounded-xl text-xs font-bold transition-all shadow-xs"
             title="Export currently displayed report as CSV"
           >
             <Download className="w-3.5 h-3.5" />
@@ -381,7 +381,7 @@ export function ReportsViewClient({
       </div>
 
       {/* Report Type Selector Tabs */}
-      <div className="flex items-center gap-2 border-b border-slate-200 pb-2 overflow-x-auto">
+      <div className="flex items-center gap-2 border-b border-border pb-2 overflow-x-auto">
         {(
           [
             { id: "collections", label: "Collections & Revenue", icon: TrendingUp },
@@ -397,10 +397,10 @@ export function ReportsViewClient({
             <button
               key={tab.id}
               onClick={() => setReportType(tab.id)}
-              className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-colors ${
+              className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all ${
                 isActive
-                  ? "bg-indigo-600 text-white shadow-xs"
-                  : "text-slate-600 hover:bg-slate-100"
+                  ? "bg-primary text-primary-foreground shadow-xs ring-1 ring-primary/25"
+                  : "text-muted-foreground hover:bg-muted hover:text-foreground"
               }`}
             >
               <Icon className="w-3.5 h-3.5" />
@@ -414,80 +414,80 @@ export function ReportsViewClient({
       {reportType === "collections" && (
         <div className="space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
-            <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs">
-              <div className="text-xs text-slate-500 font-semibold uppercase">Total Collections</div>
-              <div className="text-2xl font-black text-emerald-600 mt-1">
+            <div className="bg-card p-5 rounded-2xl border border-border shadow-xs">
+              <div className="text-xs text-muted-foreground font-semibold uppercase">Total Collections</div>
+              <div className="text-2xl font-black text-emerald-500 mt-1">
                 ₹{totalCollections.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
               </div>
-              <div className="text-[11px] text-slate-400 mt-1">{filteredPayments.length} transactions</div>
+              <div className="text-[11px] text-muted-foreground mt-1">{filteredPayments.length} transactions</div>
             </div>
 
-            <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs">
-              <div className="text-xs text-slate-500 font-semibold uppercase">UPI Collections</div>
-              <div className="text-xl font-black text-slate-900 mt-1">
+            <div className="bg-card p-5 rounded-2xl border border-border shadow-xs">
+              <div className="text-xs text-muted-foreground font-semibold uppercase">UPI Collections</div>
+              <div className="text-xl font-black text-foreground mt-1">
                 ₹{upiCollections.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
               </div>
-              <div className="text-[11px] text-slate-400 mt-1">
+              <div className="text-[11px] text-muted-foreground mt-1">
                 {totalCollections > 0 ? `${Math.round((upiCollections / totalCollections) * 100)}% of total` : "0%"}
               </div>
             </div>
 
-            <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs">
-              <div className="text-xs text-slate-500 font-semibold uppercase">Cash Collections</div>
-              <div className="text-xl font-black text-slate-900 mt-1">
+            <div className="bg-card p-5 rounded-2xl border border-border shadow-xs">
+              <div className="text-xs text-muted-foreground font-semibold uppercase">Cash Collections</div>
+              <div className="text-xl font-black text-foreground mt-1">
                 ₹{cashCollections.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
               </div>
-              <div className="text-[11px] text-slate-400 mt-1">
+              <div className="text-[11px] text-muted-foreground mt-1">
                 {totalCollections > 0 ? `${Math.round((cashCollections / totalCollections) * 100)}% of total` : "0%"}
               </div>
             </div>
 
-            <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs">
-              <div className="text-xs text-slate-500 font-semibold uppercase">Card & Bank</div>
-              <div className="text-xl font-black text-slate-900 mt-1">
+            <div className="bg-card p-5 rounded-2xl border border-border shadow-xs">
+              <div className="text-xs text-muted-foreground font-semibold uppercase">Card & Bank</div>
+              <div className="text-xl font-black text-foreground mt-1">
                 ₹{cardCollections.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
               </div>
-              <div className="text-[11px] text-slate-400 mt-1">
+              <div className="text-[11px] text-muted-foreground mt-1">
                 {totalCollections > 0 ? `${Math.round((cardCollections / totalCollections) * 100)}% of total` : "0%"}
               </div>
             </div>
           </div>
 
           {/* Table */}
-          <div className="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden">
-            <div className="p-4 border-b border-slate-100 font-bold text-sm text-slate-900">
+          <div className="bg-card rounded-2xl border border-border shadow-xs overflow-hidden">
+            <div className="p-4 border-b border-border font-bold text-sm text-card-foreground">
               Payment Transactions ({filteredPayments.length})
             </div>
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs">
-                <thead className="bg-slate-50 text-slate-500 font-semibold border-b border-slate-100">
+                <thead className="bg-muted/40 text-muted-foreground font-semibold border-b border-border">
                   <tr>
-                    <th className="p-3 pl-4">Receipt Ref</th>
-                    <th className="p-3">Date</th>
-                    <th className="p-3">Member</th>
-                    <th className="p-3">Branch</th>
-                    <th className="p-3">Mode</th>
-                    <th className="p-3 text-right pr-4">Amount</th>
+                    <th className="p-3.5 pl-4">Receipt Ref</th>
+                    <th className="p-3.5">Date</th>
+                    <th className="p-3.5">Member</th>
+                    <th className="p-3.5">Branch</th>
+                    <th className="p-3.5">Mode</th>
+                    <th className="p-3.5 text-right pr-4">Amount</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100 text-slate-700">
+                <tbody className="divide-y divide-border text-foreground">
                   {filteredPayments.length === 0 ? (
                     <tr>
-                      <td colSpan={6} className="p-6 text-center text-slate-400">
+                      <td colSpan={6} className="p-10 text-center text-muted-foreground font-medium">
                         No transactions recorded for the selected period.
                       </td>
                     </tr>
                   ) : (
                     filteredPayments.map((p) => (
-                      <tr key={p.id} className="hover:bg-slate-50/60">
-                        <td className="p-3 pl-4 font-mono font-bold text-slate-900">
+                      <tr key={p.id} className="hover:bg-muted/30 transition-colors">
+                        <td className="p-3.5 pl-4 font-mono font-bold text-foreground">
                           #{p.id.slice(0, 8).toUpperCase()}
                         </td>
-                        <td className="p-3">{p.paymentDate}</td>
-                        <td className="p-3 font-semibold text-slate-900">{p.memberName}</td>
-                        <td className="p-3">{p.branchName}</td>
-                        <td className="p-3 uppercase font-medium">{p.paymentMethod}</td>
-                        <td className="p-3 text-right pr-4 font-black text-slate-900">
+                        <td className="p-3.5 text-muted-foreground">{p.paymentDate}</td>
+                        <td className="p-3.5 font-bold text-foreground">{p.memberName}</td>
+                        <td className="p-3.5 text-muted-foreground">{p.branchName}</td>
+                        <td className="p-3.5 uppercase font-medium">{p.paymentMethod}</td>
+                        <td className="p-3.5 text-right pr-4 font-black text-foreground">
                           ₹{p.amount.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
                         </td>
                       </tr>
@@ -503,39 +503,39 @@ export function ReportsViewClient({
       {/* Report 2: Outstanding Dues */}
       {reportType === "dues" && (
         <div className="space-y-4">
-          <div className="bg-amber-50 border border-amber-200 p-5 rounded-2xl flex items-center justify-between">
+          <div className="bg-amber-500/10 border border-amber-500/20 p-5 rounded-3xl flex items-center justify-between">
             <div>
-              <div className="text-xs font-bold text-amber-800 uppercase">Total Uncollected Balance</div>
-              <div className="text-3xl font-black text-amber-700 mt-1">
+              <div className="text-xs font-bold text-amber-500 uppercase tracking-wider">Total Uncollected Balance</div>
+              <div className="text-3xl font-black text-amber-500 mt-1">
                 ₹{totalDues.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
               </div>
-              <div className="text-xs text-amber-600 mt-1">
+              <div className="text-xs text-muted-foreground mt-1">
                 Across {duesList.length} members with partial payments on active contracts
               </div>
             </div>
           </div>
 
-          <div className="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden">
-            <div className="p-4 border-b border-slate-100 font-bold text-sm text-slate-900">
+          <div className="bg-card rounded-2xl border border-border shadow-xs overflow-hidden">
+            <div className="p-4 border-b border-border font-bold text-sm text-card-foreground">
               Members with Pending Dues
             </div>
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs">
-                <thead className="bg-slate-50 text-slate-500 font-semibold border-b border-slate-100">
+                <thead className="bg-muted/40 text-muted-foreground font-semibold border-b border-border">
                   <tr>
-                    <th className="p-3 pl-4">Member Name</th>
-                    <th className="p-3">Phone</th>
-                    <th className="p-3">Plan</th>
-                    <th className="p-3">Plan Price</th>
-                    <th className="p-3">Paid so Far</th>
-                    <th className="p-3 font-bold text-amber-700">Remaining Due</th>
-                    <th className="p-3 text-right pr-4">Reminder</th>
+                    <th className="p-3.5 pl-4">Member Name</th>
+                    <th className="p-3.5">Phone</th>
+                    <th className="p-3.5">Plan</th>
+                    <th className="p-3.5">Plan Price</th>
+                    <th className="p-3.5">Paid so Far</th>
+                    <th className="p-3.5 font-bold text-amber-500">Remaining Due</th>
+                    <th className="p-3.5 text-right pr-4">Reminder</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100 text-slate-700">
+                <tbody className="divide-y divide-border text-foreground">
                   {duesList.length === 0 ? (
                     <tr>
-                      <td colSpan={7} className="p-6 text-center text-slate-400">
+                      <td colSpan={7} className="p-10 text-center text-muted-foreground font-medium">
                         All member fees are fully cleared! No pending dues. 🎉
                       </td>
                     </tr>
@@ -548,23 +548,23 @@ export function ReportsViewClient({
                       )}`;
 
                       return (
-                        <tr key={m.id} className="hover:bg-slate-50/60">
-                          <td className="p-3 pl-4 font-bold text-slate-900">{m.memberName}</td>
-                          <td className="p-3">{m.memberPhone}</td>
-                          <td className="p-3 font-medium">{m.planName}</td>
-                          <td className="p-3">₹{m.planPrice.toLocaleString("en-IN")}</td>
-                          <td className="p-3 text-emerald-600 font-semibold">
+                        <tr key={m.id} className="hover:bg-muted/30 transition-colors">
+                          <td className="p-3.5 pl-4 font-bold text-foreground">{m.memberName}</td>
+                          <td className="p-3.5 text-muted-foreground">{m.memberPhone}</td>
+                          <td className="p-3.5 font-medium">{m.planName}</td>
+                          <td className="p-3.5">₹{m.planPrice.toLocaleString("en-IN")}</td>
+                          <td className="p-3.5 text-emerald-500 font-semibold">
                             ₹{m.paidAmount.toLocaleString("en-IN")}
                           </td>
-                          <td className="p-3 font-black text-amber-700">
+                          <td className="p-3.5 font-black text-amber-500">
                             ₹{m.dueAmount.toLocaleString("en-IN")}
                           </td>
-                          <td className="p-3 text-right pr-4">
+                          <td className="p-3.5 text-right pr-4">
                             <a
                               href={waReminder}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="inline-flex items-center gap-1.5 px-3 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 rounded-xl text-xs font-bold transition-colors"
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#25D366]/10 hover:bg-[#25D366]/20 text-[#25D366] rounded-xl text-xs font-bold transition-colors border border-[#25D366]/20"
                             >
                               <MessageSquare className="w-3.5 h-3.5" />
                               WhatsApp
@@ -585,55 +585,55 @@ export function ReportsViewClient({
       {reportType === "attendance" && (
         <div className="space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs">
-              <div className="text-xs text-slate-500 font-semibold uppercase">Total Visits Recorded</div>
-              <div className="text-2xl font-black text-slate-900 mt-1">{filteredAttendance.length}</div>
-              <div className="text-[11px] text-slate-400 mt-1">During selected period</div>
+            <div className="bg-card p-5 rounded-2xl border border-border shadow-xs">
+              <div className="text-xs text-muted-foreground font-semibold uppercase">Total Visits Recorded</div>
+              <div className="text-2xl font-black text-foreground mt-1">{filteredAttendance.length}</div>
+              <div className="text-[11px] text-muted-foreground mt-1">During selected period</div>
             </div>
-            <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs">
-              <div className="text-xs text-slate-500 font-semibold uppercase">Daily Average Check-Ins</div>
-              <div className="text-2xl font-black text-indigo-600 mt-1">
+            <div className="bg-card p-5 rounded-2xl border border-border shadow-xs">
+              <div className="text-xs text-muted-foreground font-semibold uppercase">Daily Average Check-Ins</div>
+              <div className="text-2xl font-black text-primary mt-1">
                 {dateRange === "today"
                   ? filteredAttendance.length
                   : Math.round(filteredAttendance.length / (dateRange === "7days" ? 7 : 30))}
               </div>
-              <div className="text-[11px] text-slate-400 mt-1">Check-ins per day</div>
+              <div className="text-[11px] text-muted-foreground mt-1">Check-ins per day</div>
             </div>
           </div>
 
-          <div className="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden">
-            <div className="p-4 border-b border-slate-100 font-bold text-sm text-slate-900">
+          <div className="bg-card rounded-2xl border border-border shadow-xs overflow-hidden">
+            <div className="p-4 border-b border-border font-bold text-sm text-card-foreground">
               Check-In Logs ({filteredAttendance.length})
             </div>
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs">
-                <thead className="bg-slate-50 text-slate-500 font-semibold border-b border-slate-100">
+                <thead className="bg-muted/40 text-muted-foreground font-semibold border-b border-border">
                   <tr>
-                    <th className="p-3 pl-4">Date</th>
-                    <th className="p-3">Time</th>
-                    <th className="p-3">Member</th>
-                    <th className="p-3 pr-4">Branch</th>
+                    <th className="p-3.5 pl-4">Date</th>
+                    <th className="p-3.5">Time</th>
+                    <th className="p-3.5">Member</th>
+                    <th className="p-3.5 pr-4">Branch</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100 text-slate-700">
+                <tbody className="divide-y divide-border text-foreground">
                   {filteredAttendance.length === 0 ? (
                     <tr>
-                      <td colSpan={4} className="p-6 text-center text-slate-400">
+                      <td colSpan={4} className="p-10 text-center text-muted-foreground font-medium">
                         No check-ins recorded for the selected period.
                       </td>
                     </tr>
                   ) : (
                     filteredAttendance.map((a) => (
-                      <tr key={a.id} className="hover:bg-slate-50/60">
-                        <td className="p-3 pl-4 font-semibold text-slate-900">{a.checkInDate}</td>
-                        <td className="p-3">
+                      <tr key={a.id} className="hover:bg-muted/30 transition-colors">
+                        <td className="p-3.5 pl-4 font-semibold text-foreground">{a.checkInDate}</td>
+                        <td className="p-3.5 text-muted-foreground">
                           {new Date(a.checkInTime).toLocaleTimeString([], {
                             hour: "2-digit",
                             minute: "2-digit",
                           })}
                         </td>
-                        <td className="p-3 font-bold text-slate-900">{a.memberName}</td>
-                        <td className="p-3 pr-4">{a.branchName}</td>
+                        <td className="p-3.5 font-bold text-foreground">{a.memberName}</td>
+                        <td className="p-3.5 pr-4 text-muted-foreground">{a.branchName}</td>
                       </tr>
                     ))
                   )}
@@ -648,68 +648,64 @@ export function ReportsViewClient({
       {reportType === "memberships" && (
         <div className="space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs">
-              <div className="text-xs text-slate-500 font-semibold uppercase">Active Subscriptions</div>
-              <div className="text-2xl font-black text-emerald-600 mt-1">{activeMembershipsCount}</div>
-              <div className="text-[11px] text-slate-400 mt-1">Currently valid contracts</div>
+            <div className="bg-card p-5 rounded-2xl border border-border shadow-xs">
+              <div className="text-xs text-muted-foreground font-semibold uppercase">Active Subscriptions</div>
+              <div className="text-2xl font-black text-emerald-500 mt-1">{activeMembershipsCount}</div>
+              <div className="text-[11px] text-muted-foreground mt-1">Currently valid contracts</div>
             </div>
-            <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs">
-              <div className="text-xs text-slate-500 font-semibold uppercase">Expiring in 7 Days</div>
-              <div className="text-2xl font-black text-amber-600 mt-1">{expiringSoonCount}</div>
-              <div className="text-[11px] text-slate-400 mt-1">Requires renewal follow-up</div>
+            <div className="bg-card p-5 rounded-2xl border border-border shadow-xs">
+              <div className="text-xs text-muted-foreground font-semibold uppercase">Expiring in 7 Days</div>
+              <div className="text-2xl font-black text-amber-500 mt-1">{expiringSoonCount}</div>
+              <div className="text-[11px] text-muted-foreground mt-1">Requires renewal follow-up</div>
             </div>
-            <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs">
-              <div className="text-xs text-slate-500 font-semibold uppercase">Total Contracts Tracked</div>
-              <div className="text-2xl font-black text-slate-900 mt-1">{filteredMemberships.length}</div>
-              <div className="text-[11px] text-slate-400 mt-1">Active, expired & renewed</div>
+            <div className="bg-card p-5 rounded-2xl border border-border shadow-xs">
+              <div className="text-xs text-muted-foreground font-semibold uppercase">Total Contracts Tracked</div>
+              <div className="text-2xl font-black text-foreground mt-1">{filteredMemberships.length}</div>
+              <div className="text-[11px] text-muted-foreground mt-1">Active, expired & renewed</div>
             </div>
           </div>
 
-          <div className="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden">
-            <div className="p-4 border-b border-slate-100 font-bold text-sm text-slate-900">
+          <div className="bg-card rounded-2xl border border-border shadow-xs overflow-hidden">
+            <div className="p-4 border-b border-border font-bold text-sm text-card-foreground">
               Membership Contracts
             </div>
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs">
-                <thead className="bg-slate-50 text-slate-500 font-semibold border-b border-slate-100">
+                <thead className="bg-muted/40 text-muted-foreground font-semibold border-b border-border">
                   <tr>
-                    <th className="p-3 pl-4">Member Name</th>
-                    <th className="p-3">Plan</th>
-                    <th className="p-3">Start Date</th>
-                    <th className="p-3">End Date</th>
-                    <th className="p-3">Status</th>
-                    <th className="p-3 pr-4">Validity Remaining</th>
+                    <th className="p-3.5 pl-4">Member Name</th>
+                    <th className="p-3.5">Plan</th>
+                    <th className="p-3.5">Start Date</th>
+                    <th className="p-3.5">End Date</th>
+                    <th className="p-3.5">Status</th>
+                    <th className="p-3.5 pr-4">Validity Remaining</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100 text-slate-700">
+                <tbody className="divide-y divide-border text-foreground">
                   {filteredMemberships.map((m) => (
-                    <tr key={m.id} className="hover:bg-slate-50/60">
-                      <td className="p-3 pl-4 font-bold text-slate-900">{m.memberName}</td>
-                      <td className="p-3 font-semibold">{m.planName}</td>
-                      <td className="p-3">{m.startDate}</td>
-                      <td className="p-3">{m.endDate}</td>
-                      <td className="p-3">
+                    <tr key={m.id} className="hover:bg-muted/30 transition-colors">
+                      <td className="p-3.5 pl-4 font-bold text-foreground">{m.memberName}</td>
+                      <td className="p-3.5 font-semibold text-foreground">{m.planName}</td>
+                      <td className="p-3.5 text-muted-foreground">{m.startDate}</td>
+                      <td className="p-3.5 text-muted-foreground">{m.endDate}</td>
+                      <td className="p-3.5">
                         <span
-                          className={`px-2 py-0.5 rounded-md font-bold uppercase text-[10px] ${
-                            m.status === "active"
-                              ? "bg-emerald-50 text-emerald-700 border border-emerald-200/60"
-                              : "bg-slate-100 text-slate-600"
-                          }`}
+                          className={`px-2.5 py-0.5 rounded-full font-bold uppercase text-[10px] tracking-wider ${getStatusBadgeClass(m.status)}`}
                         >
                           {m.status}
                         </span>
                       </td>
-                      <td className="p-3 pr-4">
+                      <td className="p-3.5 pr-4">
                         {m.status === "active" ? (
                           m.daysLeft >= 0 ? (
-                            <span className={m.daysLeft <= 7 ? "text-amber-600 font-bold" : "text-emerald-700 font-semibold"}>
+                            <span className={m.daysLeft <= 7 ? "text-amber-500 font-bold" : "text-emerald-500 font-semibold"}>
                               {m.daysLeft} days remaining
                             </span>
                           ) : (
-                            <span className="text-red-600 font-bold">Lapsed</span>
+                            <span className="text-rose-500 font-bold">Lapsed</span>
                           )
                         ) : (
-                          <span className="text-slate-400">—</span>
+                          <span className="text-muted-foreground">—</span>
                         )}
                       </td>
                     </tr>
@@ -725,23 +721,23 @@ export function ReportsViewClient({
       {reportType === "pnl" && (
         <div className="space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs">
-              <div className="text-xs text-slate-500 font-semibold uppercase">Total Revenue (Collections)</div>
-              <div className="text-2xl font-black text-emerald-600 mt-1">
+            <div className="bg-card p-5 rounded-2xl border border-border shadow-xs">
+              <div className="text-xs text-muted-foreground font-semibold uppercase">Total Revenue (Collections)</div>
+              <div className="text-2xl font-black text-emerald-500 mt-1">
                 ₹{totalCollections.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
               </div>
             </div>
-            <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs">
-              <div className="text-xs text-slate-500 font-semibold uppercase">Operational Expenses</div>
-              <div className="text-2xl font-black text-red-600 mt-1">
+            <div className="bg-card p-5 rounded-2xl border border-border shadow-xs">
+              <div className="text-xs text-muted-foreground font-semibold uppercase">Operational Expenses</div>
+              <div className="text-2xl font-black text-rose-500 mt-1">
                 ₹{totalExpenses.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
               </div>
             </div>
-            <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs">
-              <div className="text-xs text-slate-500 font-semibold uppercase">Net Operating Cash Flow</div>
+            <div className="bg-card p-5 rounded-2xl border border-border shadow-xs">
+              <div className="text-xs text-muted-foreground font-semibold uppercase">Net Operating Cash Flow</div>
               <div
                 className={`text-2xl font-black mt-1 ${
-                  netCashFlow >= 0 ? "text-emerald-700" : "text-red-700"
+                  netCashFlow >= 0 ? "text-emerald-500" : "text-rose-500"
                 }`}
               >
                 {netCashFlow >= 0 ? "+" : ""}₹{netCashFlow.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
@@ -749,40 +745,40 @@ export function ReportsViewClient({
             </div>
           </div>
 
-          <div className="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden">
-            <div className="p-4 border-b border-slate-100 font-bold text-sm text-slate-900">
+          <div className="bg-card rounded-2xl border border-border shadow-xs overflow-hidden">
+            <div className="p-4 border-b border-border font-bold text-sm text-card-foreground">
               Expenses Recorded ({filteredExpenses.length})
             </div>
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs">
-                <thead className="bg-slate-50 text-slate-500 font-semibold border-b border-slate-100">
+                <thead className="bg-muted/40 text-muted-foreground font-semibold border-b border-border">
                   <tr>
-                    <th className="p-3 pl-4">Date</th>
-                    <th className="p-3">Category</th>
-                    <th className="p-3">Branch</th>
-                    <th className="p-3">Description</th>
-                    <th className="p-3 text-right pr-4">Amount</th>
+                    <th className="p-3.5 pl-4">Date</th>
+                    <th className="p-3.5">Category</th>
+                    <th className="p-3.5">Branch</th>
+                    <th className="p-3.5">Description</th>
+                    <th className="p-3.5 text-right pr-4">Amount</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100 text-slate-700">
+                <tbody className="divide-y divide-border text-foreground">
                   {filteredExpenses.length === 0 ? (
                     <tr>
-                      <td colSpan={5} className="p-6 text-center text-slate-400">
+                      <td colSpan={5} className="p-10 text-center text-muted-foreground font-medium">
                         No expenses logged for this period.
                       </td>
                     </tr>
                   ) : (
                     filteredExpenses.map((e) => (
-                      <tr key={e.id} className="hover:bg-slate-50/60">
-                        <td className="p-3 pl-4 font-semibold text-slate-900">{e.expenseDate}</td>
-                        <td className="p-3">
-                          <span className="px-2 py-0.5 rounded-md bg-red-50 text-red-700 font-bold capitalize text-[10px]">
+                      <tr key={e.id} className="hover:bg-muted/30 transition-colors">
+                        <td className="p-3.5 pl-4 font-semibold text-foreground">{e.expenseDate}</td>
+                        <td className="p-3.5">
+                          <span className="px-2.5 py-0.5 rounded-full bg-rose-500/10 text-rose-500 border border-rose-500/20 font-bold capitalize text-[10px] tracking-wider">
                             {e.category}
                           </span>
                         </td>
-                        <td className="p-3">{e.branchName}</td>
-                        <td className="p-3 text-slate-500">{e.description || "—"}</td>
-                        <td className="p-3 text-right pr-4 font-black text-slate-900">
+                        <td className="p-3.5 text-muted-foreground">{e.branchName}</td>
+                        <td className="p-3.5 text-muted-foreground">{e.description || "—"}</td>
+                        <td className="p-3.5 text-right pr-4 font-black text-foreground">
                           ₹{e.amount.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
                         </td>
                       </tr>

@@ -111,20 +111,20 @@ function EditPlanForm({
   }
 
   return (
-    <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-100 animate-in fade-in zoom-in-95 duration-150">
-      <div className="flex items-center justify-between pb-4 border-b border-slate-100">
-        <div className="flex items-center gap-2.5">
-          <div className="p-2 bg-indigo-50 text-indigo-600 rounded-xl">
+    <div className="bg-card text-card-foreground rounded-3xl max-w-md w-full p-6 sm:p-7 shadow-2xl border border-border animate-in fade-in zoom-in-95 duration-150">
+      <div className="flex items-center justify-between pb-4 border-b border-border">
+        <div className="flex items-center gap-3">
+          <div className="p-2.5 bg-primary/10 text-primary rounded-2xl shadow-2xs">
             <Edit2 className="w-5 h-5" />
           </div>
           <div>
-            <h3 className="text-base font-bold text-slate-900">Edit Membership Plan</h3>
-            <p className="text-xs text-slate-500">Update terms and availability for this plan</p>
+            <h3 className="text-base font-black text-foreground">Edit Membership Plan</h3>
+            <p className="text-xs text-muted-foreground">Update terms and availability for this plan</p>
           </div>
         </div>
         <button
           onClick={onClose}
-          className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100"
+          className="p-1.5 rounded-xl text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer"
           aria-label="Close modal"
         >
           <X className="w-4 h-4" />
@@ -132,24 +132,24 @@ function EditPlanForm({
       </div>
 
       {error && (
-        <div className="mt-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded-xl text-xs">
+        <div className="mt-4 p-3.5 bg-rose-500/10 border border-rose-500/20 text-rose-600 rounded-xl text-xs font-semibold">
           {error}
         </div>
       )}
 
       {hasUsage && termsModified && (
-        <div className="mt-4 p-3 bg-blue-50 border border-blue-200 text-blue-800 rounded-xl text-xs flex items-start gap-2">
-          <ShieldCheck className="w-4 h-4 text-blue-600 shrink-0 mt-0.5" />
+        <div className="mt-4 p-3.5 bg-primary/10 border border-primary/20 text-foreground rounded-xl text-xs flex items-start gap-2.5">
+          <ShieldCheck className="w-4 h-4 text-primary shrink-0 mt-0.5" />
           <span>
             <strong>Historical terms protected:</strong> Because {plan.usageCount} member contract(s) reference this plan, updating price or duration will preserve existing contracts at their originally agreed terms while offering updated terms to new subscribers.
           </span>
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="mt-4 space-y-4">
+      <form onSubmit={handleSubmit} className="mt-5 space-y-4">
         {/* Plan Name */}
         <div>
-          <label className="block text-xs font-semibold text-slate-700 mb-1">
+          <label className="block text-xs font-bold uppercase tracking-wider text-muted-foreground mb-1.5">
             Plan Name *
           </label>
           <input
@@ -157,23 +157,23 @@ function EditPlanForm({
             required
             value={name}
             onChange={(e) => setName(e.target.value)}
-            className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 focus:outline-hidden focus:ring-2 focus:ring-indigo-500"
+            className="w-full h-11 px-3.5 bg-muted/40 border border-input rounded-xl text-sm font-semibold text-foreground focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary/40"
           />
         </div>
 
         {/* Branch Selection */}
         {branches.length > 1 && (
           <div>
-            <label className="block text-xs font-semibold text-slate-700 mb-1">
+            <label className="block text-xs font-bold uppercase tracking-wider text-muted-foreground mb-1.5">
               Branch Location *
             </label>
             <div className="relative">
-              <Building2 className="w-3.5 h-3.5 absolute left-3 top-3 text-slate-400" />
+              <Building2 className="w-4 h-4 absolute left-3.5 top-3.5 text-muted-foreground pointer-events-none" />
               <select
                 value={branchId}
                 onChange={(e) => setBranchId(e.target.value)}
                 required
-                className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 focus:outline-hidden focus:ring-2 focus:ring-indigo-500"
+                className="w-full h-11 pl-10 pr-4 bg-muted/40 border border-input rounded-xl text-sm font-semibold text-foreground focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary/40 cursor-pointer"
               >
                 {branches.map((b) => (
                   <option key={b.id} value={b.id}>
@@ -188,54 +188,56 @@ function EditPlanForm({
         {/* Duration & Price */}
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="block text-xs font-semibold text-slate-700 mb-1">
+            <label className="block text-xs font-bold uppercase tracking-wider text-muted-foreground mb-1.5">
               Duration (Days) *
             </label>
             <div className="relative">
-              <Clock className="w-3.5 h-3.5 absolute left-3 top-3 text-slate-400" />
+              <Clock className="w-4 h-4 absolute left-3.5 top-3.5 text-muted-foreground pointer-events-none" />
               <input
                 type="number"
+                inputMode="numeric"
                 min="1"
                 required
                 value={durationDays}
                 onChange={(e) => setDurationDays(parseInt(e.target.value, 10) || 1)}
-                className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 focus:outline-hidden focus:ring-2 focus:ring-indigo-500"
+                className="w-full h-11 pl-10 pr-3.5 bg-muted/40 border border-input rounded-xl text-sm font-semibold text-foreground focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary/40"
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-slate-700 mb-1">
+            <label className="block text-xs font-bold uppercase tracking-wider text-muted-foreground mb-1.5">
               Price (₹) *
             </label>
             <div className="relative">
-              <IndianRupee className="w-3.5 h-3.5 absolute left-3 top-3 text-slate-400" />
+              <IndianRupee className="w-4 h-4 absolute left-3.5 top-3.5 text-muted-foreground pointer-events-none" />
               <input
                 type="number"
+                inputMode="decimal"
                 min="0"
                 step="any"
                 required
                 value={price}
                 onChange={(e) => setPrice(e.target.value)}
-                className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 focus:outline-hidden focus:ring-2 focus:ring-indigo-500"
+                className="w-full h-11 pl-10 pr-3.5 bg-muted/40 border border-input rounded-xl text-sm font-bold text-foreground focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary/40"
               />
             </div>
           </div>
         </div>
 
         {/* Status Toggle */}
-        <div className="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-200">
+        <div className="flex items-center justify-between p-3.5 bg-muted/40 rounded-2xl border border-border">
           <div>
-            <div className="text-xs font-semibold text-slate-900">Plan Availability</div>
-            <div className="text-[11px] text-slate-500">
-              {isActive ? "Active (Can be assigned to members)" : "Inactive (Hidden from assignment)"}
+            <div className="text-xs font-bold text-foreground">Plan Availability</div>
+            <div className="text-[11px] text-muted-foreground">
+              {isActive ? "Active (Available for member enrollment)" : "Archived (Hidden from new assignments)"}
             </div>
           </div>
           <button
             type="button"
             onClick={() => setIsActive(!isActive)}
-            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-hidden ${
-              isActive ? "bg-indigo-600" : "bg-slate-300"
+            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-hidden cursor-pointer ${
+              isActive ? "bg-primary" : "bg-muted-foreground/30"
             }`}
           >
             <span
@@ -248,30 +250,30 @@ function EditPlanForm({
 
         {/* Description */}
         <div>
-          <label className="block text-xs font-semibold text-slate-700 mb-1">
+          <label className="block text-xs font-bold uppercase tracking-wider text-muted-foreground mb-1.5">
             Description (Optional)
           </label>
           <textarea
             rows={2}
             value={description}
             onChange={(e) => setDescription(e.target.value)}
-            className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 focus:outline-hidden focus:ring-2 focus:ring-indigo-500"
+            className="w-full p-3 bg-muted/40 border border-input rounded-xl text-xs text-foreground focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary/40"
           />
         </div>
 
         {/* Action Buttons */}
-        <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100">
+        <div className="flex items-center justify-end gap-3 pt-3 border-t border-border">
           <button
             type="button"
             onClick={onClose}
-            className="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition-colors"
+            className="h-11 px-4 text-xs font-bold text-muted-foreground hover:bg-muted rounded-xl transition-colors cursor-pointer"
           >
             Cancel
           </button>
           <button
             type="submit"
             disabled={loading}
-            className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-xl shadow-xs transition-colors disabled:opacity-50"
+            className="flex items-center gap-2 h-11 px-5 bg-primary hover:opacity-95 text-primary-foreground text-xs font-bold rounded-xl shadow-md shadow-primary/25 transition-all disabled:opacity-50 cursor-pointer"
           >
             {loading && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
             Save Changes
@@ -293,7 +295,7 @@ export function EditPlanModal({
   if (!isOpen || !plan) return null;
 
   return (
-    <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
+    <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
       <EditPlanForm
         key={plan.id}
         gymId={gymId}

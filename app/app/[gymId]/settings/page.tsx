@@ -1,5 +1,7 @@
+import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { getAuthorizedActionContext } from "@/lib/auth/guard";
+import { getCachedGymAuthContext } from "@/lib/auth/guard";
+import { hasCapability } from "@/lib/auth/capabilities";
 import { SettingsViewClient } from "@/components/settings/settings-view-client";
 
 interface SettingsPageProps {
@@ -9,10 +11,11 @@ interface SettingsPageProps {
 export default async function SettingsPage({ params }: SettingsPageProps) {
   const { gymId } = await params;
 
-  const authContext = await getAuthorizedActionContext({
-    gymId,
-    capability: "settings:manage",
-  });
+  // Settings route lockdown: Only owner role possesses settings:manage
+  const authContext = await getCachedGymAuthContext(gymId);
+  if (!hasCapability(authContext.role, "settings:manage")) {
+    redirect(`/app/${gymId}/dashboard`);
+  }
 
   const supabase = await createClient();
 

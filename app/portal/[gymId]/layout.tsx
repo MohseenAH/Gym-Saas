@@ -44,18 +44,18 @@ export default async function MemberPortalLayout({
   const gymName = branchData?.gyms?.name || "Member Portal";
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col justify-between">
+    <div className="min-h-screen bg-background text-foreground flex flex-col justify-between">
       {/* Top Header */}
-      <header className="h-16 px-6 bg-white border-b border-slate-200/80 flex items-center justify-between sticky top-0 z-40">
-        <div className="flex items-center gap-2.5">
-          <div className="p-2 bg-emerald-600 text-white rounded-xl shadow-xs">
+      <header className="h-16 px-6 bg-card/85 backdrop-blur-md border-b border-border flex items-center justify-between sticky top-0 z-40 transition-colors">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 bg-primary text-primary-foreground rounded-2xl flex items-center justify-center shadow-xs">
             <Dumbbell className="w-5 h-5" />
           </div>
           <div>
-            <div className="text-sm font-bold text-slate-900 tracking-tight">
+            <div className="text-sm font-black text-foreground tracking-tight">
               {gymName}
             </div>
-            <div className="text-[10px] text-emerald-600 font-semibold uppercase tracking-wider">
+            <div className="text-[10px] text-primary font-bold uppercase tracking-wider">
               Member Portal
             </div>
           </div>
@@ -65,25 +65,25 @@ export default async function MemberPortalLayout({
         <div className="hidden md:flex items-center gap-6">
           <Link
             href={`/portal/${gymId}/dashboard`}
-            className="text-xs font-semibold text-slate-700 hover:text-emerald-600 transition-colors"
+            className="text-xs font-bold text-muted-foreground hover:text-primary transition-colors"
           >
             Home
           </Link>
           <Link
             href={`/portal/${gymId}/attendance`}
-            className="text-xs font-semibold text-slate-700 hover:text-emerald-600 transition-colors"
+            className="text-xs font-bold text-muted-foreground hover:text-primary transition-colors"
           >
             Attendance
           </Link>
           <Link
             href={`/portal/${gymId}/payments`}
-            className="text-xs font-semibold text-slate-700 hover:text-emerald-600 transition-colors"
+            className="text-xs font-bold text-muted-foreground hover:text-primary transition-colors"
           >
             Payments & Dues
           </Link>
           <Link
             href={`/portal/${gymId}/notices`}
-            className="text-xs font-semibold text-slate-700 hover:text-emerald-600 transition-colors"
+            className="text-xs font-bold text-muted-foreground hover:text-primary transition-colors"
           >
             Notices
           </Link>
@@ -92,14 +92,14 @@ export default async function MemberPortalLayout({
         <div className="flex items-center gap-3">
           <Link
             href="/select-workspace"
-            className="text-xs text-slate-500 hover:text-slate-800 hidden sm:block"
+            className="text-xs text-muted-foreground hover:text-foreground hidden sm:block font-medium transition-colors"
           >
             Switch Gym
           </Link>
           <form action={logoutAction}>
             <button
               type="submit"
-              className="p-2 rounded-xl text-slate-400 hover:text-red-600 hover:bg-slate-100 transition-colors"
+              className="p-2 rounded-xl text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
               title="Sign out"
             >
               <LogOut className="w-4 h-4" />
@@ -109,36 +109,36 @@ export default async function MemberPortalLayout({
       </header>
 
       {/* Main Content Area */}
-      <main className="flex-1 max-w-4xl w-full mx-auto p-4 sm:p-6 pb-20 sm:pb-8">
+      <main className="flex-1 max-w-4xl w-full mx-auto p-4 sm:p-6 pb-24 sm:pb-10">
         {children}
       </main>
 
       {/* Mobile Bottom Navigation */}
-      <nav className="sm:hidden fixed bottom-0 left-0 right-0 h-16 bg-white border-t border-slate-200 flex items-center justify-around z-40 px-2">
+      <nav className="sm:hidden fixed bottom-0 left-0 right-0 h-16 bg-card/90 backdrop-blur-md border-t border-border flex items-center justify-around z-40 px-2 transition-colors">
         <Link
           href={`/portal/${gymId}/dashboard`}
-          className="flex flex-col items-center gap-1 text-slate-600 hover:text-emerald-600 text-[11px] font-medium"
+          className="flex flex-col items-center gap-1 text-muted-foreground hover:text-primary active:text-primary text-[11px] font-bold transition-colors"
         >
           <Home className="w-5 h-5" />
           <span>Home</span>
         </Link>
         <Link
           href={`/portal/${gymId}/attendance`}
-          className="flex flex-col items-center gap-1 text-slate-600 hover:text-emerald-600 text-[11px] font-medium"
+          className="flex flex-col items-center gap-1 text-muted-foreground hover:text-primary active:text-primary text-[11px] font-bold transition-colors"
         >
           <CalendarCheck className="w-5 h-5" />
           <span>Check-in</span>
         </Link>
         <Link
           href={`/portal/${gymId}/payments`}
-          className="flex flex-col items-center gap-1 text-slate-600 hover:text-emerald-600 text-[11px] font-medium"
+          className="flex flex-col items-center gap-1 text-muted-foreground hover:text-primary active:text-primary text-[11px] font-bold transition-colors"
         >
           <CreditCard className="w-5 h-5" />
           <span>Payments</span>
         </Link>
         <Link
           href={`/portal/${gymId}/notices`}
-          className="flex flex-col items-center gap-1 text-slate-600 hover:text-emerald-600 text-[11px] font-medium"
+          className="flex flex-col items-center gap-1 text-muted-foreground hover:text-primary active:text-primary text-[11px] font-bold transition-colors"
         >
           <Bell className="w-5 h-5" />
           <span>Notices</span>

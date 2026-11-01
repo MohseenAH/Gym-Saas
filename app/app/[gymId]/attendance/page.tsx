@@ -2,7 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getAuthorizedActionContext } from "@/lib/auth/guard";
 import { cookies } from "next/headers";
 import { resolveBranchContext } from "@/lib/auth/branch-context";
-import { getTodayIST } from "@/lib/utils";
+import { getTodayIST, isMembershipValidForAttendance } from "@/lib/utils";
 import { StaffCheckInClient, AttendanceMember } from "@/components/attendance/staff-checkin-client";
 
 interface AttendancePageProps {
@@ -35,8 +35,6 @@ export default async function AttendancePage({ params, searchParams }: Attendanc
   });
 
   const todayStr = getTodayIST();
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
 
   // Prepare members query across gym branches
   let membersQuery = supabase
@@ -68,7 +66,8 @@ export default async function AttendancePage({ params, searchParams }: Attendanc
     supabase
       .from("memberships")
       .select("member_id, status, end_date, membership_plans(name)")
-      .eq("status", "active"),
+      .eq("status", "active")
+      .order("end_date", { ascending: false }),
   ]);
 
   const branchList = authContext.branches;
@@ -80,9 +79,11 @@ export default async function AttendancePage({ params, searchParams }: Attendanc
   const todayAttendance = todayAttendanceRes.data || [];
   const memberships = membershipsRes.data || [];
 
-  const membershipMap = new Map<string, { end_date?: string; membership_plans?: { name?: string } | null }>();
+  const membershipMap = new Map<string, { status: string; end_date: string; membership_plans?: { name?: string } | null }>();
   (memberships || []).forEach((m) => {
-    membershipMap.set(m.member_id, m as unknown as { end_date?: string; membership_plans?: { name?: string } | null });
+    if (!membershipMap.has(m.member_id)) {
+      membershipMap.set(m.member_id, m as unknown as { status: string; end_date: string; membership_plans?: { name?: string } | null });
+    }
   });
 
   const checkedInMap = new Map<string, string>();
@@ -93,40 +94,46 @@ export default async function AttendancePage({ params, searchParams }: Attendanc
   const formattedMembers: AttendanceMember[] = (members || []).map((m) => {
     const mem = membershipMap.get(m.id);
     let daysLeft: number | undefined;
-    let isExpired = false;
 
     if (mem && mem.end_date) {
-      const expDate = new Date(mem.end_date);
-      const diffTime = expDate.getTime() - today.getTime();
-      daysLeft = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-      isExpired = daysLeft < 0;
+      const todayDate = new Date(todayStr + "T00:00:00+05:30");
+      const expDate = new Date(mem.end_date + "T00:00:00+05:30");
+      const diffTime = expDate.getTime() - todayDate.getTime();
+      daysLeft = Math.round(diffTime / (1000 * 60 * 60 * 24));
     }
 
-    const branch = m.branches as unknown as { name?: string } | null;
+    const validation = isMembershipValidForAttendance(mem, todayStr);
+    const branchInfo = m.branches as unknown as { name?: string } | null;
+
     return {
       id: m.id,
       fullName: m.full_name,
       phone: m.phone,
       branchId: m.branch_id,
-      branchName: branch?.name || "Main Branch",
+      branchName: branchInfo?.name || "Main Branch",
       status: m.status,
-      hasActiveMembership: !!mem,
-      planName: mem ? (mem.membership_plans?.name || "Active Plan") : undefined,
+      hasActiveMembership: validation.isValid,
+      planName: mem?.membership_plans?.name,
       planEndDate: mem?.end_date,
       daysLeft,
-      isExpired,
+      isExpired: validation.isExpired,
       checkedInToday: checkedInMap.has(m.id),
       checkInTime: checkedInMap.get(m.id),
     };
   });
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-black text-slate-900 tracking-tight">Front-Desk Attendance Kiosk</h1>
-        <p className="text-xs text-slate-500 mt-1">
-          Rapid 1-tap check-in, real-time membership validation, and front-desk roster
-        </p>
+    <div className="space-y-6 max-w-7xl mx-auto text-foreground">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-black text-foreground tracking-tight">
+            Attendance & Front Desk Kiosk
+          </h1>
+          <p className="text-xs text-muted-foreground mt-1">
+            Tap to record daily member workout check-ins with automatic plan validation
+          </p>
+        </div>
       </div>
 
       <StaffCheckInClient
@@ -134,7 +141,7 @@ export default async function AttendancePage({ params, searchParams }: Attendanc
         branchId={branchId}
         branches={branchList.map((b) => ({ id: b.id, name: b.name }))}
         initialMembers={formattedMembers}
-        todayCheckInCount={checkedInMap.size}
+        todayCheckInCount={todayAttendance.length}
       />
     </div>
   );

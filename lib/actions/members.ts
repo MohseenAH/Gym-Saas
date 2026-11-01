@@ -234,11 +234,6 @@ export async function quickEnrollMemberAction(input: QuickEnrollMemberInput) {
     return { success: false, error: message };
   }
 }
-  } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : "Failed to enroll member";
-    return { success: false, error: message };
-  }
-}
 
 const updateMemberSchema = z.object({
   gymId: z.string().uuid("Invalid gym ID"),
@@ -456,11 +451,6 @@ export async function renewMembershipAction(input: RenewMembershipInput) {
       planName: plan.name,
       stacked: Boolean(currentActiveMembership && currentActiveMembership.end_date >= todayIST),
     };
-  } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : "Failed to renew membership";
-    return { success: false, error: message };
-  }
-}
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Failed to renew membership";
     return { success: false, error: message };

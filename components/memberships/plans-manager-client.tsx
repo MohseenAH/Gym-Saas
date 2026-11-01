@@ -14,6 +14,7 @@ import {
   Power,
   ShieldAlert,
   Loader2,
+  IndianRupee,
 } from "lucide-react";
 import { CreatePlanModal } from "./create-plan-modal";
 import { EditPlanModal, EditablePlan } from "./edit-plan-modal";
@@ -138,27 +139,24 @@ export function PlansManagerClient({
       );
       showMessage(
         "success",
-        `Plan "${plan.name}" has been ${nextState ? "activated" : "deactivated"}.`
+        `Plan "${plan.name}" is now ${nextState ? "Active" : "Archived/Inactive"}.`
       );
     }
   }
 
-  // Handle plan deletion
+  // Handle hard delete (allowed only if usageCount === 0)
   async function handleDeletePlan(plan: PlanDetailItem) {
     if (!canManagePlans) return;
-
     if (plan.usageCount > 0) {
-      if (
-        !confirm(
-          `Plan "${plan.name}" is linked to ${plan.usageCount} member contract(s). Hard deletion will be blocked and this plan will be safely archived (deactivated) instead. Proceed?`
-        )
-      ) {
-        return;
-      }
-    } else {
-      if (!confirm(`Are you sure you want to permanently delete plan "${plan.name}"?`)) {
-        return;
-      }
+      showMessage(
+        "error",
+        "Cannot delete a plan with subscriber history. Toggle to Inactive instead."
+      );
+      return;
+    }
+
+    if (!confirm(`Are you sure you want to permanently delete plan "${plan.name}"?`)) {
+      return;
     }
 
     setActionLoadingId(plan.id);
@@ -170,14 +168,9 @@ export function PlansManagerClient({
 
     if (!res.success) {
       showMessage("error", res.error || "Failed to delete plan");
-    } else if (res.archived) {
-      setPlans((prev) =>
-        prev.map((p) => (p.id === plan.id ? { ...p, isActive: false } : p))
-      );
-      showMessage("success", res.message || `Plan "${plan.name}" has been safely archived and deactivated.`);
     } else {
       setPlans((prev) => prev.filter((p) => p.id !== plan.id));
-      showMessage("success", res.message || `Plan "${plan.name}" has been deleted.`);
+      showMessage("success", `Plan "${plan.name}" permanently deleted.`);
     }
   }
 
@@ -187,7 +180,7 @@ export function PlansManagerClient({
       branchId: plan.branchId,
       branchName: plan.branchName,
       name: plan.name,
-      description: plan.description,
+      description: plan.description || undefined,
       durationDays: plan.durationDays,
       price: plan.price,
       isActive: plan.isActive,
@@ -196,7 +189,7 @@ export function PlansManagerClient({
     setEditModalOpen(true);
   }
 
-  function handleCreateSuccess(newPlan: {
+  function handlePlanCreated(newPlan: {
     id: string;
     name: string;
     price: number;
@@ -209,7 +202,6 @@ export function PlansManagerClient({
       branchId: newPlan.branchId,
       branchName: branch?.name || "Main Branch",
       name: newPlan.name,
-      description: null,
       durationDays: newPlan.durationDays,
       price: newPlan.price,
       isActive: true,
@@ -217,11 +209,11 @@ export function PlansManagerClient({
       activeSubscribersCount: 0,
       createdAt: new Date().toISOString(),
     };
-    setPlans((prev) => [item, ...prev]);
-    showMessage("success", `Membership plan "${newPlan.name}" created successfully!`);
+    setPlans([item, ...plans]);
+    showMessage("success", `Plan "${newPlan.name}" created successfully!`);
   }
 
-  function handleEditSuccess(result: {
+  function handlePlanEdited(result: {
     planId: string;
     versioned?: boolean;
     name: string;
@@ -230,7 +222,6 @@ export function PlansManagerClient({
     isActive: boolean;
   }) {
     if (result.versioned) {
-      // Historical versioning: reload page or update in list
       showMessage(
         "success",
         `Plan updated with new terms! Historical contracts preserved.`
@@ -255,27 +246,27 @@ export function PlansManagerClient({
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 text-foreground">
       {/* Notification banner */}
       {notification && (
         <div
-          className={`p-4 rounded-xl text-xs font-semibold flex items-center justify-between animate-in fade-in ${
+          className={`p-4 rounded-2xl text-xs font-semibold flex items-center justify-between animate-in fade-in ${
             notification.type === "success"
-              ? "bg-emerald-50 border border-emerald-200 text-emerald-800"
-              : "bg-red-50 border border-red-200 text-red-800"
+              ? "bg-emerald-500/10 border border-emerald-500/20 text-emerald-600"
+              : "bg-rose-500/10 border border-rose-500/20 text-rose-600"
           }`}
         >
           <div className="flex items-center gap-2">
             {notification.type === "success" ? (
               <CheckCircle2 className="w-4 h-4 text-emerald-600" />
             ) : (
-              <ShieldAlert className="w-4 h-4 text-red-600" />
+              <ShieldAlert className="w-4 h-4 text-rose-600" />
             )}
             <span>{notification.text}</span>
           </div>
           <button
             onClick={() => setNotification(null)}
-            className="hover:opacity-75"
+            className="hover:opacity-75 cursor-pointer"
           >
             ✕
           </button>
@@ -284,94 +275,94 @@ export function PlansManagerClient({
 
       {/* KPI Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="p-4 bg-white rounded-2xl border border-slate-200/80">
-          <div className="text-xs text-slate-500 font-semibold uppercase tracking-wider">
+        <div className="p-6 bg-card rounded-3xl border border-border shadow-xs text-card-foreground">
+          <div className="text-xs text-muted-foreground font-bold uppercase tracking-wider">
             Total Plans
           </div>
-          <div className="text-2xl font-black text-slate-900 mt-2">{stats.total}</div>
-          <div className="text-[11px] text-slate-400 mt-1">Configured templates</div>
+          <div className="text-3xl font-black text-foreground mt-2">{stats.total}</div>
+          <div className="text-[11px] text-muted-foreground mt-1">Configured templates</div>
         </div>
 
-        <div className="p-4 bg-emerald-50/50 rounded-2xl border border-emerald-200/80">
-          <div className="text-xs text-emerald-700 font-semibold uppercase tracking-wider flex items-center justify-between">
+        <div className="p-6 bg-card rounded-3xl border border-border shadow-xs text-card-foreground">
+          <div className="text-xs text-emerald-600 font-bold uppercase tracking-wider flex items-center justify-between">
             <span>Active Plans</span>
             <CheckCircle2 className="w-4 h-4 text-emerald-600" />
           </div>
-          <div className="text-2xl font-black text-emerald-700 mt-2">
+          <div className="text-3xl font-black text-emerald-600 mt-2">
             {stats.active}
           </div>
-          <div className="text-[11px] text-emerald-600 mt-1">Available for new enrollments</div>
+          <div className="text-[11px] text-muted-foreground mt-1">Available for enrollments</div>
         </div>
 
-        <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200">
-          <div className="text-xs text-slate-500 font-semibold uppercase tracking-wider flex items-center justify-between">
-            <span>Inactive Plans</span>
-            <XCircle className="w-4 h-4 text-slate-400" />
+        <div className="p-6 bg-card rounded-3xl border border-border shadow-xs text-card-foreground">
+          <div className="text-xs text-muted-foreground font-bold uppercase tracking-wider flex items-center justify-between">
+            <span>Archived Plans</span>
+            <XCircle className="w-4 h-4 text-muted-foreground" />
           </div>
-          <div className="text-2xl font-black text-slate-600 mt-2">
+          <div className="text-3xl font-black text-muted-foreground mt-2">
             {stats.inactive}
           </div>
-          <div className="text-[11px] text-slate-400 mt-1">Archived or paused</div>
+          <div className="text-[11px] text-muted-foreground mt-1">Paused or retired</div>
         </div>
 
-        <div className="p-4 bg-indigo-50/50 rounded-2xl border border-indigo-200/80">
-          <div className="text-xs text-indigo-700 font-semibold uppercase tracking-wider flex items-center justify-between">
-            <span>Active Subscribers</span>
-            <Users className="w-4 h-4 text-indigo-600" />
+        <div className="p-6 bg-card rounded-3xl border border-border shadow-xs text-card-foreground">
+          <div className="text-xs text-primary font-bold uppercase tracking-wider flex items-center justify-between">
+            <span>Subscribers</span>
+            <Users className="w-4 h-4 text-primary" />
           </div>
-          <div className="text-2xl font-black text-indigo-900 mt-2">
+          <div className="text-3xl font-black text-foreground mt-2">
             {stats.totalSubscribers}
           </div>
-          <div className="text-[11px] text-indigo-600 mt-1">Members currently subscribed</div>
+          <div className="text-[11px] text-muted-foreground mt-1">Members currently subscribed</div>
         </div>
       </div>
 
       {/* Filter and Action Bar */}
-      <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col md:flex-row items-center justify-between gap-3">
+      <div className="bg-card p-4 sm:p-5 rounded-3xl border border-border shadow-xs flex flex-col md:flex-row items-center justify-between gap-3 text-card-foreground">
         {/* Status Filter Tabs */}
-        <div className="flex items-center gap-1.5 p-1 bg-slate-100/80 rounded-xl w-full sm:w-auto">
+        <div className="flex items-center gap-1.5 p-1 bg-muted/60 rounded-2xl w-full sm:w-auto border border-border/60">
           <button
             onClick={() => setStatusFilter("all")}
-            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+            className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
               statusFilter === "all"
-                ? "bg-white text-slate-900 shadow-xs"
-                : "text-slate-600 hover:text-slate-900"
+                ? "bg-card text-foreground shadow-2xs border border-border"
+                : "text-muted-foreground hover:text-foreground"
             }`}
           >
             All Plans ({stats.total})
           </button>
           <button
             onClick={() => setStatusFilter("active")}
-            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+            className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
               statusFilter === "active"
-                ? "bg-white text-emerald-700 shadow-xs"
-                : "text-slate-600 hover:text-slate-900"
+                ? "bg-card text-emerald-600 shadow-2xs border border-border"
+                : "text-muted-foreground hover:text-foreground"
             }`}
           >
             Active ({stats.active})
           </button>
           <button
             onClick={() => setStatusFilter("inactive")}
-            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+            className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
               statusFilter === "inactive"
-                ? "bg-white text-slate-700 shadow-xs"
-                : "text-slate-600 hover:text-slate-900"
+                ? "bg-card text-muted-foreground shadow-2xs border border-border"
+                : "text-muted-foreground hover:text-foreground"
             }`}
           >
-            Inactive ({stats.inactive})
+            Archived ({stats.inactive})
           </button>
         </div>
 
-        {/* Search, Branch Filter, & Create Button */}
-        <div className="flex items-center gap-2.5 w-full sm:w-auto">
-          <div className="relative flex-1 sm:w-56">
-            <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-3" />
+        {/* Search & Actions */}
+        <div className="flex items-center gap-2.5 w-full md:w-auto">
+          <div className="relative flex-1 md:w-64">
+            <Search className="w-4 h-4 text-muted-foreground absolute left-3.5 top-3.5 pointer-events-none" />
             <input
               type="text"
-              placeholder="Search plans..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-9 pr-3 py-2 text-xs rounded-xl border border-slate-200 focus:outline-hidden focus:ring-2 focus:ring-indigo-500/20"
+              placeholder="Search plans..."
+              className="w-full h-11 pl-10 pr-4 bg-muted/40 border border-input rounded-xl text-xs text-foreground focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary/40"
             />
           </div>
 
@@ -379,8 +370,7 @@ export function PlansManagerClient({
             <select
               value={branchFilter}
               onChange={(e) => setBranchFilter(e.target.value)}
-              className="px-3 py-2 rounded-xl border border-slate-200 text-xs font-medium text-slate-700 focus:outline-hidden"
-              aria-label="Filter plans by branch"
+              className="h-11 px-3 bg-muted/40 border border-input rounded-xl text-xs font-semibold text-foreground focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary/40 cursor-pointer"
             >
               <option value="all">All Branches</option>
               {branches.map((b) => (
@@ -394,22 +384,23 @@ export function PlansManagerClient({
           {canManagePlans && (
             <button
               onClick={() => setCreateModalOpen(true)}
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold shadow-xs transition-colors shrink-0"
+              className="flex items-center gap-1.5 h-11 px-4 bg-primary hover:opacity-95 text-primary-foreground text-xs font-bold rounded-xl shadow-md shadow-primary/20 transition-all shrink-0 cursor-pointer"
             >
-              <Plus className="w-3.5 h-3.5" /> Create Plan
+              <Plus className="w-4 h-4" />
+              <span>New Plan</span>
             </button>
           )}
         </div>
       </div>
 
-      {/* Plans Grid / Table */}
+      {/* Plans Grid */}
       {filteredPlans.length === 0 ? (
-        <div className="bg-white rounded-2xl border border-slate-200/80 p-12 text-center shadow-xs">
-          <div className="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-full flex items-center justify-center mx-auto mb-3">
+        <div className="bg-card rounded-3xl border border-border p-12 text-center shadow-xs text-card-foreground">
+          <div className="w-12 h-12 bg-primary/10 text-primary rounded-full flex items-center justify-center mx-auto mb-3">
             <Clock className="w-6 h-6" />
           </div>
-          <h3 className="text-sm font-bold text-slate-900">No Membership Plans Found</h3>
-          <p className="text-xs text-slate-500 max-w-sm mx-auto mt-1">
+          <h3 className="text-sm font-bold text-foreground">No Membership Plans Found</h3>
+          <p className="text-xs text-muted-foreground max-w-sm mx-auto mt-1">
             {searchTerm || statusFilter !== "all" || branchFilter !== "all"
               ? "No plans match your current search or status filter."
               : "No membership plans have been configured yet. Create standard membership tiers for your gym."}
@@ -417,9 +408,9 @@ export function PlansManagerClient({
           {canManagePlans && (
             <button
               onClick={() => setCreateModalOpen(true)}
-              className="mt-4 inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold shadow-xs"
+              className="mt-4 inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-primary hover:opacity-95 text-primary-foreground text-xs font-bold shadow-md shadow-primary/25 cursor-pointer"
             >
-              <Plus className="w-3.5 h-3.5" /> Create First Plan
+              <Plus className="w-4 h-4" /> Create First Plan
             </button>
           )}
         </div>
@@ -430,25 +421,28 @@ export function PlansManagerClient({
             return (
               <div
                 key={plan.id}
-                className={`bg-white rounded-2xl border p-5 transition-all shadow-xs flex flex-col justify-between ${
+                className={`bg-card rounded-3xl border p-6 transition-all shadow-xs flex flex-col justify-between text-card-foreground ${
                   plan.isActive
-                    ? "border-slate-200/80 hover:border-indigo-200 hover:shadow-md"
-                    : "border-slate-200 bg-slate-50/50 opacity-80"
+                    ? "border-border hover:border-primary/40 hover:shadow-md"
+                    : "border-border/60 bg-muted/20 opacity-80"
                 }`}
               >
                 <div>
                   {/* Top line: Branch & Status Badge */}
                   <div className="flex items-center justify-between gap-2 mb-3">
-                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md text-[10px] font-semibold bg-slate-100 text-slate-700">
-                      <Building2 className="w-3 h-3 text-slate-400" />
+                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10px] font-bold bg-muted text-muted-foreground border border-border">
+                      <Building2 className="w-3 h-3 text-muted-foreground" />
                       {plan.branchName}
                     </span>
 
-                    <span
-                      className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
+                    <button
+                      type="button"
+                      onClick={() => handleToggleStatus(plan)}
+                      disabled={isLoading || !canManagePlans}
+                      className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold transition-colors cursor-pointer ${
                         plan.isActive
-                          ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
-                          : "bg-slate-100 text-slate-600 border border-slate-200"
+                          ? "bg-emerald-500/10 text-emerald-600 border border-emerald-500/20"
+                          : "bg-muted text-muted-foreground border border-border"
                       }`}
                     >
                       {plan.isActive ? (
@@ -460,38 +454,38 @@ export function PlansManagerClient({
                           <XCircle className="w-3 h-3" /> Inactive
                         </>
                       )}
-                    </span>
+                    </button>
                   </div>
 
                   {/* Plan Name & Price */}
-                  <h3 className="text-base font-black text-slate-900 tracking-tight">
+                  <h3 className="text-lg font-black text-foreground tracking-tight">
                     {plan.name}
                   </h3>
                   {plan.description && (
-                    <p className="text-xs text-slate-500 mt-1 line-clamp-2">
+                    <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
                       {plan.description}
                     </p>
                   )}
 
-                  <div className="mt-4 flex items-baseline gap-1 text-slate-900">
-                    <span className="text-2xl font-black">
+                  <div className="mt-4 flex items-baseline gap-1 text-foreground">
+                    <span className="text-3xl font-black tracking-tight">
                       ₹{plan.price.toLocaleString("en-IN")}
                     </span>
-                    <span className="text-xs text-slate-500 font-medium">
-                      / {plan.durationDays} days
+                    <span className="text-xs font-bold px-2 py-0.5 rounded-md bg-muted text-muted-foreground border border-border">
+                      {plan.durationDays} days
                     </span>
                   </div>
 
                   {/* Metrics bar */}
-                  <div className="mt-4 pt-4 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
+                  <div className="mt-4 pt-4 border-t border-border flex items-center justify-between text-xs text-muted-foreground">
                     <div className="flex items-center gap-1.5">
-                      <Users className="w-3.5 h-3.5 text-indigo-500" />
-                      <span className="font-semibold text-slate-700">
+                      <Users className="w-3.5 h-3.5 text-primary" />
+                      <span className="font-bold text-foreground">
                         {plan.activeSubscribersCount}
                       </span>{" "}
                       active members
                     </div>
-                    <div className="text-[11px] text-slate-400">
+                    <div className="text-[11px] text-muted-foreground font-medium">
                       {plan.usageCount} lifetime
                     </div>
                   </div>
@@ -499,14 +493,14 @@ export function PlansManagerClient({
 
                 {/* Card Actions Footer */}
                 {canManagePlans && (
-                  <div className="mt-5 pt-3 border-t border-slate-100 flex items-center justify-between gap-2">
+                  <div className="mt-5 pt-3.5 border-t border-border flex items-center justify-between gap-2">
                     <button
                       onClick={() => handleToggleStatus(plan)}
                       disabled={isLoading}
-                      className={`inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-colors disabled:opacity-50 ${
+                      className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-colors disabled:opacity-50 cursor-pointer ${
                         plan.isActive
-                          ? "text-slate-600 hover:text-amber-700 hover:bg-amber-50"
-                          : "text-emerald-700 hover:bg-emerald-50"
+                          ? "text-muted-foreground hover:text-amber-600 hover:bg-amber-500/10"
+                          : "text-emerald-600 hover:bg-emerald-500/10"
                       }`}
                       title={plan.isActive ? "Deactivate plan" : "Activate plan"}
                     >
@@ -515,26 +509,26 @@ export function PlansManagerClient({
                       ) : (
                         <Power className="w-3.5 h-3.5" />
                       )}
-                      <span>{plan.isActive ? "Deactivate" : "Activate"}</span>
+                      <span>{plan.isActive ? "Archive" : "Activate"}</span>
                     </button>
 
                     <div className="flex items-center gap-1">
                       <button
                         onClick={() => handleOpenEdit(plan)}
-                        className="p-1.5 rounded-lg text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 transition-colors"
+                        className="p-2 rounded-xl text-muted-foreground hover:text-primary hover:bg-muted transition-colors cursor-pointer"
                         title="Edit plan details"
                       >
-                        <Edit2 className="w-3.5 h-3.5" />
+                        <Edit2 className="w-4 h-4" />
                       </button>
 
                       {plan.usageCount === 0 && (
                         <button
                           onClick={() => handleDeletePlan(plan)}
                           disabled={isLoading}
-                          className="p-1.5 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 transition-colors"
+                          className="p-2 rounded-xl text-muted-foreground hover:text-rose-600 hover:bg-rose-500/10 transition-colors cursor-pointer"
                           title="Delete unreferenced plan"
                         >
-                          <Trash2 className="w-3.5 h-3.5" />
+                          <Trash2 className="w-4 h-4" />
                         </button>
                       )}
                     </div>
@@ -546,28 +540,29 @@ export function PlansManagerClient({
         </div>
       )}
 
-      {/* Create Plan Modal */}
+      {/* Modals */}
       <CreatePlanModal
         gymId={gymId}
         branches={branches}
         defaultBranchId={selectedBranchId}
         isOpen={createModalOpen}
         onClose={() => setCreateModalOpen(false)}
-        onSuccess={handleCreateSuccess}
+        onSuccess={handlePlanCreated}
       />
 
-      {/* Edit Plan Modal */}
-      <EditPlanModal
-        gymId={gymId}
-        branches={branches}
-        plan={selectedPlanToEdit}
-        isOpen={editModalOpen}
-        onClose={() => {
-          setEditModalOpen(false);
-          setSelectedPlanToEdit(null);
-        }}
-        onSuccess={handleEditSuccess}
-      />
+      {selectedPlanToEdit && (
+        <EditPlanModal
+          gymId={gymId}
+          branches={branches}
+          plan={selectedPlanToEdit}
+          isOpen={editModalOpen}
+          onClose={() => {
+            setEditModalOpen(false);
+            setSelectedPlanToEdit(null);
+          }}
+          onSuccess={handlePlanEdited}
+        />
+      )}
     </div>
   );
 }

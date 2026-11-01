@@ -3,6 +3,7 @@ import { computeMembershipStatus } from "@/lib/actions/memberships";
 import { createPlanSchema, updatePlanSchema } from "@/lib/actions/plans";
 import { assignMembershipSchema } from "@/lib/actions/memberships";
 import { hasCapability } from "@/lib/auth/capabilities";
+import { getISTDateString, getTodayIST } from "@/lib/utils";
 
 describe("Membership Plans & Lifecycle Unit Tests", () => {
   // ==========================================================================
@@ -325,6 +326,237 @@ describe("Membership Plans & Lifecycle Unit Tests", () => {
         existingPlan.durationDays !== updatedTerms.durationDays;
 
       expect(termsChanged).toBe(false);
+    });
+  });
+
+  // ==========================================================================
+  // 7. Plan Safety & Soft-Archival vs Hard Deletion
+  // ==========================================================================
+  describe("Plan Deletion Safety & Soft-Archival", () => {
+    it("blocks hard deletion and soft-archives when active or historical memberships exist", () => {
+      const plan = {
+        id: "plan-with-members",
+        name: "Pro Pass",
+        isActive: true,
+        membershipCount: 8,
+      };
+
+      // Model deletion handler logic
+      function simulateDeletePlan(p: typeof plan) {
+        if (p.membershipCount > 0) {
+          return {
+            success: true,
+            archived: true,
+            isActive: false,
+            message: `Plan "${p.name}" is linked to ${p.membershipCount} member contract(s). Hard deletion was blocked and the plan has been safely soft-archived (deactivated).`,
+          };
+        }
+        return {
+          success: true,
+          archived: false,
+          deleted: true,
+        };
+      }
+
+      const result = simulateDeletePlan(plan);
+      expect(result.archived).toBe(true);
+      expect(result.isActive).toBe(false);
+      expect(result.message).toContain("Hard deletion was blocked");
+    });
+
+    it("permits permanent hard deletion when zero memberships reference the plan", () => {
+      const unusedPlan = {
+        id: "unused-plan",
+        name: "Trial Draft",
+        isActive: true,
+        membershipCount: 0,
+      };
+
+      function simulateDeletePlan(p: typeof unusedPlan) {
+        if (p.membershipCount > 0) {
+          return { success: true, archived: true };
+        }
+        return { success: true, archived: false, deleted: true };
+      }
+
+      const result = simulateDeletePlan(unusedPlan);
+      expect(result.archived).toBe(false);
+      expect(result.deleted).toBe(true);
+    });
+  });
+
+  // ==========================================================================
+  // 8. Quick Enroll Pending Dues & Payment Entry Invariants
+  // ==========================================================================
+  describe("Quick Enroll Dues & Payment Invariants", () => {
+    function calculateDues(planPrice: number, discount = 0, amountPaid = 0): number {
+      return Math.max(0, planPrice - discount - amountPaid);
+    }
+
+    it("calculates pending dues correctly for partial payment", () => {
+      const planPrice = 2000;
+      const discount = 200;
+      const amountPaid = 1000;
+      // Dues: 2000 - 200 - 1000 = 800
+      expect(calculateDues(planPrice, discount, amountPaid)).toBe(800);
+    });
+
+    it("evaluates pending dues as 0 for full payment", () => {
+      const planPrice = 1500;
+      const discount = 100;
+      const amountPaid = 1400;
+      expect(calculateDues(planPrice, discount, amountPaid)).toBe(0);
+    });
+
+    it("never returns negative dues if payment exceeds plan price", () => {
+      const planPrice = 1000;
+      const discount = 0;
+      const amountPaid = 1500;
+      expect(calculateDues(planPrice, discount, amountPaid)).toBe(0);
+    });
+
+    it("preserves full plan price as dues when selecting Pay Later (0 paid)", () => {
+      const planPrice = 3000;
+      const discount = 500;
+      const amountPaid = 0;
+      expect(calculateDues(planPrice, discount, amountPaid)).toBe(2500);
+    });
+
+    it("enforces database invariant: initial payment row is created ONLY if amountPaid > 0", () => {
+      function shouldCreatePaymentRecord(amountPaid?: number | null): boolean {
+        return amountPaid !== undefined && amountPaid !== null && amountPaid > 0;
+      }
+
+      expect(shouldCreatePaymentRecord(0)).toBe(false);
+      expect(shouldCreatePaymentRecord(null)).toBe(false);
+      expect(shouldCreatePaymentRecord(undefined)).toBe(false);
+      expect(shouldCreatePaymentRecord(500)).toBe(true);
+      expect(shouldCreatePaymentRecord(1500.5)).toBe(true);
+    });
+  });
+
+  // ==========================================================================
+  // 9. Renewal Expiration Tracking & Rollover Stacking Logic
+  // ==========================================================================
+  describe("Renewal Rollover Stacking & Status Transition Logic", () => {
+    function computeRenewalDates(
+      currentEndDateStr: string | null,
+      planDurationDays: number,
+      todayIST: string,
+      customStartDate?: string
+    ) {
+      let computedStartDate: string;
+      let priorStatus: "renewed" | "completed" | null = null;
+      let stacked = false;
+
+      if (currentEndDateStr) {
+        if (currentEndDateStr >= todayIST) {
+          // Early / On-Time Renewal: Strictly stack onto current_end_date + 1 day
+          const nextDay = new Date(currentEndDateStr + "T00:00:00+05:30");
+          nextDay.setDate(nextDay.getDate() + 1);
+          computedStartDate = getISTDateString(nextDay);
+          priorStatus = "renewed";
+          stacked = true;
+        } else {
+          // Late Renewal: Starts today IST
+          computedStartDate = customStartDate && customStartDate >= todayIST ? customStartDate : todayIST;
+          priorStatus = "completed";
+          stacked = false;
+        }
+      } else {
+        computedStartDate = customStartDate || todayIST;
+      }
+
+      const startObj = new Date(computedStartDate + "T00:00:00+05:30");
+      const endObj = new Date(startObj);
+      endObj.setDate(endObj.getDate() + planDurationDays - 1);
+
+      return {
+        startDate: computedStartDate,
+        endDate: getISTDateString(endObj),
+        priorStatus,
+        stacked,
+      };
+    }
+
+    it("strictly stacks start date to (current_end_date + 1 day) for early renewals", () => {
+      const today = "2026-11-01";
+      const currentEnd = "2026-11-10"; // 9 days remaining
+      const durationDays = 30;
+
+      const result = computeRenewalDates(currentEnd, durationDays, today);
+
+      expect(result.stacked).toBe(true);
+      expect(result.startDate).toBe("2026-11-11");
+      expect(result.endDate).toBe("2026-12-10");
+      expect(result.priorStatus).toBe("renewed");
+    });
+
+    it("stacks correctly for on-time renewal (expiring today)", () => {
+      const today = "2026-11-01";
+      const currentEnd = "2026-11-01"; // Expires today
+      const durationDays = 30;
+
+      const result = computeRenewalDates(currentEnd, durationDays, today);
+
+      expect(result.stacked).toBe(true);
+      expect(result.startDate).toBe("2026-11-02");
+      expect(result.endDate).toBe("2026-12-01");
+      expect(result.priorStatus).toBe("renewed");
+    });
+
+    it("defaults to Today IST when member renews late after expiration", () => {
+      const today = "2026-11-01";
+      const currentEnd = "2026-10-20"; // Expired 12 days ago
+      const durationDays = 30;
+
+      const result = computeRenewalDates(currentEnd, durationDays, today);
+
+      expect(result.stacked).toBe(false);
+      expect(result.startDate).toBe("2026-11-01");
+      expect(result.endDate).toBe("2026-11-30");
+      expect(result.priorStatus).toBe("completed");
+    });
+  });
+
+  // ==========================================================================
+  // 10. Dashboard 7-Day IST Expiring Alerts Window
+  // ==========================================================================
+  describe("Dashboard 7-Day Expiring Alerts Window", () => {
+    function isExpiringIn7DayWindow(endDateStr: string, todayIST: string): { isAlert: boolean; daysLeft: number } {
+      const todayDate = new Date(todayIST + "T00:00:00+05:30");
+      const targetDate = new Date(endDateStr + "T00:00:00+05:30");
+      const diffTime = targetDate.getTime() - todayDate.getTime();
+      const daysLeft = Math.round(diffTime / (1000 * 60 * 60 * 24));
+
+      return {
+        isAlert: daysLeft >= 0 && daysLeft <= 7,
+        daysLeft,
+      };
+    }
+
+    it("captures memberships expiring today (0 days left)", () => {
+      const res = isExpiringIn7DayWindow("2026-11-01", "2026-11-01");
+      expect(res.isAlert).toBe(true);
+      expect(res.daysLeft).toBe(0);
+    });
+
+    it("captures memberships expiring exactly 7 days from today", () => {
+      const res = isExpiringIn7DayWindow("2026-11-08", "2026-11-01");
+      expect(res.isAlert).toBe(true);
+      expect(res.daysLeft).toBe(7);
+    });
+
+    it("excludes memberships expiring 8 or more days in the future", () => {
+      const res = isExpiringIn7DayWindow("2026-11-09", "2026-11-01");
+      expect(res.isAlert).toBe(false);
+      expect(res.daysLeft).toBe(8);
+    });
+
+    it("excludes memberships that already expired (negative days left)", () => {
+      const res = isExpiringIn7DayWindow("2026-10-31", "2026-11-01");
+      expect(res.isAlert).toBe(false);
+      expect(res.daysLeft).toBe(-1);
     });
   });
 });

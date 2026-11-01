@@ -98,26 +98,26 @@ export function InviteStaffModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-xs p-4">
-      <div className="w-full max-w-lg bg-white rounded-2xl border border-slate-200 shadow-xl overflow-hidden">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4">
+      <div className="w-full max-w-lg bg-card text-card-foreground rounded-3xl border border-border shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-150">
         {/* Modal Header */}
-        <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
-            <div className="p-2 rounded-xl bg-indigo-50 text-indigo-600">
+        <div className="px-6 py-4 border-b border-border flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 rounded-xl bg-primary/10 text-primary">
               <ShieldCheck className="w-5 h-5" />
             </div>
             <div>
-              <h2 className="font-bold text-slate-900 text-base">
+              <h2 className="font-bold text-card-foreground text-base">
                 Invite Staff Member
               </h2>
-              <p className="text-xs text-slate-500">
+              <p className="text-xs text-muted-foreground">
                 Grant team access with branch scoping and 1-click sharing
               </p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="p-2 rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-50"
+            className="p-2 rounded-xl text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
           >
             <X className="w-4 h-4" />
           </button>
@@ -126,7 +126,7 @@ export function InviteStaffModal({
         {/* Modal Body */}
         <div className="p-6">
           {error && (
-            <div className="mb-4 p-3.5 rounded-xl bg-red-50 border border-red-200/70 text-sm text-red-700 font-medium">
+            <div className="mb-4 p-3.5 rounded-xl bg-destructive/10 border border-destructive/20 text-destructive text-sm font-medium">
               {error}
             </div>
           )}
@@ -134,13 +134,13 @@ export function InviteStaffModal({
           {!generatedLinks ? (
             <form onSubmit={handleGenerate} className="space-y-4">
               <div>
-                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-700 mb-1.5">
+                <label className="block text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1.5">
                   Role Assignment
                 </label>
                 <select
                   value={role}
                   onChange={(e) => setRole(e.target.value as InvitableStaffRole)}
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                  className="w-full h-11 px-3.5 rounded-xl border border-border bg-background text-foreground text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary/30 transition-all"
                 >
                   <option value="trainer">Trainer (Member View, Attendance)</option>
                   <option value="staff">Front Desk Staff (Members, Attendance, Payments)</option>
@@ -151,33 +151,34 @@ export function InviteStaffModal({
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-semibold uppercase tracking-wider text-slate-700 mb-1.5">
+                  <label className="block text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1.5">
                     Phone Number (for WhatsApp)
                   </label>
                   <div className="relative">
-                    <Phone className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
+                    <Phone className="w-4 h-4 text-muted-foreground absolute left-3.5 top-3.5" />
                     <input
                       type="tel"
+                      inputMode="tel"
                       value={phone}
                       onChange={(e) => setPhone(e.target.value)}
                       placeholder="+91 98765 43210"
-                      className="w-full pl-9 pr-3 py-2 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                      className="w-full h-11 pl-10 pr-3.5 rounded-xl border border-border bg-background text-foreground text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary/30 transition-all"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold uppercase tracking-wider text-slate-700 mb-1.5">
+                  <label className="block text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1.5">
                     Email Address (Optional)
                   </label>
                   <div className="relative">
-                    <Mail className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
+                    <Mail className="w-4 h-4 text-muted-foreground absolute left-3.5 top-3.5" />
                     <input
                       type="email"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       placeholder="staff@gym.com"
-                      className="w-full pl-9 pr-3 py-2 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                      className="w-full h-11 pl-10 pr-3.5 rounded-xl border border-border bg-background text-foreground text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary/30 transition-all"
                     />
                   </div>
                 </div>
@@ -186,20 +187,20 @@ export function InviteStaffModal({
               {/* Branch Scope */}
               {branches.length > 1 && (
                 <div>
-                  <label className="block text-xs font-semibold uppercase tracking-wider text-slate-700 mb-1.5">
+                  <label className="block text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1.5">
                     Branch Permissions
                   </label>
-                  <div className="space-y-1.5 max-h-32 overflow-y-auto border border-slate-200 rounded-xl p-3">
+                  <div className="space-y-1.5 max-h-32 overflow-y-auto border border-border rounded-xl p-3 bg-muted/20">
                     {branches.map((b) => (
                       <label
                         key={b.id}
-                        className="flex items-center gap-2 text-xs font-medium text-slate-700 cursor-pointer"
+                        className="flex items-center gap-2 text-xs font-medium text-foreground cursor-pointer"
                       >
                         <input
                           type="checkbox"
                           checked={selectedBranches.includes(b.id)}
                           onChange={() => handleToggleBranch(b.id)}
-                          className="rounded text-indigo-600 focus:ring-indigo-500"
+                          className="rounded text-primary focus:ring-primary"
                         />
                         <span>{b.name}</span>
                       </label>
@@ -211,7 +212,7 @@ export function InviteStaffModal({
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full mt-4 py-3 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-sm shadow-sm transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+                className="w-full h-12 mt-4 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-sm shadow-xs transition-all flex items-center justify-center gap-2 disabled:opacity-50 active:scale-[0.98]"
               >
                 {loading ? (
                   <>
@@ -226,26 +227,26 @@ export function InviteStaffModal({
           ) : (
             /* Sharing CTAs View */
             <div className="space-y-4">
-              <div className="p-4 rounded-xl bg-emerald-50 border border-emerald-200/80 text-emerald-800 text-xs font-medium">
+              <div className="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-xs font-semibold">
                 Invitation link generated! Choose a 1-click sharing action below:
               </div>
 
               {/* URL Box with Copy */}
-              <div className="flex items-center gap-2 p-2.5 rounded-xl border border-slate-200 bg-slate-50">
+              <div className="flex items-center gap-2 p-2 rounded-xl border border-border bg-muted/40">
                 <input
                   type="text"
                   readOnly
                   value={generatedLinks.inviteUrl}
-                  className="flex-1 bg-transparent text-xs font-mono text-slate-700 outline-none truncate"
+                  className="flex-1 px-2 bg-transparent text-xs font-mono text-foreground outline-none truncate"
                 />
                 <button
                   type="button"
                   onClick={handleCopy}
-                  className="px-3 py-1.5 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 text-xs font-semibold text-slate-700 flex items-center gap-1.5 shrink-0 transition-colors"
+                  className="h-9 px-3 rounded-lg bg-card border border-border hover:bg-muted text-xs font-bold text-foreground flex items-center gap-1.5 shrink-0 transition-colors"
                 >
                   {copied ? (
                     <>
-                      <Check className="w-3.5 h-3.5 text-emerald-600" /> Copied
+                      <Check className="w-3.5 h-3.5 text-emerald-500" /> Copied
                     </>
                   ) : (
                     <>
@@ -261,7 +262,7 @@ export function InviteStaffModal({
                   href={generatedLinks.whatsappUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-[#25D366] hover:bg-[#20bd5a] text-white font-semibold text-xs shadow-xs transition-colors"
+                  className="h-11 flex items-center justify-center gap-2 px-4 rounded-xl bg-[#25D366] hover:bg-[#20bd5a] text-white font-bold text-xs shadow-xs transition-colors"
                 >
                   <Share2 className="w-4 h-4" /> Send via WhatsApp
                 </a>
@@ -270,20 +271,20 @@ export function InviteStaffModal({
                   href={generatedLinks.gmailUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-semibold text-xs shadow-xs transition-colors"
+                  className="h-11 flex items-center justify-center gap-2 px-4 rounded-xl bg-foreground text-background hover:opacity-90 font-bold text-xs shadow-xs transition-colors"
                 >
                   <Mail className="w-4 h-4" /> Send via Gmail
                 </a>
               </div>
 
-              <div className="pt-3 border-t border-slate-100 flex justify-end">
+              <div className="pt-3 border-t border-border flex justify-end">
                 <button
                   type="button"
                   onClick={() => {
                     setGeneratedLinks(null);
                     onClose();
                   }}
-                  className="px-4 py-2 rounded-xl border border-slate-200 hover:bg-slate-50 text-xs font-semibold text-slate-700"
+                  className="h-10 px-4 rounded-xl border border-border hover:bg-muted text-xs font-semibold text-foreground transition-colors"
                 >
                   Done
                 </button>

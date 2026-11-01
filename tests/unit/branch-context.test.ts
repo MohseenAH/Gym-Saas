@@ -5,7 +5,7 @@ describe("Branch Context Resolution & Role Boundaries", () => {
   const branchA = "11111111-1111-1111-1111-111111111111";
   const branchB = "22222222-2222-2222-2222-222222222222";
   const branchC = "33333333-3333-3333-3333-333333333333";
-  const unauthorizedBranch = "99999999-9999-9999-9999-999999999999";
+  const foreignBranch = "99999999-9999-9999-9999-999999999999";
 
   it("TEST-BR-001: Single-branch gyms always resolve to that single branch without all-branch toggle", () => {
     const result = resolveBranchContext({
@@ -71,23 +71,54 @@ describe("Branch Context Resolution & Role Boundaries", () => {
     expect(result.canSelectAll).toBe(false);
   });
 
-  it("TEST-BR-006: Unauthorized branch ID request is rejected and safely clamped", () => {
-    // Owner with invalid branch falls back to All Branches
+  it("TEST-BR-006: Foreign branch ID request is safely shielded and falls back to All Branches or primary", () => {
+    // Owner with invalid/foreign branch falls back to All Branches
     const ownerResult = resolveBranchContext({
       role: "owner",
       authorizedBranchIds: [branchA, branchB],
-      requestedBranchId: unauthorizedBranch,
+      requestedBranchId: foreignBranch,
     });
     expect(ownerResult.selectedBranchId).toBeNull();
     expect(ownerResult.isAllBranches).toBe(true);
+    expect(ownerResult.effectiveBranchIds).toEqual([branchA, branchB]);
 
-    // Staff with invalid branch falls back to their authorized branch
+    // Staff with foreign branch falls back to their authorized branch
     const staffResult = resolveBranchContext({
       role: "staff",
       authorizedBranchIds: [branchA],
-      requestedBranchId: unauthorizedBranch,
+      requestedBranchId: foreignBranch,
     });
     expect(staffResult.selectedBranchId).toBe(branchA);
     expect(staffResult.isAllBranches).toBe(false);
+    expect(staffResult.effectiveBranchIds).toEqual([branchA]);
+  });
+
+  it("TEST-BR-007: Handles malformed query parameters like 'null', 'undefined', or whitespace safely", () => {
+    const malformedQueries = ["null", "undefined", "", "   ", undefined];
+
+    for (const q of malformedQueries) {
+      const res = resolveBranchContext({
+        role: "manager",
+        authorizedBranchIds: [branchA, branchB],
+        requestedBranchId: q,
+      });
+      expect(res.selectedBranchId).toBeNull();
+      expect(res.isAllBranches).toBe(true);
+      expect(res.canSelectAll).toBe(true);
+    }
+  });
+
+  it("TEST-BR-008: Multi-branch staff with limited assignments falls back to their primary assigned branch", () => {
+    // Staff member assigned to branch B and branch C, but NOT branch A
+    const staffMulti = resolveBranchContext({
+      role: "trainer",
+      authorizedBranchIds: [branchB, branchC],
+      requestedBranchId: branchA, // Foreign to this trainer
+    });
+
+    expect(staffMulti.selectedBranchId).toBe(branchB);
+    expect(staffMulti.isAllBranches).toBe(false);
+    expect(staffMulti.effectiveBranchIds).toEqual([branchB]);
+    expect(staffMulti.canSelectAll).toBe(false);
   });
 });

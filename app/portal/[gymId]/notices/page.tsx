@@ -22,20 +22,20 @@ export default async function MemberNoticesPage({ params }: NoticesPageProps) {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-black text-slate-900 tracking-tight">Gym Notice Board</h1>
-        <p className="text-xs text-slate-500 mt-1">
+        <h1 className="text-2xl font-black text-foreground tracking-tight">Gym Notice Board</h1>
+        <p className="text-xs text-muted-foreground mt-1">
           Official announcements, holiday schedules, and updates from gym management
         </p>
       </div>
 
       <div className="space-y-3">
         {allNotices.length === 0 ? (
-          <div className="bg-white p-12 text-center rounded-2xl border border-slate-200/80 shadow-xs">
-            <div className="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-full flex items-center justify-center mx-auto mb-3">
+          <div className="bg-card p-12 text-center rounded-3xl border border-border shadow-xs">
+            <div className="w-12 h-12 bg-primary/10 text-primary rounded-full flex items-center justify-center mx-auto mb-3">
               <Bell className="w-6 h-6" />
             </div>
-            <h3 className="text-sm font-bold text-slate-900">No Announcements Right Now</h3>
-            <p className="text-xs text-slate-500 max-w-sm mx-auto mt-1">
+            <h3 className="text-sm font-bold text-foreground">No Announcements Right Now</h3>
+            <p className="text-xs text-muted-foreground max-w-sm mx-auto mt-1">
               Check back later for news, fitness workshops, and schedule updates.
             </p>
           </div>
@@ -47,22 +47,22 @@ export default async function MemberNoticesPage({ params }: NoticesPageProps) {
             return (
               <div
                 key={n.id}
-                className={`bg-white p-5 rounded-2xl border shadow-xs transition-all ${
+                className={`bg-card p-5 rounded-3xl border shadow-xs transition-all ${
                   isUrgent
-                    ? "border-red-300 bg-red-50/20"
+                    ? "border-rose-500/30 bg-rose-500/5 dark:bg-rose-500/10"
                     : isImportant
-                    ? "border-amber-300 bg-amber-50/20"
-                    : "border-slate-200/80"
+                    ? "border-amber-500/30 bg-amber-500/5 dark:bg-amber-500/10"
+                    : "border-border"
                 }`}
               >
-                <div className="flex items-start gap-3">
+                <div className="flex items-start gap-3.5">
                   <div
-                    className={`p-2.5 rounded-xl shrink-0 mt-0.5 ${
+                    className={`p-2.5 rounded-2xl shrink-0 mt-0.5 ${
                       isUrgent
-                        ? "bg-red-100 text-red-700"
+                        ? "bg-rose-500/15 text-rose-500"
                         : isImportant
-                        ? "bg-amber-100 text-amber-700"
-                        : "bg-indigo-50 text-indigo-600"
+                        ? "bg-amber-500/15 text-amber-500"
+                        : "bg-primary/10 text-primary"
                     }`}
                   >
                     {isUrgent ? (
@@ -76,25 +76,25 @@ export default async function MemberNoticesPage({ params }: NoticesPageProps) {
 
                   <div className="flex-1">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <h3 className="text-base font-bold text-slate-900">{n.title}</h3>
+                      <h3 className="text-base font-bold text-foreground">{n.title}</h3>
                       <span
-                        className={`px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider ${
+                        className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
                           isUrgent
-                            ? "bg-red-100 text-red-800"
+                            ? "bg-rose-500/15 text-rose-500 border border-rose-500/20"
                             : isImportant
-                            ? "bg-amber-100 text-amber-800"
-                            : "bg-slate-100 text-slate-700"
+                            ? "bg-amber-500/15 text-amber-500 border border-amber-500/20"
+                            : "bg-muted text-muted-foreground border border-border"
                         }`}
                       >
                         {n.priority}
                       </span>
                     </div>
 
-                    <p className="text-xs text-slate-600 mt-2 leading-relaxed whitespace-pre-line">
+                    <p className="text-xs text-muted-foreground mt-2 leading-relaxed whitespace-pre-line">
                       {n.content}
                     </p>
 
-                    <div className="flex items-center gap-3 text-[11px] text-slate-400 mt-3">
+                    <div className="flex items-center gap-3 text-[11px] text-muted-foreground mt-3">
                       <span className="flex items-center gap-1">
                         <Calendar className="w-3 h-3" />
                         {new Date(n.published_at).toLocaleDateString("en-US", {

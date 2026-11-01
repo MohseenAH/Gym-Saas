@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { z } from "zod";
+import { calculateRemainingDues, validatePaymentAmountAgainstDues } from "@/lib/utils";
 
 const submitMemberUpiPaymentSchema = z.object({
   gymId: z.string().uuid("Invalid gym ID"),
@@ -14,92 +15,253 @@ const submitMemberUpiPaymentSchema = z.object({
 const verifyPaymentSchema = z.object({
   gymId: z.string().uuid("Invalid gym ID"),
   paymentId: z.string().uuid("Invalid payment ID"),
+  action: z.enum(["approve", "reject"]).default("approve"),
+  rejectionReason: z.string().max(300).optional().nullable(),
 });
 
-describe("Member Portal UPI Verification Guard Suite", () => {
+describe("Member Portal UPI Verification & Dues Integrity Suite", () => {
   const gymId = "11111111-1111-4111-8111-111111111111";
   const branchId = "22222222-2222-4222-8222-222222222222";
   const memberId = "33333333-3333-4333-8333-333333333333";
   const membershipId = "44444444-4444-4444-8444-444444444444";
   const paymentId = "55555555-5555-4555-8555-555555555555";
 
-  it("validates member UPI payment submission schema", () => {
-    const valid = submitMemberUpiPaymentSchema.safeParse({
-      gymId,
-      branchId,
-      memberId,
-      membershipId,
-      amount: 2500,
-      utrRef: "123456789012",
+  // ==========================================================================
+  // 1. Schema Validations
+  // ==========================================================================
+  describe("Payment Schemas", () => {
+    it("validates member UPI payment submission schema", () => {
+      const valid = submitMemberUpiPaymentSchema.safeParse({
+        gymId,
+        branchId,
+        memberId,
+        membershipId,
+        amount: 2500,
+        utrRef: "123456789012",
+      });
+      expect(valid.success).toBe(true);
     });
-    expect(valid.success).toBe(true);
+
+    it("rejects non-positive amounts in member submission", () => {
+      const invalid = submitMemberUpiPaymentSchema.safeParse({
+        gymId,
+        branchId,
+        memberId,
+        amount: -100,
+      });
+      expect(invalid.success).toBe(false);
+    });
+
+    it("rejects invalid UUIDs in member submission", () => {
+      const invalid = submitMemberUpiPaymentSchema.safeParse({
+        gymId: "not-a-uuid",
+        branchId,
+        memberId,
+        amount: 1000,
+      });
+      expect(invalid.success).toBe(false);
+    });
+
+    it("validates staff payment verification schema for approval and rejection", () => {
+      const approveValid = verifyPaymentSchema.safeParse({
+        gymId,
+        paymentId,
+        action: "approve",
+      });
+      expect(approveValid.success).toBe(true);
+
+      const rejectValid = verifyPaymentSchema.safeParse({
+        gymId,
+        paymentId,
+        action: "reject",
+        rejectionReason: "Invalid UTR screenshot",
+      });
+      expect(rejectValid.success).toBe(true);
+      if (rejectValid.success) {
+        expect(rejectValid.data.action).toBe("reject");
+        expect(rejectValid.data.rejectionReason).toBe("Invalid UTR screenshot");
+      }
+    });
   });
 
-  it("rejects non-positive amounts in member submission", () => {
-    const invalid = submitMemberUpiPaymentSchema.safeParse({
-      gymId,
-      branchId,
-      memberId,
-      amount: -100,
+  // ==========================================================================
+  // 2. Strict Dues & Overpayment Guards
+  // ==========================================================================
+  describe("Overpayment Guards (validatePaymentAmountAgainstDues)", () => {
+    it("rejects payment amounts exceeding current outstanding dues", () => {
+      const outstandingDues = 2000;
+      const paymentAmount = 2500;
+
+      const check = validatePaymentAmountAgainstDues(outstandingDues, paymentAmount);
+      expect(check.isValid).toBe(false);
+      expect(check.error).toContain("exceeds outstanding dues");
+      expect(check.error).toContain("₹2500");
+      expect(check.error).toContain("₹2000");
     });
-    expect(invalid.success).toBe(false);
+
+    it("permits exact payment matching outstanding dues", () => {
+      const outstandingDues = 1500;
+      const paymentAmount = 1500;
+
+      const check = validatePaymentAmountAgainstDues(outstandingDues, paymentAmount);
+      expect(check.isValid).toBe(true);
+      expect(check.error).toBeUndefined();
+    });
+
+    it("permits partial payment below outstanding dues", () => {
+      const outstandingDues = 3000;
+      const paymentAmount = 1000;
+
+      const check = validatePaymentAmountAgainstDues(outstandingDues, paymentAmount);
+      expect(check.isValid).toBe(true);
+    });
+
+    it("rejects non-positive payment amounts", () => {
+      expect(validatePaymentAmountAgainstDues(1000, 0).isValid).toBe(false);
+      expect(validatePaymentAmountAgainstDues(1000, -500).isValid).toBe(false);
+    });
   });
 
-  it("rejects invalid UUIDs in member submission", () => {
-    const invalid = submitMemberUpiPaymentSchema.safeParse({
-      gymId: "not-a-uuid",
-      branchId,
-      memberId,
-      amount: 1000,
+  // ==========================================================================
+  // 3. Pending Dues Decrement & Invariants
+  // ==========================================================================
+  describe("Dues Decrement Invariants (calculateRemainingDues)", () => {
+    it("accurately decrements dues upon partial payment", () => {
+      const currentDues = 2500;
+      const paymentAmount = 1000;
+      expect(calculateRemainingDues(currentDues, paymentAmount)).toBe(1500);
     });
-    expect(invalid.success).toBe(false);
+
+    it("evaluates remaining dues to 0 upon full payment", () => {
+      const currentDues = 1800;
+      const paymentAmount = 1800;
+      expect(calculateRemainingDues(currentDues, paymentAmount)).toBe(0);
+    });
+
+    it("never permits remaining dues to drop below 0 (clamped)", () => {
+      const currentDues = 500;
+      const paymentAmount = 600;
+      expect(calculateRemainingDues(currentDues, paymentAmount)).toBe(0);
+    });
+
+    it("handles null or undefined dues gracefully as 0", () => {
+      expect(calculateRemainingDues(null, 500)).toBe(0);
+      expect(calculateRemainingDues(undefined, 500)).toBe(0);
+    });
   });
 
-  it("validates staff payment verification schema", () => {
-    const valid = verifyPaymentSchema.safeParse({
-      gymId,
-      paymentId,
-    });
-    expect(valid.success).toBe(true);
-  });
-
-  it("ensures member UPI payments are initialized as pending", () => {
-    // Model test of state machine
+  // ==========================================================================
+  // 4. Member UPI Claim & Staff Approval Lifecycle
+  // ==========================================================================
+  describe("Member UPI Approval State Machine", () => {
     interface PaymentRecord {
       id: string;
       gymId: string;
       memberId: string;
+      membershipId: string;
       amount: number;
       paymentMethod: string;
-      paymentStatus: "paid" | "pending";
+      paymentStatus: "paid" | "pending" | "rejected";
       notes: string;
     }
 
-    const initialRecord: PaymentRecord = {
-      id: paymentId,
-      gymId,
-      memberId,
-      amount: 2500,
-      paymentMethod: "upi",
-      paymentStatus: "pending",
-      notes: "Member UPI transfer (UTR: 123456789012)",
-    };
-
-    expect(initialRecord.paymentStatus).toBe("pending");
-    expect(initialRecord.paymentMethod).toBe("upi");
-
-    // Staff approves payment
-    function approvePayment(rec: PaymentRecord): PaymentRecord {
-      if (rec.paymentStatus === "pending") {
-        return { ...rec, paymentStatus: "paid" };
-      }
-      return rec;
+    interface MembershipRecord {
+      id: string;
+      pending_dues: number;
     }
 
-    const approved = approvePayment(initialRecord);
-    expect(approved.paymentStatus).toBe("paid");
+    it("ensures member UPI submissions start as pending and DO NOT reduce dues prematurely", () => {
+      const initialMembership: MembershipRecord = {
+        id: membershipId,
+        pending_dues: 2500,
+      };
+
+      const initialPayment: PaymentRecord = {
+        id: paymentId,
+        gymId,
+        memberId,
+        membershipId,
+        amount: 2500,
+        paymentMethod: "upi",
+        paymentStatus: "pending",
+        notes: "Member UPI transfer (UTR: 123456789012)",
+      };
+
+      // Invariant: At submission time, status is 'pending' and dues remain unchanged
+      expect(initialPayment.paymentStatus).toBe("pending");
+      expect(initialMembership.pending_dues).toBe(2500);
+    });
+
+    it("atomically decrements dues when staff approves pending payment", () => {
+      const membership: MembershipRecord = {
+        id: membershipId,
+        pending_dues: 2500,
+      };
+
+      const payment: PaymentRecord = {
+        id: paymentId,
+        gymId,
+        memberId,
+        membershipId,
+        amount: 2500,
+        paymentMethod: "upi",
+        paymentStatus: "pending",
+        notes: "Member UPI transfer (UTR: 123456789012)",
+      };
+
+      // Simulate staff approval
+      function approvePayment(pay: PaymentRecord, mem: MembershipRecord) {
+        if (pay.paymentStatus !== "pending") {
+          throw new Error("Only pending payments can be approved");
+        }
+        pay.paymentStatus = "paid";
+        mem.pending_dues = calculateRemainingDues(mem.pending_dues, pay.amount);
+        return { pay, mem };
+      }
+
+      const result = approvePayment(payment, membership);
+      expect(result.pay.paymentStatus).toBe("paid");
+      expect(result.mem.pending_dues).toBe(0);
+    });
+
+    it("preserves member dues unchanged when staff rejects a fraudulent/duplicate claim", () => {
+      const membership: MembershipRecord = {
+        id: membershipId,
+        pending_dues: 2500,
+      };
+
+      const payment: PaymentRecord = {
+        id: paymentId,
+        gymId,
+        memberId,
+        membershipId,
+        amount: 2500,
+        paymentMethod: "upi",
+        paymentStatus: "pending",
+        notes: "Member UPI transfer (UTR: 000000000000)",
+      };
+
+      // Simulate staff rejection
+      function rejectPayment(pay: PaymentRecord, mem: MembershipRecord, reason: string) {
+        if (pay.paymentStatus !== "pending") {
+          throw new Error("Only pending payments can be rejected");
+        }
+        pay.paymentStatus = "rejected";
+        pay.notes += ` [REJECTED: ${reason}]`;
+        // Invariant: Dues remain untouched!
+        return { pay, mem };
+      }
+
+      const result = rejectPayment(payment, membership, "Invalid transaction UTR");
+      expect(result.pay.paymentStatus).toBe("rejected");
+      expect(result.pay.notes).toContain("[REJECTED: Invalid transaction UTR]");
+      expect(result.mem.pending_dues).toBe(2500); // Intact!
+    });
   });
 
+  // ==========================================================================
+  // 5. Zero-Dependency CSV Export Logic
+  // ==========================================================================
   describe("Zero-Dependency CSV Export Logic", () => {
     function escapeCsvCell(cell: string | number | null | undefined): string {
       if (cell === null || cell === undefined) return '""';

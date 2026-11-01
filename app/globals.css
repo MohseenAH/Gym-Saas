@@ -1,27 +1,107 @@
 @import "tailwindcss";
 
-:root {
-  --background: #f8fafc;
-  --foreground: #0f172a;
-  --card: #ffffff;
-  --card-foreground: #0f172a;
-  --popover: #ffffff;
-  --popover-foreground: #0f172a;
-  --primary: #4f46e5;
-  --primary-foreground: #ffffff;
-  --secondary: #f1f5f9;
-  --secondary-foreground: #1e293b;
-  --muted: #f1f5f9;
-  --muted-foreground: #64748b;
-  --accent: #f8fafc;
-  --accent-foreground: #0f172a;
-  --border: #e2e8f0;
-  --input: #e2e8f0;
-  --ring: #4f46e5;
-  --success: #10b981;
-  --warning: #f59e0b;
-  --destructive: #ef4444;
-  --radius: 0.5rem;
+@import "tailwindcss";
+
+/* ==========================================================================
+   GymApra V2 — 4-Theme CSS Variable Design Engine
+   Supports: light (default emerald), dark (electric lime), iron (forge amber), sage (nordic teal)
+   ========================================================================== */
+
+:root,
+[data-theme="light"] {
+  --background: hsl(210 20% 99%);
+  --foreground: hsl(222 47% 11%);
+  --card: hsl(0 0% 100%);
+  --card-foreground: hsl(222 47% 11%);
+  --popover: hsl(0 0% 100%);
+  --popover-foreground: hsl(222 47% 11%);
+  --primary: hsl(160 84% 36%); /* Refined Emerald */
+  --primary-foreground: hsl(0 0% 100%);
+  --secondary: hsl(210 30% 96%);
+  --secondary-foreground: hsl(222 47% 13%);
+  --muted: hsl(210 28% 95%);
+  --muted-foreground: hsl(215 16% 47%);
+  --accent: hsl(160 60% 95%);
+  --accent-foreground: hsl(160 84% 20%);
+  --border: hsl(214 32% 91%);
+  --input: hsl(214 32% 91%);
+  --ring: hsl(160 84% 36%);
+  --success: hsl(158 75% 38%);
+  --warning: hsl(38 92% 50%);
+  --destructive: hsl(0 84% 60%);
+  --radius: 0.625rem;
+}
+
+[data-theme="dark"] {
+  --background: hsl(224 71% 4%); /* Deep Obsidian */
+  --foreground: hsl(210 40% 98%);
+  --card: hsl(222 47% 9%); /* Crisp Obsidian Card Surface */
+  --card-foreground: hsl(210 40% 98%);
+  --popover: hsl(222 47% 9%);
+  --popover-foreground: hsl(210 40% 98%);
+  --primary: hsl(84 81% 50%); /* Athletic Electric Lime */
+  --primary-foreground: hsl(84 100% 6%);
+  --secondary: hsl(217 33% 14%);
+  --secondary-foreground: hsl(210 40% 98%);
+  --muted: hsl(217 33% 14%);
+  --muted-foreground: hsl(215 20% 65%);
+  --accent: hsl(84 81% 15%);
+  --accent-foreground: hsl(84 81% 70%);
+  --border: hsl(217 33% 17%);
+  --input: hsl(217 33% 17%);
+  --ring: hsl(84 81% 50%);
+  --success: hsl(142 71% 45%);
+  --warning: hsl(38 92% 50%);
+  --destructive: hsl(0 84% 60%);
+  --radius: 0.625rem;
+}
+
+[data-theme="iron"] {
+  --background: hsl(20 14% 6%); /* Deep Forge Charcoal */
+  --foreground: hsl(30 20% 96%);
+  --card: hsl(24 10% 11%); /* Dark Iron Surface */
+  --card-foreground: hsl(30 20% 96%);
+  --popover: hsl(24 10% 11%);
+  --popover-foreground: hsl(30 20% 96%);
+  --primary: hsl(24 95% 53%); /* Hot Amber / Forge Orange */
+  --primary-foreground: hsl(0 0% 100%);
+  --secondary: hsl(24 8% 18%);
+  --secondary-foreground: hsl(30 20% 96%);
+  --muted: hsl(24 8% 18%);
+  --muted-foreground: hsl(24 12% 65%);
+  --accent: hsl(24 95% 15%);
+  --accent-foreground: hsl(24 95% 70%);
+  --border: hsl(24 8% 22%);
+  --input: hsl(24 8% 22%);
+  --ring: hsl(24 95% 53%);
+  --success: hsl(142 71% 45%);
+  --warning: hsl(38 92% 50%);
+  --destructive: hsl(0 84% 60%);
+  --radius: 0.625rem;
+}
+
+[data-theme="sage"] {
+  --background: hsl(45 29% 96%); /* Soft Mineral Oat */
+  --foreground: hsl(160 25% 12%);
+  --card: hsl(0 0% 100%); /* Pure White Card */
+  --card-foreground: hsl(160 25% 12%);
+  --popover: hsl(0 0% 100%);
+  --popover-foreground: hsl(160 25% 12%);
+  --primary: hsl(168 64% 28%); /* Deep Forest / Nordic Teal */
+  --primary-foreground: hsl(0 0% 100%);
+  --secondary: hsl(45 20% 91%);
+  --secondary-foreground: hsl(160 25% 12%);
+  --muted: hsl(45 20% 91%);
+  --muted-foreground: hsl(160 10% 42%);
+  --accent: hsl(168 64% 94%);
+  --accent-foreground: hsl(168 64% 22%);
+  --border: hsl(40 18% 87%);
+  --input: hsl(40 18% 87%);
+  --ring: hsl(168 64% 28%);
+  --success: hsl(158 75% 38%);
+  --warning: hsl(38 92% 50%);
+  --destructive: hsl(0 84% 60%);
+  --radius: 0.625rem;
 }
 
 @theme inline {
@@ -52,4 +132,20 @@ body {
   background-color: var(--background);
   color: var(--foreground);
   font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+}
+
+/* Custom scrollbars & print helpers */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--muted-foreground);
 }

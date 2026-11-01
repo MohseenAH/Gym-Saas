@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Receipt, CheckCircle2, Clock, FileText } from "lucide-react";
+import { Receipt, CheckCircle2, Clock, FileText, XCircle } from "lucide-react";
 import { ReceiptModal, ReceiptData } from "@/components/payments/receipt-modal";
 
 interface PortalPaymentItem {
@@ -50,33 +50,33 @@ export function PortalPaymentsClient({
 
   return (
     <>
-      <div className="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden">
-        <div className="p-4 border-b border-slate-100 flex items-center justify-between">
-          <div className="text-sm font-bold text-slate-900">Payment Receipts</div>
-          <div className="text-xs text-slate-400">{payments.length} transactions</div>
+      <div className="bg-card rounded-3xl border border-border shadow-xs overflow-hidden">
+        <div className="p-4 border-b border-border flex items-center justify-between">
+          <div className="text-sm font-bold text-card-foreground">Payment Receipts</div>
+          <div className="text-xs text-muted-foreground font-medium">{payments.length} transactions</div>
         </div>
 
-        <div className="divide-y divide-slate-100">
+        <div className="divide-y divide-border">
           {payments.length === 0 ? (
-            <div className="p-8 text-center text-xs text-slate-400">
+            <div className="p-10 text-center text-xs text-muted-foreground font-medium">
               No payment receipts recorded yet.
             </div>
           ) : (
             payments.map((p) => (
               <div
                 key={p.id}
-                className="p-4 flex items-center justify-between hover:bg-slate-50/60 transition-colors"
+                className="p-4 flex items-center justify-between hover:bg-muted/30 transition-colors"
               >
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-indigo-50 text-indigo-600 rounded-xl flex items-center justify-center shrink-0">
+                  <div className="w-10 h-10 bg-primary/10 text-primary rounded-xl flex items-center justify-center shrink-0">
                     <Receipt className="w-5 h-5" />
                   </div>
                   <div>
-                    <div className="text-sm font-bold text-slate-900">
+                    <div className="text-sm font-bold text-foreground">
                       Receipt #{p.id.slice(0, 8).toUpperCase()}
                     </div>
-                    <div className="text-xs text-slate-400">
-                      {p.paymentDate} &bull; <span className="uppercase">{p.paymentMethod}</span>
+                    <div className="text-xs text-muted-foreground">
+                      {p.paymentDate} &bull; <span className="uppercase font-semibold">{p.paymentMethod}</span>
                       {p.notes && ` &bull; ${p.notes}`}
                     </div>
                   </div>
@@ -84,22 +84,26 @@ export function PortalPaymentsClient({
 
                 <div className="flex items-center gap-3">
                   <div className="text-right">
-                    <div className="text-sm font-black text-slate-900">
+                    <div className="text-sm font-black text-foreground">
                       ₹{p.amount.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
                     </div>
                     {p.paymentStatus === "pending" ? (
-                      <div className="inline-flex items-center gap-1 text-[11px] font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded-md border border-amber-200">
+                      <div className="inline-flex items-center gap-1 text-[11px] font-bold text-amber-500 bg-amber-500/10 px-2 py-0.5 rounded-full border border-amber-500/20 uppercase tracking-wider">
                         <Clock className="w-3 h-3" /> Pending Verification
                       </div>
+                    ) : p.paymentStatus === "rejected" ? (
+                      <div className="inline-flex items-center gap-1 text-[11px] font-bold text-rose-500 bg-rose-500/10 px-2 py-0.5 rounded-full border border-rose-500/20 uppercase tracking-wider">
+                        <XCircle className="w-3 h-3" /> Claim Declined
+                      </div>
                     ) : (
-                      <div className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-600">
+                      <div className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-500 uppercase tracking-wider">
                         <CheckCircle2 className="w-3 h-3" /> Paid
                       </div>
                     )}
                   </div>
                   <button
                     onClick={() => openReceipt(p)}
-                    className="inline-flex items-center gap-1 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-semibold transition-colors"
+                    className="inline-flex items-center gap-1 px-3 py-1.5 bg-muted hover:bg-muted/80 text-foreground rounded-xl text-xs font-semibold transition-colors"
                   >
                     <FileText className="w-3.5 h-3.5" />
                     <span>View</span>

@@ -1,5 +1,7 @@
+import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { getAuthorizedActionContext } from "@/lib/auth/guard";
+import { getCachedGymAuthContext } from "@/lib/auth/guard";
+import { hasCapability } from "@/lib/auth/capabilities";
 import { cookies } from "next/headers";
 import { resolveBranchContext } from "@/lib/auth/branch-context";
 import {
@@ -19,10 +21,11 @@ export default async function ReportsPage({ params, searchParams }: ReportsPageP
   const { gymId } = await params;
   const resolvedSearchParams = searchParams ? await searchParams : {};
 
-  const authContext = await getAuthorizedActionContext({
-    gymId,
-    capability: "reports:view",
-  });
+  // Financial route lockdown: Floor staff cannot view revenue or expense analytics
+  const authContext = await getCachedGymAuthContext(gymId);
+  if (!hasCapability(authContext.role, "reports:view")) {
+    redirect(`/app/${gymId}/attendance`);
+  }
 
   const cookieStore = await cookies();
   const cookieBranch = cookieStore.get(`gymapra_branch_${gymId}`)?.value;

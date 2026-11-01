@@ -101,40 +101,40 @@ export function RenewMembershipModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
-      <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-100 animate-in fade-in zoom-in-95 duration-150">
-        <div className="flex items-center justify-between pb-4 border-b border-slate-100">
-          <div className="flex items-center gap-2.5">
-            <div className="p-2 bg-emerald-50 text-emerald-600 rounded-xl">
+    <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
+      <div className="bg-card text-card-foreground rounded-3xl max-w-md w-full p-6 sm:p-7 shadow-2xl border border-border animate-in fade-in zoom-in-95 duration-150">
+        <div className="flex items-center justify-between pb-4 border-b border-border">
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 bg-primary/10 text-primary rounded-2xl shadow-2xs">
               <RefreshCw className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="text-base font-bold text-slate-900">Renew Membership</h3>
-              <p className="text-xs text-slate-500">Extend plan for {memberName}</p>
+              <h3 className="text-base font-black text-foreground">Renew Membership</h3>
+              <p className="text-xs text-muted-foreground">Extend plan for {memberName}</p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100"
+            className="p-1.5 rounded-xl text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer"
           >
             <X className="w-4 h-4" />
           </button>
         </div>
 
         {error && (
-          <div className="mt-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded-xl text-xs">
+          <div className="mt-4 p-3.5 bg-rose-500/10 border border-rose-500/20 text-rose-600 rounded-xl text-xs font-semibold">
             {error}
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="mt-4 space-y-4">
+        <form onSubmit={handleSubmit} className="mt-5 space-y-4">
           <div>
-            <label className="block text-xs font-semibold text-slate-700 mb-1">Select Plan *</label>
+            <label className="block text-xs font-bold uppercase tracking-wider text-muted-foreground mb-1.5">Select Plan *</label>
             <select
               value={selectedPlanId}
               onChange={(e) => handlePlanChange(e.target.value)}
               required
-              className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 focus:outline-hidden focus:ring-2 focus:ring-emerald-500"
+              className="w-full h-11 px-3.5 bg-muted/40 border border-input rounded-xl text-sm font-semibold text-foreground focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary/40 cursor-pointer"
             >
               {plans.map((p) => (
                 <option key={p.id} value={p.id}>
@@ -147,17 +147,17 @@ export function RenewMembershipModal({
           {/* 3 Payment Presets */}
           {currentPlan && (
             <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+              <label className="block text-xs font-bold uppercase tracking-wider text-muted-foreground mb-1.5">
                 Payment Status Preset
               </label>
               <div className="grid grid-cols-3 gap-2">
                 <button
                   type="button"
                   onClick={() => setAmountPaid(currentPlan.price)}
-                  className={`py-1.5 px-2 rounded-xl text-xs font-bold border transition-all ${
+                  className={`h-11 px-2 rounded-xl text-xs font-bold border transition-all cursor-pointer flex items-center justify-center ${
                     amountPaid >= currentPlan.price
-                      ? "bg-emerald-50 border-emerald-500 text-emerald-700 shadow-2xs"
-                      : "bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100"
+                      ? "bg-emerald-500/10 border-emerald-500 text-emerald-600 shadow-2xs"
+                      : "bg-muted/40 border-border text-muted-foreground hover:bg-muted"
                   }`}
                 >
                   Full Payment
@@ -168,10 +168,10 @@ export function RenewMembershipModal({
                     const half = Math.round((currentPlan.price / 2) * 100) / 100;
                     setAmountPaid(half > 0 ? half : 500);
                   }}
-                  className={`py-1.5 px-2 rounded-xl text-xs font-bold border transition-all ${
+                  className={`h-11 px-2 rounded-xl text-xs font-bold border transition-all cursor-pointer flex items-center justify-center ${
                     amountPaid > 0 && amountPaid < currentPlan.price
-                      ? "bg-amber-50 border-amber-500 text-amber-700 shadow-2xs"
-                      : "bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100"
+                      ? "bg-amber-500/10 border-amber-500 text-amber-600 shadow-2xs"
+                      : "bg-muted/40 border-border text-muted-foreground hover:bg-muted"
                   }`}
                 >
                   Partial Payment
@@ -179,10 +179,10 @@ export function RenewMembershipModal({
                 <button
                   type="button"
                   onClick={() => setAmountPaid(0)}
-                  className={`py-1.5 px-2 rounded-xl text-xs font-bold border transition-all ${
+                  className={`h-11 px-2 rounded-xl text-xs font-bold border transition-all cursor-pointer flex items-center justify-center ${
                     amountPaid === 0
-                      ? "bg-indigo-50 border-indigo-500 text-indigo-700 shadow-2xs"
-                      : "bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100"
+                      ? "bg-primary/10 border-primary text-primary shadow-2xs"
+                      : "bg-muted/40 border-border text-muted-foreground hover:bg-muted"
                   }`}
                 >
                   Pay Later
@@ -193,57 +193,61 @@ export function RenewMembershipModal({
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1">Start Date *</label>
+              <label className="block text-xs font-bold uppercase tracking-wider text-muted-foreground mb-1.5">Start Date *</label>
               <input
                 type="date"
                 required
                 value={startDate}
                 onChange={(e) => setStartDate(e.target.value)}
-                className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 focus:outline-hidden focus:ring-2 focus:ring-emerald-500"
+                className="w-full h-11 px-3 bg-muted/40 border border-input rounded-xl text-sm font-semibold text-foreground focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary/40"
               />
             </div>
             <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1">Amount Collected (₹)</label>
+              <label className="block text-xs font-bold uppercase tracking-wider text-muted-foreground mb-1.5">Amount Collected (₹)</label>
               <div className="relative">
-                <IndianRupee className="w-3.5 h-3.5 absolute left-3 top-3 text-slate-400" />
+                <IndianRupee className="w-4 h-4 absolute left-3 top-3.5 text-muted-foreground" />
                 <input
                   type="number"
+                  inputMode="decimal"
                   min="0"
                   step="any"
                   value={amountPaid}
                   onChange={(e) => setAmountPaid(Number(e.target.value))}
-                  className="w-full pl-8 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 focus:outline-hidden focus:ring-2 focus:ring-emerald-500 font-semibold"
+                  className="w-full h-11 pl-9 pr-3 bg-muted/40 border border-input rounded-xl text-sm font-bold text-foreground focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary/40"
                 />
               </div>
             </div>
           </div>
 
           {currentPlan && amountPaid >= currentPlan.price ? (
-            <div className="text-[11px] font-semibold text-emerald-800 bg-emerald-50 border border-emerald-200/80 rounded-xl p-2.5">
-              ✅ Full renewal payment received. Balance due: ₹0.00
+            <div className="text-xs font-bold text-emerald-600 bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-3 flex items-center gap-2">
+              <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+              <span>Full renewal payment received. Balance due: ₹0.00</span>
             </div>
           ) : currentPlan && amountPaid > 0 && amountPaid < currentPlan.price ? (
-            <div className="text-[11px] font-semibold text-amber-800 bg-amber-50 border border-amber-200/80 rounded-xl p-2.5">
-              ⚠️ Partial payment recorded: Remaining dues ₹{(currentPlan.price - amountPaid).toLocaleString("en-IN")} will be logged.
+            <div className="text-xs font-bold text-amber-600 bg-amber-500/10 border border-amber-500/20 rounded-xl p-3 flex items-center gap-2">
+              <IndianRupee className="w-4 h-4 text-amber-600 shrink-0" />
+              <span>Partial payment recorded: Remaining dues ₹{(currentPlan.price - amountPaid).toLocaleString("en-IN")}.</span>
             </div>
           ) : currentPlan && amountPaid === 0 ? (
-            <div className="text-[11px] font-semibold text-indigo-800 bg-indigo-50 border border-indigo-200/80 rounded-xl p-2.5">
-              ⏳ Pay Later: Renewal active immediately. Full fee of ₹{currentPlan.price.toLocaleString("en-IN")} tracked as pending dues.
+            <div className="text-xs font-bold text-primary bg-primary/10 border border-primary/20 rounded-xl p-3 flex items-center gap-2">
+              <IndianRupee className="w-4 h-4 text-primary shrink-0" />
+              <span>Pay Later: Renewal active immediately. Full fee of ₹{currentPlan.price.toLocaleString("en-IN")} tracked as pending dues.</span>
             </div>
           ) : null}
 
           <div>
-            <label className="block text-xs font-semibold text-slate-700 mb-1">Payment Method</label>
+            <label className="block text-xs font-bold uppercase tracking-wider text-muted-foreground mb-1.5">Payment Method</label>
             <div className="grid grid-cols-3 gap-2">
               {(["cash", "upi", "card"] as const).map((method) => (
                 <button
                   key={method}
                   type="button"
                   onClick={() => setPaymentMethod(method)}
-                  className={`py-2 px-3 text-xs font-bold rounded-xl border transition-colors uppercase ${
+                  className={`h-11 px-3 text-xs font-bold rounded-xl border transition-all uppercase cursor-pointer flex items-center justify-center ${
                     paymentMethod === method
-                      ? "bg-emerald-50 border-emerald-500 text-emerald-700"
-                      : "bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100"
+                      ? "bg-primary/10 border-primary text-primary shadow-2xs"
+                      : "bg-muted/40 border-border text-muted-foreground hover:bg-muted"
                   }`}
                 >
                   {method}
@@ -253,28 +257,28 @@ export function RenewMembershipModal({
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-slate-700 mb-1">Renewal Notes (Optional)</label>
+            <label className="block text-xs font-bold uppercase tracking-wider text-muted-foreground mb-1.5">Renewal Notes (Optional)</label>
             <input
               type="text"
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               placeholder="e.g. Festival offer, renewed for 3 months"
-              className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 focus:outline-hidden focus:ring-2 focus:ring-emerald-500"
+              className="w-full h-11 px-3.5 bg-muted/40 border border-input rounded-xl text-sm text-foreground focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary/40"
             />
           </div>
 
-          <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100">
+          <div className="flex items-center justify-end gap-3 pt-3 border-t border-border">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition-colors"
+              className="h-11 px-4 text-xs font-bold text-muted-foreground hover:bg-muted rounded-xl transition-colors cursor-pointer"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={loading}
-              className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-xl shadow-xs transition-colors disabled:opacity-50"
+              className="flex items-center gap-2 h-11 px-5 bg-primary hover:opacity-95 text-primary-foreground text-xs font-bold rounded-xl shadow-md shadow-primary/25 transition-all disabled:opacity-50 cursor-pointer"
             >
               {loading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CheckCircle2 className="w-3.5 h-3.5" />}
               Confirm Renewal

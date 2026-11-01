@@ -33,7 +33,7 @@ export function AppShell({
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
 
   return (
-    <div className="flex h-screen overflow-hidden bg-slate-50">
+    <div className="flex h-screen overflow-hidden bg-background text-foreground">
       {/* Desktop Persistent Sidebar */}
       <div className="hidden md:flex shrink-0">
         <Sidebar gymId={gymId} gymName={gymName} role={role} />
@@ -44,16 +44,16 @@ export function AppShell({
         <div className="fixed inset-0 z-50 md:hidden flex">
           {/* Backdrop */}
           <div
-            className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-200"
+            className="fixed inset-0 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200"
             onClick={() => setMobileDrawerOpen(false)}
           />
 
           {/* Drawer Content */}
-          <div className="relative z-10 w-64 max-w-[80vw] bg-white h-full shadow-2xl flex flex-col animate-in slide-in-from-left duration-200">
-            <div className="absolute right-2 top-3 z-20">
+          <div className="relative z-10 w-72 max-w-[85vw] bg-card text-card-foreground h-full shadow-2xl flex flex-col border-r border-border animate-in slide-in-from-left duration-200">
+            <div className="absolute right-3 top-3.5 z-20">
               <button
                 onClick={() => setMobileDrawerOpen(false)}
-                className="p-1.5 rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors"
+                className="p-1.5 rounded-xl text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
                 aria-label="Close menu"
               >
                 <X className="w-4 h-4" />
@@ -70,7 +70,7 @@ export function AppShell({
       )}
 
       {/* Main Content Area */}
-      <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
+      <div className="flex flex-col flex-1 min-w-0 overflow-hidden bg-background">
         <Topbar
           gymId={gymId}
           gymName={gymName}

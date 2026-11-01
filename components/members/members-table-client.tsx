@@ -9,7 +9,9 @@ import {
   ShieldCheck,
   Clock,
   AlertCircle,
+  Building2,
 } from "lucide-react";
+import { getStatusBadgeClass } from "@/lib/utils";
 
 export interface MemberListItem {
   id: string;
@@ -75,63 +77,63 @@ export function MembersTableClient({
   }, [members, search, filterType, selectedBranch]);
 
   return (
-    <div className="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden">
+    <div className="bg-card rounded-3xl border border-border shadow-xs overflow-hidden text-card-foreground">
       {/* Controls Bar */}
-      <div className="p-4 border-b border-slate-100 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
+      <div className="p-4 sm:p-5 border-b border-border flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
         {/* Search */}
         <div className="relative flex-1 max-w-md">
-          <Search className="w-4 h-4 absolute left-3 top-2.5 text-slate-400" />
+          <Search className="w-4 h-4 absolute left-3.5 top-3.5 text-muted-foreground pointer-events-none" />
           <input
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search by name, phone, or email..."
-            className="w-full pl-9 pr-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 focus:outline-hidden focus:ring-2 focus:ring-indigo-500"
+            className="w-full h-11 pl-10 pr-4 bg-muted/50 border border-input rounded-xl text-xs sm:text-sm text-foreground focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:border-primary transition-all"
           />
         </div>
 
         {/* Filter Badges & Branch Select */}
-        <div className="flex items-center gap-2 flex-wrap">
-          <div className="flex items-center bg-slate-100 p-0.5 rounded-xl text-xs">
+        <div className="flex items-center gap-2.5 flex-wrap">
+          <div className="flex items-center bg-muted/60 p-1 rounded-xl text-xs border border-border/60">
             <button
               onClick={() => setFilterType("all")}
-              className={`px-3 py-1 rounded-lg font-bold transition-colors ${
+              className={`px-3 py-1.5 rounded-lg font-bold transition-all cursor-pointer ${
                 filterType === "all"
-                  ? "bg-white text-slate-900 shadow-2xs"
-                  : "text-slate-600 hover:text-slate-900"
+                  ? "bg-card text-foreground shadow-2xs border border-border"
+                  : "text-muted-foreground hover:text-foreground"
               }`}
             >
               All ({members.length})
             </button>
             <button
               onClick={() => setFilterType("active")}
-              className={`px-3 py-1 rounded-lg font-bold transition-colors ${
+              className={`px-3 py-1.5 rounded-lg font-bold transition-all cursor-pointer ${
                 filterType === "active"
-                  ? "bg-white text-emerald-700 shadow-2xs"
-                  : "text-slate-600 hover:text-slate-900"
+                  ? "bg-card text-emerald-600 shadow-2xs border border-border"
+                  : "text-muted-foreground hover:text-foreground"
               }`}
             >
               Active Plan
             </button>
             <button
               onClick={() => setFilterType("expiring_soon")}
-              className={`px-3 py-1 rounded-lg font-bold transition-colors ${
+              className={`px-3 py-1.5 rounded-lg font-bold transition-all cursor-pointer ${
                 filterType === "expiring_soon"
-                  ? "bg-white text-amber-700 shadow-2xs"
-                  : "text-slate-600 hover:text-slate-900"
+                  ? "bg-card text-amber-600 shadow-2xs border border-border"
+                  : "text-muted-foreground hover:text-foreground"
               }`}
             >
               Expiring Soon
             </button>
             <button
               onClick={() => setFilterType("expired_or_none")}
-              className={`px-3 py-1 rounded-lg font-bold transition-colors ${
+              className={`px-3 py-1.5 rounded-lg font-bold transition-all cursor-pointer ${
                 filterType === "expired_or_none"
-                  ? "bg-white text-red-700 shadow-2xs"
-                  : "text-slate-600 hover:text-slate-900"
+                  ? "bg-card text-rose-600 shadow-2xs border border-border"
+                  : "text-muted-foreground hover:text-foreground"
               }`}
             >
-              No / Expired Plan
+              No / Expired
             </button>
           </div>
 
@@ -139,7 +141,7 @@ export function MembersTableClient({
             <select
               value={selectedBranch}
               onChange={(e) => setSelectedBranch(e.target.value)}
-              className="px-2.5 py-1 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 font-semibold focus:outline-hidden focus:ring-2 focus:ring-indigo-500"
+              className="h-11 px-3 bg-muted/50 border border-input rounded-xl text-xs font-semibold text-foreground focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary/40 cursor-pointer"
             >
               <option value="all">All Branches</option>
               {branches.map((b) => (
@@ -155,23 +157,23 @@ export function MembersTableClient({
       {/* Table */}
       <div className="overflow-x-auto">
         <table className="w-full text-left text-xs">
-          <thead className="bg-slate-50/80 text-slate-500 font-semibold border-b border-slate-100">
+          <thead className="bg-muted/40 text-muted-foreground font-bold border-b border-border uppercase tracking-wider text-[10px]">
             <tr>
-              <th className="p-3.5 pl-4">Member Name</th>
-              <th className="p-3.5">Contact</th>
-              <th className="p-3.5">Branch</th>
-              <th className="p-3.5">Current Plan</th>
-              <th className="p-3.5">Validity Status</th>
-              <th className="p-3.5">Portal Status</th>
-              <th className="p-3.5 pr-4 text-right">Actions</th>
+              <th className="p-4 pl-5">Member Name</th>
+              <th className="p-4">Contact</th>
+              <th className="p-4">Branch</th>
+              <th className="p-4">Current Plan</th>
+              <th className="p-4">Validity Status</th>
+              <th className="p-4">Portal Status</th>
+              <th className="p-4 pr-5 text-right">Actions</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100 text-slate-700">
+          <tbody className="divide-y divide-border text-foreground">
             {filteredMembers.length === 0 ? (
               <tr>
-                <td colSpan={7} className="p-8 text-center text-slate-400">
+                <td colSpan={7} className="p-10 text-center text-muted-foreground">
                   {members.length === 0
-                    ? 'No members registered yet. Click "Quick Enroll" to add a member.'
+                    ? 'No members registered yet. Click "Quick Enroll Member" to onboard.'
                     : "No members match the selected filters or search query."}
                 </td>
               </tr>
@@ -188,23 +190,23 @@ export function MembersTableClient({
                 return (
                   <tr
                     key={member.id}
-                    className="hover:bg-slate-50/70 transition-colors group"
+                    className="hover:bg-muted/30 transition-colors group"
                   >
-                    <td className="p-3.5 pl-4 whitespace-nowrap">
+                    <td className="p-4 pl-5 whitespace-nowrap">
                       <Link
                         href={`/app/${gymId}/members/${member.id}`}
-                        className="flex items-center gap-2.5 font-bold text-slate-900 hover:text-indigo-600 transition-colors"
+                        className="flex items-center gap-3 font-bold text-foreground hover:text-primary transition-colors"
                       >
-                        <div className="w-8 h-8 rounded-full bg-slate-100 text-slate-700 font-bold flex items-center justify-center text-xs border border-slate-200">
+                        <div className="w-9 h-9 rounded-full bg-primary/10 text-primary font-bold flex items-center justify-center text-xs border border-primary/20 shrink-0">
                           {member.fullName.charAt(0).toUpperCase()}
                         </div>
                         <div>
                           <div className="flex items-center gap-1.5">
                             <span>{member.fullName}</span>
-                            <ArrowRight className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity text-indigo-600" />
+                            <ArrowRight className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 transition-opacity text-primary" />
                           </div>
                           {member.status !== "active" && (
-                            <span className="text-[10px] text-red-600 uppercase font-bold">
+                            <span className="text-[10px] text-rose-600 uppercase font-bold">
                               {member.status}
                             </span>
                           )}
@@ -212,82 +214,85 @@ export function MembersTableClient({
                       </Link>
                     </td>
 
-                    <td className="p-3.5 font-medium text-slate-600 whitespace-nowrap">
-                      <div>{member.phone}</div>
+                    <td className="p-4 font-medium text-muted-foreground whitespace-nowrap">
+                      <div className="text-foreground font-semibold">{member.phone}</div>
                       {member.email && (
-                        <div className="text-[11px] text-slate-400">{member.email}</div>
+                        <div className="text-[11px] text-muted-foreground">{member.email}</div>
                       )}
                     </td>
 
-                    <td className="p-3.5 whitespace-nowrap text-slate-600">
-                      {member.branchName}
+                    <td className="p-4 whitespace-nowrap text-muted-foreground font-medium">
+                      <span className="inline-flex items-center gap-1">
+                        <Building2 className="w-3 h-3 text-muted-foreground/70" />
+                        {member.branchName}
+                      </span>
                     </td>
 
-                    <td className="p-3.5 whitespace-nowrap">
+                    <td className="p-4 whitespace-nowrap">
                       <span
                         className={`px-2.5 py-1 rounded-lg text-xs font-bold ${
                           member.activePlan && !member.activePlan.isExpired
-                            ? "bg-emerald-50 text-emerald-700 border border-emerald-200/60"
-                            : "bg-slate-100 text-slate-500"
+                            ? "bg-primary/10 text-primary border border-primary/20"
+                            : "bg-muted text-muted-foreground border border-border"
                         }`}
                       >
                         {member.activePlan ? member.activePlan.name : "No Plan"}
                       </span>
                     </td>
 
-                    <td className="p-3.5 whitespace-nowrap">
+                    <td className="p-4 whitespace-nowrap">
                       {member.activePlan ? (
                         member.activePlan.isExpired ? (
-                          <span className="inline-flex items-center gap-1 text-red-600 font-bold text-xs">
+                          <span className="inline-flex items-center gap-1 bg-rose-500/10 text-rose-600 border border-rose-500/20 px-2.5 py-1 rounded-full text-xs font-bold">
                             <AlertCircle className="w-3.5 h-3.5" />
                             Expired ({member.activePlan.endDate})
                           </span>
                         ) : member.activePlan.isExpiringSoon ? (
-                          <span className="inline-flex items-center gap-1 text-amber-600 font-bold text-xs bg-amber-50 px-2 py-0.5 rounded-md border border-amber-200/60">
+                          <span className="inline-flex items-center gap-1 bg-amber-500/10 text-amber-600 border border-amber-500/20 px-2.5 py-1 rounded-full text-xs font-bold">
                             <Clock className="w-3.5 h-3.5" />
                             {member.activePlan.daysLeft}d left ({member.activePlan.endDate})
                           </span>
                         ) : (
-                          <span className="text-emerald-700 font-semibold text-xs">
+                          <span className="inline-flex items-center gap-1 bg-emerald-500/10 text-emerald-600 border border-emerald-500/20 px-2.5 py-1 rounded-full text-xs font-bold">
                             Expires {member.activePlan.endDate} ({member.activePlan.daysLeft}d)
                           </span>
                         )
                       ) : (
-                        <span className="text-slate-400">—</span>
+                        <span className="text-muted-foreground">—</span>
                       )}
                     </td>
 
-                    <td className="p-3.5 whitespace-nowrap">
+                    <td className="p-4 whitespace-nowrap">
                       {member.userId ? (
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-blue-50 text-blue-700 rounded-md font-bold text-[11px] border border-blue-200/60">
+                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 bg-primary/10 text-primary rounded-full font-bold text-[11px] border border-primary/20">
                           <ShieldCheck className="w-3 h-3" />
                           Connected
                         </span>
                       ) : member.hasPendingInvite ? (
-                        <span className="px-2 py-0.5 bg-amber-50 text-amber-700 rounded-md font-bold text-[11px]">
+                        <span className="px-2.5 py-0.5 bg-amber-500/10 text-amber-600 rounded-full font-bold text-[11px] border border-amber-500/20">
                           Invite Sent
                         </span>
                       ) : (
-                        <span className="px-2 py-0.5 bg-slate-100 text-slate-500 rounded-md font-medium text-[11px]">
+                        <span className="px-2.5 py-0.5 bg-muted text-muted-foreground rounded-full font-medium text-[11px] border border-border">
                           Not Claimed
                         </span>
                       )}
                     </td>
 
-                    <td className="p-3.5 pr-4 text-right whitespace-nowrap">
-                      <div className="flex items-center justify-end gap-1.5">
+                    <td className="p-4 pr-5 text-right whitespace-nowrap">
+                      <div className="flex items-center justify-end gap-2">
                         <a
                           href={waShare}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="p-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 rounded-lg transition-colors"
+                          className="p-2 bg-[#25D366]/10 hover:bg-[#25D366] text-[#25D366] hover:text-white rounded-xl transition-all shadow-2xs"
                           title="Share Portal link via WhatsApp"
                         >
                           <MessageSquare className="w-3.5 h-3.5" />
                         </a>
                         <Link
                           href={`/app/${gymId}/members/${member.id}`}
-                          className="px-2.5 py-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-lg font-bold text-xs transition-colors"
+                          className="px-3 py-1.5 bg-primary/10 hover:bg-primary text-primary hover:text-primary-foreground rounded-xl font-bold text-xs transition-all shadow-2xs"
                         >
                           Profile 360 &rarr;
                         </Link>
@@ -302,9 +307,9 @@ export function MembersTableClient({
       </div>
 
       {/* Footer */}
-      <div className="p-3 bg-slate-50 border-t border-slate-100 text-xs text-slate-500 flex items-center justify-between">
+      <div className="p-4 bg-muted/30 border-t border-border text-xs text-muted-foreground flex items-center justify-between">
         <div>
-          Showing {filteredMembers.length} of {members.length} members
+          Showing <span className="font-bold text-foreground">{filteredMembers.length}</span> of <span className="font-bold text-foreground">{members.length}</span> members
         </div>
       </div>
     </div>

@@ -8,6 +8,12 @@ import {
   buildInvitationLinks,
   getAppBaseUrl,
 } from "@/lib/auth/invitations";
+import {
+  ROLE_HIERARCHY,
+  StaffRole,
+  canAssignRole,
+  canDemoteOrRemoveOwner,
+} from "@/lib/auth/roles";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
@@ -15,7 +21,7 @@ const staffInviteSchema = z.object({
   gymId: z.string().uuid(),
   email: z.string().email().optional().or(z.literal("")),
   phone: z.string().optional().or(z.literal("")),
-  role: z.enum(["partner", "manager", "staff", "trainer"]),
+  role: z.enum(["owner", "partner", "manager", "staff", "trainer"]),
   branchIds: z.array(z.string().uuid()).default([]),
 });
 
@@ -33,7 +39,40 @@ export async function createStaffInvitationAction(data: z.infer<typeof staffInvi
     capability: "invitations:manage",
   });
 
+  // Anti-Privilege Escalation: verify inviter has authority to grant this role
+  if (!canAssignRole(authContext.role, role)) {
+    if (role === "owner") {
+      return {
+        success: false,
+        error: "Permission denied: Only an existing owner can invite another owner",
+      };
+    }
+    return {
+      success: false,
+      error: `Permission denied: Cannot invite staff with role '${role}' (requires higher privileges)`,
+    };
+  }
+
   const supabase = await createClient();
+
+  // Validate that all attached branchIds strictly belong to this gym workspace and are active
+  if (branchIds && branchIds.length > 0) {
+    const { data: validBranches } = await supabase
+      .from("branches")
+      .select("id")
+      .eq("gym_id", gymId)
+      .eq("is_active", true)
+      .in("id", branchIds);
+
+    const validBranchSet = new Set((validBranches || []).map((b) => b.id));
+    const hasForeignBranch = branchIds.some((id) => !validBranchSet.has(id));
+    if (hasForeignBranch) {
+      return {
+        success: false,
+        error: "One or more selected branches do not belong to this gym workspace",
+      };
+    }
+  }
 
   // Get gym name
   const { data: gym } = await supabase
@@ -87,6 +126,11 @@ export async function createStaffInvitationAction(data: z.infer<typeof staffInvi
     invitationId: invitation.id,
     links,
   };
+}
+
+// Convenient alias for createStaffInvitationAction
+export async function inviteStaffAction(data: z.infer<typeof staffInviteSchema>) {
+  return createStaffInvitationAction(data);
 }
 
 export async function createMemberInvitationAction(params: {
@@ -208,6 +252,36 @@ export async function toggleStaffStatusAction(params: {
 
     const supabase = await createClient();
 
+    const { data: targetUser, error: fetchErr } = await supabase
+      .from("gym_users")
+      .select("id, role, status, user_id")
+      .eq("id", params.gymUserId)
+      .eq("gym_id", params.gymId)
+      .maybeSingle();
+
+    if (fetchErr || !targetUser) {
+      return { success: false, error: "Staff member not found" };
+    }
+
+    // Privilege protection: Non-owners cannot suspend senior or equal roles
+    if (context.role !== "owner" && ROLE_HIERARCHY[targetUser.role as StaffRole] >= ROLE_HIERARCHY[context.role]) {
+      return { success: false, error: "Permission denied: Cannot modify status of a senior staff member" };
+    }
+
+    // Sole owner suspension protection
+    if (targetUser.role === "owner" && params.status === "suspended") {
+      const { data: owners } = await supabase
+        .from("gym_users")
+        .select("id")
+        .eq("gym_id", params.gymId)
+        .eq("role", "owner")
+        .eq("status", "active");
+
+      if (!canDemoteOrRemoveOwner(owners?.length || 0)) {
+        return { success: false, error: "Cannot suspend or deactivate the sole owner of this gym workspace" };
+      }
+    }
+
     const { error } = await supabase
       .from("gym_users")
       .update({ status: params.status })
@@ -223,6 +297,137 @@ export async function toggleStaffStatusAction(params: {
     return { success: true };
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Failed to update staff status";
+    return { success: false, error: message };
+  }
+}
+
+export async function updateStaffRoleAction(params: {
+  gymId: string;
+  gymUserId: string;
+  newRole: StaffRole;
+}) {
+  try {
+    const context = await getAuthorizedActionContext({
+      gymId: params.gymId,
+      capability: "staff:manage",
+    });
+
+    const supabase = await createClient();
+
+    const { data: targetUser, error: fetchErr } = await supabase
+      .from("gym_users")
+      .select("id, role, status, user_id")
+      .eq("id", params.gymUserId)
+      .eq("gym_id", params.gymId)
+      .maybeSingle();
+
+    if (fetchErr || !targetUser) {
+      return { success: false, error: "Staff member not found" };
+    }
+
+    // Only owners can promote or assign owner role; non-owners can only assign below their hierarchy
+    if (!canAssignRole(context.role, params.newRole)) {
+      if (params.newRole === "owner") {
+        return { success: false, error: "Permission denied: Only an existing owner can promote another user to owner" };
+      }
+      return { success: false, error: `Permission denied: Cannot assign role '${params.newRole}' (requires higher privileges)` };
+    }
+
+    // Non-owners cannot modify senior or equal staff
+    if (context.role !== "owner" && ROLE_HIERARCHY[targetUser.role as StaffRole] >= ROLE_HIERARCHY[context.role]) {
+      return { success: false, error: "Permission denied: Cannot modify a staff member with equal or higher role" };
+    }
+
+    // Sole owner demotion protection
+    if (targetUser.role === "owner" && params.newRole !== "owner") {
+      const { data: owners } = await supabase
+        .from("gym_users")
+        .select("id")
+        .eq("gym_id", params.gymId)
+        .eq("role", "owner")
+        .eq("status", "active");
+
+      if (!canDemoteOrRemoveOwner(owners?.length || 0)) {
+        return { success: false, error: "Cannot demote the sole owner of this gym workspace" };
+      }
+    }
+
+    const { error } = await supabase
+      .from("gym_users")
+      .update({ role: params.newRole })
+      .eq("id", params.gymUserId)
+      .eq("gym_id", params.gymId);
+
+    if (error) {
+      return { success: false, error: error.message };
+    }
+
+    revalidatePath(`/app/${context.gymId}`, "layout");
+    revalidatePath(`/app/${context.gymId}/staff`);
+    return { success: true };
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : "Failed to update staff role";
+    return { success: false, error: message };
+  }
+}
+
+export async function deleteStaffMemberAction(params: {
+  gymId: string;
+  gymUserId: string;
+}) {
+  try {
+    const context = await getAuthorizedActionContext({
+      gymId: params.gymId,
+      capability: "staff:manage",
+    });
+
+    const supabase = await createClient();
+
+    const { data: targetUser, error: fetchErr } = await supabase
+      .from("gym_users")
+      .select("id, role, status, user_id")
+      .eq("id", params.gymUserId)
+      .eq("gym_id", params.gymId)
+      .maybeSingle();
+
+    if (fetchErr || !targetUser) {
+      return { success: false, error: "Staff member not found" };
+    }
+
+    // Non-owners cannot remove senior staff
+    if (context.role !== "owner" && ROLE_HIERARCHY[targetUser.role as StaffRole] >= ROLE_HIERARCHY[context.role]) {
+      return { success: false, error: "Permission denied: Cannot remove a staff member with equal or higher role" };
+    }
+
+    // Sole owner deletion protection
+    if (targetUser.role === "owner") {
+      const { data: owners } = await supabase
+        .from("gym_users")
+        .select("id")
+        .eq("gym_id", params.gymId)
+        .eq("role", "owner")
+        .eq("status", "active");
+
+      if (!canDemoteOrRemoveOwner(owners?.length || 0)) {
+        return { success: false, error: "Cannot delete or remove the sole owner of this gym workspace" };
+      }
+    }
+
+    const { error } = await supabase
+      .from("gym_users")
+      .delete()
+      .eq("id", params.gymUserId)
+      .eq("gym_id", params.gymId);
+
+    if (error) {
+      return { success: false, error: error.message };
+    }
+
+    revalidatePath(`/app/${context.gymId}`, "layout");
+    revalidatePath(`/app/${context.gymId}/staff`);
+    return { success: true };
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : "Failed to remove staff member";
     return { success: false, error: message };
   }
 }

@@ -166,7 +166,7 @@ CREATE TABLE IF NOT EXISTS public.payments (
     membership_id UUID REFERENCES public.memberships(id) ON DELETE SET NULL,
     amount NUMERIC(10, 2) NOT NULL CHECK (amount > 0),
     payment_method TEXT NOT NULL DEFAULT 'cash' CHECK (payment_method IN ('cash', 'upi', 'card', 'bank_transfer', 'cheque', 'other')),
-    payment_status TEXT NOT NULL DEFAULT 'paid' CHECK (payment_status IN ('paid', 'partial', 'pending', 'refunded')),
+    payment_status TEXT NOT NULL DEFAULT 'paid' CHECK (payment_status IN ('paid', 'partial', 'pending', 'refunded', 'rejected')),
     payment_date DATE NOT NULL DEFAULT CURRENT_DATE,
     notes TEXT,
     idempotency_key TEXT,

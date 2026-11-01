@@ -117,8 +117,8 @@ export default async function PaymentsPage({ params, searchParams }: PaymentsPag
       {/* Top Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-black text-slate-900 tracking-tight">Payment & Revenue Ledger</h1>
-          <p className="text-xs text-slate-500 mt-1">
+          <h1 className="text-2xl font-black text-foreground tracking-tight">Payment & Revenue Ledger</h1>
+          <p className="text-xs text-muted-foreground mt-1">
             Track member fee collections, payment methods, and automated WhatsApp & printable receipts
           </p>
         </div>
@@ -136,39 +136,39 @@ export default async function PaymentsPage({ params, searchParams }: PaymentsPag
 
       {/* KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs flex items-center gap-4">
-          <div className="p-3 bg-emerald-50 text-emerald-600 rounded-xl">
+        <div className="bg-card p-5 rounded-2xl border border-border shadow-xs flex items-center gap-4 transition-all">
+          <div className="p-3 bg-emerald-500/10 text-emerald-500 rounded-xl">
             <TrendingUp className="w-6 h-6" />
           </div>
           <div>
-            <div className="text-2xl font-black text-slate-900">
+            <div className="text-2xl font-black text-card-foreground">
               ₹{totalRevenue.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
             </div>
-            <div className="text-xs text-slate-500 font-medium">Total Revenue Collected</div>
+            <div className="text-xs text-muted-foreground font-medium">Total Revenue Collected</div>
           </div>
         </div>
 
-        <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs flex items-center gap-4">
-          <div className="p-3 bg-indigo-50 text-indigo-600 rounded-xl">
+        <div className="bg-card p-5 rounded-2xl border border-border shadow-xs flex items-center gap-4 transition-all">
+          <div className="p-3 bg-primary/10 text-primary rounded-xl">
             <Wallet className="w-6 h-6" />
           </div>
           <div>
-            <div className="text-sm font-bold text-slate-900">
+            <div className="text-sm font-bold text-card-foreground">
               UPI: ₹{upiTotal.toLocaleString("en-IN")} • Cash: ₹{cashTotal.toLocaleString("en-IN")}
             </div>
-            <div className="text-xs text-slate-500 font-medium">
+            <div className="text-xs text-muted-foreground font-medium">
               Card & Others: ₹{cardTotal.toLocaleString("en-IN")}
             </div>
           </div>
         </div>
 
-        <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs flex items-center gap-4">
-          <div className="p-3 bg-slate-100 text-slate-600 rounded-xl">
+        <div className="bg-card p-5 rounded-2xl border border-border shadow-xs flex items-center gap-4 transition-all">
+          <div className="p-3 bg-muted text-muted-foreground rounded-xl">
             <CreditCard className="w-6 h-6" />
           </div>
           <div>
-            <div className="text-2xl font-black text-slate-900">{allPayments.length}</div>
-            <div className="text-xs text-slate-500 font-medium">Payment Receipts Issued</div>
+            <div className="text-2xl font-black text-card-foreground">{allPayments.length}</div>
+            <div className="text-xs text-muted-foreground font-medium">Payment Receipts Issued</div>
           </div>
         </div>
       </div>

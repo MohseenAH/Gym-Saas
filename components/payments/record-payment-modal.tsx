@@ -95,28 +95,28 @@ export function RecordPaymentModal({ gymId, branches, members }: RecordPaymentMo
     <>
       <button
         onClick={() => setIsOpen(true)}
-        className="flex items-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-sm font-semibold shadow-sm transition-all"
+        className="h-11 flex items-center gap-2 px-4 bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl text-sm font-bold shadow-xs transition-all active:scale-[0.98]"
       >
         <Plus className="w-4 h-4" />
         Record Payment
       </button>
 
       {isOpen && (
-        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-xl border border-slate-100 animate-in fade-in zoom-in-95 duration-150">
-            <div className="flex items-center justify-between pb-4 border-b border-slate-100">
-              <div className="flex items-center gap-2.5">
-                <div className="p-2 bg-emerald-50 text-emerald-600 rounded-xl">
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-card text-card-foreground rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-border animate-in fade-in zoom-in-95 duration-150">
+            <div className="flex items-center justify-between pb-4 border-b border-border">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 bg-primary/10 text-primary rounded-xl">
                   <CreditCard className="w-5 h-5" />
                 </div>
                 <div>
-                  <h3 className="text-base font-bold text-slate-900">Record Member Payment</h3>
-                  <p className="text-xs text-slate-500">Collect fees and generate instant receipt</p>
+                  <h3 className="text-base font-bold text-card-foreground">Record Member Payment</h3>
+                  <p className="text-xs text-muted-foreground">Collect fees and generate instant receipt</p>
                 </div>
               </div>
               <button
                 onClick={handleClose}
-                className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100"
+                className="p-2 rounded-xl text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -124,54 +124,54 @@ export function RecordPaymentModal({ gymId, branches, members }: RecordPaymentMo
 
             {waReceiptUrl ? (
               <div className="mt-6 text-center space-y-4">
-                <div className="mx-auto w-12 h-12 bg-emerald-50 text-emerald-600 rounded-full flex items-center justify-center">
-                  <CheckCircle2 className="w-6 h-6" />
+                <div className="mx-auto w-14 h-14 bg-emerald-500/10 text-emerald-500 rounded-full flex items-center justify-center">
+                  <CheckCircle2 className="w-8 h-8" />
                 </div>
                 <div>
-                  <h4 className="text-base font-bold text-slate-900">Payment Recorded Successfully!</h4>
-                  <p className="text-xs text-slate-500 mt-1">
+                  <h4 className="text-base font-bold text-card-foreground">Payment Recorded Successfully!</h4>
+                  <p className="text-xs text-muted-foreground mt-1">
                     Send the official digital receipt directly to {selectedMember?.fullName}&apos;s WhatsApp
                   </p>
                 </div>
-                <div className="pt-2 flex flex-col gap-2">
+                <div className="pt-2 flex flex-col gap-2.5">
                   <a
                     href={waReceiptUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex items-center justify-center gap-2 w-full py-2.5 px-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition-all shadow-xs"
+                    className="h-11 flex items-center justify-center gap-2 w-full px-4 bg-[#25D366] hover:bg-[#20bd5a] text-white rounded-xl text-xs font-bold transition-all shadow-xs"
                   >
                     <MessageSquare className="w-4 h-4" />
                     Send Receipt via WhatsApp
                   </a>
                   <button
                     onClick={handleClose}
-                    className="w-full py-2 text-xs font-semibold text-slate-500 hover:text-slate-800"
+                    className="h-10 w-full text-xs font-semibold text-muted-foreground hover:text-foreground"
                   >
                     Done & Close
                   </button>
                 </div>
               </div>
             ) : (
-              <form onSubmit={handleSubmit} className="mt-4 space-y-4">
+              <form onSubmit={handleSubmit} className="mt-5 space-y-4">
                 {error && (
-                  <div className="p-3 bg-red-50 border border-red-200 text-red-700 rounded-xl text-xs">
+                  <div className="p-3 bg-destructive/10 border border-destructive/20 text-destructive rounded-xl text-xs font-medium">
                     {error}
                   </div>
                 )}
 
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">
+                  <label className="block text-xs font-semibold text-foreground mb-1.5">
                     Select Member
                   </label>
                   {members.length === 0 ? (
-                    <div className="text-xs text-amber-700 bg-amber-50 p-2.5 rounded-xl border border-amber-200">
+                    <div className="text-xs text-amber-500 bg-amber-500/10 p-3 rounded-xl border border-amber-500/20 font-medium">
                       No members enrolled yet. Please add a member first.
                     </div>
                   ) : (
                     <select
                       value={memberId}
                       onChange={(e) => setMemberId(e.target.value)}
-                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 focus:outline-hidden focus:ring-2 focus:ring-emerald-500"
+                      className="w-full h-11 px-3.5 bg-background border border-border rounded-xl text-sm text-foreground focus:outline-hidden focus:ring-2 focus:ring-primary/30 transition-all font-medium"
                     >
                       {members.map((m) => (
                         <option key={m.id} value={m.id}>
@@ -184,23 +184,24 @@ export function RecordPaymentModal({ gymId, branches, members }: RecordPaymentMo
 
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-xs font-semibold text-slate-700 mb-1">
+                    <label className="block text-xs font-semibold text-foreground mb-1.5">
                       Amount Collected (₹)
                     </label>
                     <input
                       type="number"
                       step="0.01"
                       min="0"
+                      inputMode="decimal"
                       placeholder="0.00"
                       required
                       value={amount}
                       onChange={(e) => setAmount(e.target.value)}
-                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 focus:outline-hidden focus:ring-2 focus:ring-emerald-500 font-semibold"
+                      className="w-full h-12 px-3.5 bg-background border border-border rounded-xl text-lg text-foreground focus:outline-hidden focus:ring-2 focus:ring-primary/30 font-black tracking-tight transition-all"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-xs font-semibold text-slate-700 mb-1">
+                    <label className="block text-xs font-semibold text-foreground mb-1.5">
                       Payment Date
                     </label>
                     <input
@@ -208,13 +209,13 @@ export function RecordPaymentModal({ gymId, branches, members }: RecordPaymentMo
                       required
                       value={paymentDate}
                       onChange={(e) => setPaymentDate(e.target.value)}
-                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 focus:outline-hidden focus:ring-2 focus:ring-emerald-500"
+                      className="w-full h-12 px-3.5 bg-background border border-border rounded-xl text-sm text-foreground focus:outline-hidden focus:ring-2 focus:ring-primary/30 transition-all font-medium"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">
+                  <label className="block text-xs font-semibold text-foreground mb-1.5">
                     Payment Method
                   </label>
                   <div className="grid grid-cols-3 gap-2">
@@ -223,10 +224,10 @@ export function RecordPaymentModal({ gymId, branches, members }: RecordPaymentMo
                         key={method}
                         type="button"
                         onClick={() => setPaymentMethod(method)}
-                        className={`py-2 px-3 text-xs font-semibold rounded-xl border capitalize transition-all ${
+                        className={`h-10 px-3 text-xs font-bold rounded-xl border capitalize transition-all ${
                           paymentMethod === method
-                            ? "bg-emerald-50 border-emerald-500 text-emerald-700 shadow-xs"
-                            : "bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100"
+                            ? "bg-primary/10 border-primary text-primary shadow-xs ring-1 ring-primary/20"
+                            : "bg-muted/40 border-border text-muted-foreground hover:bg-muted hover:text-foreground"
                         }`}
                       >
                         {method.replace("_", " ")}
@@ -236,7 +237,7 @@ export function RecordPaymentModal({ gymId, branches, members }: RecordPaymentMo
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">
+                  <label className="block text-xs font-semibold text-foreground mb-1.5">
                     Notes / Remarks (Optional)
                   </label>
                   <input
@@ -244,22 +245,22 @@ export function RecordPaymentModal({ gymId, branches, members }: RecordPaymentMo
                     placeholder="e.g. 1-Month Renewal, Personal Training Fee"
                     value={notes}
                     onChange={(e) => setNotes(e.target.value)}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 focus:outline-hidden focus:ring-2 focus:ring-emerald-500"
+                    className="w-full h-11 px-3.5 bg-background border border-border rounded-xl text-sm text-foreground focus:outline-hidden focus:ring-2 focus:ring-primary/30 font-medium transition-all"
                   />
                 </div>
 
-                <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100">
+                <div className="flex items-center justify-end gap-3 pt-3 border-t border-border">
                   <button
                     type="button"
                     onClick={handleClose}
-                    className="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition-colors"
+                    className="h-11 px-4 text-xs font-semibold text-muted-foreground hover:text-foreground hover:bg-muted rounded-xl transition-colors"
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
                     disabled={loading || members.length === 0}
-                    className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-xl shadow-xs transition-colors disabled:opacity-50"
+                    className="h-11 flex items-center gap-2 px-5 bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-bold rounded-xl shadow-xs transition-all disabled:opacity-50 active:scale-[0.98]"
                   >
                     {loading && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
                     Confirm & Record Payment
