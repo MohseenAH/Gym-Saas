@@ -148,15 +148,17 @@ export function PlansManagerClient({
     if (!canManagePlans) return;
 
     if (plan.usageCount > 0) {
-      showMessage(
-        "error",
-        `Cannot delete "${plan.name}" because it is linked to ${plan.usageCount} member contract(s). Deactivate this plan instead.`
-      );
-      return;
-    }
-
-    if (!confirm(`Are you sure you want to permanently delete plan "${plan.name}"?`)) {
-      return;
+      if (
+        !confirm(
+          `Plan "${plan.name}" is linked to ${plan.usageCount} member contract(s). Hard deletion will be blocked and this plan will be safely archived (deactivated) instead. Proceed?`
+        )
+      ) {
+        return;
+      }
+    } else {
+      if (!confirm(`Are you sure you want to permanently delete plan "${plan.name}"?`)) {
+        return;
+      }
     }
 
     setActionLoadingId(plan.id);
@@ -168,9 +170,14 @@ export function PlansManagerClient({
 
     if (!res.success) {
       showMessage("error", res.error || "Failed to delete plan");
+    } else if (res.archived) {
+      setPlans((prev) =>
+        prev.map((p) => (p.id === plan.id ? { ...p, isActive: false } : p))
+      );
+      showMessage("success", res.message || `Plan "${plan.name}" has been safely archived and deactivated.`);
     } else {
       setPlans((prev) => prev.filter((p) => p.id !== plan.id));
-      showMessage("success", `Plan "${plan.name}" has been deleted.`);
+      showMessage("success", res.message || `Plan "${plan.name}" has been deleted.`);
     }
   }
 

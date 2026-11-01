@@ -150,7 +150,7 @@ CREATE TABLE IF NOT EXISTS public.memberships (
     plan_id UUID NOT NULL REFERENCES public.membership_plans(id) ON DELETE RESTRICT,
     start_date DATE NOT NULL,
     end_date DATE NOT NULL,
-    status TEXT NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'expired', 'frozen', 'cancelled')),
+    status TEXT NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'expired', 'frozen', 'cancelled', 'renewed', 'completed')),
     notes TEXT,
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),

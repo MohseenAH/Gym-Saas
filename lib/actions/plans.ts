@@ -12,20 +12,20 @@ import { getAuthorizedActionContext } from "@/lib/auth/guard";
 export const createPlanSchema = z.object({
   gymId: z.string().uuid("Invalid gym ID"),
   branchId: z.string().uuid("Invalid branch ID"),
-  name: z.string().min(2, "Plan name must be at least 2 characters").max(100, "Plan name too long"),
-  description: z.string().max(500, "Description too long").optional().nullable(),
-  durationDays: z.number().int("Duration must be an integer").min(1, "Duration must be at least 1 day"),
-  price: z.number().min(0, "Price cannot be negative"),
+  name: z.string().trim().min(2, "Plan name must be at least 2 characters").max(100, "Plan name too long"),
+  description: z.string().trim().max(500, "Description too long").optional().nullable(),
+  durationDays: z.number().int("Duration must be an integer").min(1, "Duration must be at least 1 day").max(3650, "Duration cannot exceed 3,650 days (10 years)"),
+  price: z.number().min(0, "Price cannot be negative").max(10000000, "Price cannot exceed ₹1,00,00,000"),
 });
 
 export const updatePlanSchema = z.object({
   gymId: z.string().uuid("Invalid gym ID"),
   planId: z.string().uuid("Invalid plan ID"),
   branchId: z.string().uuid("Invalid branch ID"),
-  name: z.string().min(2, "Plan name must be at least 2 characters").max(100, "Plan name too long"),
-  description: z.string().max(500, "Description too long").optional().nullable(),
-  durationDays: z.number().int("Duration must be an integer").min(1, "Duration must be at least 1 day"),
-  price: z.number().min(0, "Price cannot be negative"),
+  name: z.string().trim().min(2, "Plan name must be at least 2 characters").max(100, "Plan name too long"),
+  description: z.string().trim().max(500, "Description too long").optional().nullable(),
+  durationDays: z.number().int("Duration must be an integer").min(1, "Duration must be at least 1 day").max(3650, "Duration cannot exceed 3,650 days (10 years)"),
+  price: z.number().min(0, "Price cannot be negative").max(10000000, "Price cannot exceed ₹1,00,00,000"),
   isActive: z.boolean().optional(),
 });
 
@@ -318,19 +318,42 @@ export async function deletePlanAction(input: DeletePlanInput) {
     }
 
     // 2. Check for referencing memberships
-    const { count: membershipCount } = await supabase
+    const { count: membershipCount, error: countErr } = await supabase
       .from("memberships")
       .select("id", { count: "exact", head: true })
       .eq("plan_id", validated.planId);
 
+    if (countErr) {
+      return { success: false, error: `Failed to check plan usage: ${countErr.message}` };
+    }
+
+    // If referenced by existing active or historical memberships, BLOCK hard deletion and safely soft-archive
     if ((membershipCount ?? 0) > 0) {
+      const { error: archiveErr } = await supabase
+        .from("membership_plans")
+        .update({
+          is_active: false,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", validated.planId);
+
+      if (archiveErr) {
+        return { success: false, error: `Failed to archive plan: ${archiveErr.message}` };
+      }
+
+      revalidatePath(`/app/${context.gymId}`, "layout");
+      revalidatePath(`/app/${context.gymId}/memberships`);
+      revalidatePath(`/app/${context.gymId}/members`);
+      revalidatePath(`/app/${context.gymId}/settings`);
+
       return {
-        success: false,
-        error: `Cannot delete plan "${plan.name}" because it is linked to ${membershipCount} member contract(s). Deactivate this plan instead so it cannot be assigned to new members.`,
+        success: true,
+        archived: true,
+        message: `Plan "${plan.name}" is linked to ${membershipCount} member contract(s). Hard deletion was blocked and the plan has been safely soft-archived (deactivated).`,
       };
     }
 
-    // 3. Safe deletion
+    // 3. Safe hard deletion for unreferenced plan
     const { error: deleteErr } = await supabase
       .from("membership_plans")
       .delete()
@@ -345,7 +368,11 @@ export async function deletePlanAction(input: DeletePlanInput) {
     revalidatePath(`/app/${context.gymId}/members`);
     revalidatePath(`/app/${context.gymId}/settings`);
 
-    return { success: true };
+    return {
+      success: true,
+      archived: false,
+      message: `Plan "${plan.name}" has been permanently deleted.`,
+    };
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Failed to delete membership plan";
     return { success: false, error: message };

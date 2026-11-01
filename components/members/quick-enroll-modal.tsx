@@ -28,6 +28,7 @@ export function QuickEnrollModal({ gymId, branchId, plans }: QuickEnrollModalPro
   const [notes, setNotes] = useState("");
 
   const [selectedPlanId, setSelectedPlanId] = useState<string>(plans[0]?.id || "");
+  const [discount, setDiscount] = useState<string>("");
   const [amountPaid, setAmountPaid] = useState<string>(
     plans[0]?.price ? plans[0].price.toString() : ""
   );
@@ -55,6 +56,7 @@ export function QuickEnrollModal({ gymId, branchId, plans }: QuickEnrollModalPro
     }
 
     setLoading(true);
+    const parsedDiscount = parseFloat(discount) || 0;
     const res = await quickEnrollMemberAction({
       gymId,
       branchId,
@@ -64,6 +66,7 @@ export function QuickEnrollModal({ gymId, branchId, plans }: QuickEnrollModalPro
       notes: notes.trim() || null,
       planId: selectedPlanId || null,
       amountPaid: amountPaid !== "" && !isNaN(parseFloat(amountPaid)) ? parseFloat(amountPaid) : undefined,
+      discount: parsedDiscount > 0 ? parsedDiscount : 0,
       paymentMethod: paymentMethod as "cash" | "upi" | "card" | "bank_transfer" | "cheque" | "other",
     });
 
@@ -84,6 +87,7 @@ export function QuickEnrollModal({ gymId, branchId, plans }: QuickEnrollModalPro
     setPhone("");
     setEmail("");
     setNotes("");
+    setDiscount("");
   }
 
   function handleCopy() {

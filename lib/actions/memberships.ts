@@ -232,3 +232,6 @@ export async function assignMembershipAction(input: AssignMembershipInput) {
     return { success: false, error: message };
   }
 }
+
+// Re-export renewMembershipAction so imports from either actions module resolve cleanly
+export { renewMembershipAction, type RenewMembershipInput } from "./members";

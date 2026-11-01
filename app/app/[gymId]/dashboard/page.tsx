@@ -217,10 +217,11 @@ export default async function DashboardPage({ params, searchParams }: PageProps)
     const dues = Math.max(0, planPrice - paid);
     totalOutstandingDues += dues;
 
-    // Check if expiring in next 7 days
-    const expDate = new Date(m.end_date);
-    const diffTime = expDate.getTime() - today.getTime();
-    const daysLeft = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    // Check if expiring in next 7 days using strict IST calendar window
+    const todayDate = new Date(todayStr + "T00:00:00+05:30");
+    const expDate = new Date(m.end_date + "T00:00:00+05:30");
+    const diffTime = expDate.getTime() - todayDate.getTime();
+    const daysLeft = Math.round(diffTime / (1000 * 60 * 60 * 24));
 
     if (daysLeft >= 0 && daysLeft <= 7) {
       expiringMembers.push({
