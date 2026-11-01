@@ -3,6 +3,7 @@ import { UserCheck, Dumbbell, Calendar, CreditCard, Bell, ArrowRight } from "luc
 import Link from "next/link";
 import { MemberCheckInButton } from "@/components/portal/member-checkin-button";
 import { PayDuesModal } from "@/components/portal/pay-dues-modal";
+import { getTodayIST } from "@/lib/utils";
 
 interface BranchRelation {
   name: string;
@@ -43,7 +44,7 @@ export default async function MemberPortalDashboardPage({ params }: PageProps) {
   const branchName = branchData?.name || "Main Branch";
 
   // Fetch today's check-in status, active membership, and active notices in parallel
-  const today = new Date().toISOString().split("T")[0];
+  const today = getTodayIST();
   const [todayCheckInRes, membershipRes, noticesRes] = await Promise.all([
     supabase
       .from("attendance")
@@ -156,6 +157,10 @@ export default async function MemberPortalDashboardPage({ params }: PageProps) {
 
           <div>
             <PayDuesModal
+              gymId={gymId}
+              branchId={member.branch_id}
+              memberId={member.id}
+              membershipId={membership?.id || null}
               gymName={gymName}
               planName={planName}
               amount={planPrice > 0 ? planPrice : 1500}

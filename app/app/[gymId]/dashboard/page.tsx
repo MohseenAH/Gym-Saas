@@ -17,6 +17,7 @@ import { getAuthorizedActionContext } from "@/lib/auth/guard";
 import { resolveBranchContext } from "@/lib/auth/branch-context";
 import { BranchSelector } from "@/components/dashboard/branch-selector";
 import { ExpiringSoonAlerts, ExpiringMember } from "@/components/dashboard/expiring-soon-alerts";
+import { getTodayIST } from "@/lib/utils";
 
 interface PageProps {
   params: Promise<{ gymId: string }>;
@@ -48,7 +49,7 @@ export default async function DashboardPage({ params, searchParams }: PageProps)
   const gymBranchIds = branchContext.effectiveBranchIds;
   const isValidBranchFilter = !!selectedBranchId;
 
-  const todayStr = new Date().toISOString().split("T")[0];
+  const todayStr = getTodayIST();
 
   // Prepare all independent queries simultaneously
   let membersQuery = supabase

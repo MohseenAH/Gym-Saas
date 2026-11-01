@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { getAuthorizedActionContext } from "@/lib/auth/guard";
+import { getTodayIST } from "@/lib/utils";
 
 export async function staffCheckInAction(params: {
   gymId: string;
@@ -17,7 +18,7 @@ export async function staffCheckInAction(params: {
     });
 
     const supabase = await createClient();
-    const today = new Date().toISOString().split("T")[0];
+    const today = getTodayIST();
 
     // Check if already checked in
     const { data: existing } = await supabase
@@ -91,7 +92,7 @@ export async function memberSelfCheckInAction(params: {
       return { success: false, error: "Active member record not found or unauthorized" };
     }
 
-    const today = new Date().toISOString().split("T")[0];
+    const today = getTodayIST();
 
     // Check for existing check-in today
     const { data: existing } = await supabase

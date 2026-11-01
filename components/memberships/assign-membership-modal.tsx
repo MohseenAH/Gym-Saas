@@ -3,6 +3,7 @@
 import { useState, useMemo } from "react";
 import { UserPlus, X, Loader2, IndianRupee, Calendar, CheckCircle2, AlertTriangle } from "lucide-react";
 import { assignMembershipAction } from "@/lib/actions/memberships";
+import { getTodayIST, getISTDateString } from "@/lib/utils";
 
 export interface AssignableMember {
   id: string;
@@ -51,9 +52,7 @@ export function AssignMembershipModal({
   );
   const [memberSearch, setMemberSearch] = useState("");
   const [selectedPlanId, setSelectedPlanId] = useState<string>("");
-  const [startDate, setStartDate] = useState<string>(
-    new Date().toISOString().split("T")[0]
-  );
+  const [startDate, setStartDate] = useState<string>(getTodayIST());
   const [amountPaid, setAmountPaid] = useState<string>("");
   const [paymentMethod, setPaymentMethod] = useState<
     "cash" | "upi" | "card" | "bank_transfer" | "cheque" | "other"
@@ -96,7 +95,7 @@ export function AssignMembershipModal({
       const s = new Date(startDate);
       const e = new Date(s);
       e.setDate(e.getDate() + currentPlan.durationDays - 1);
-      return e.toISOString().split("T")[0];
+      return getISTDateString(e);
     } catch {
       return "";
     }

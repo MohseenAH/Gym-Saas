@@ -4,6 +4,7 @@ import { z } from "zod";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { getAuthorizedActionContext } from "@/lib/auth/guard";
+import { getISTDateString } from "@/lib/utils";
 
 // ============================================================================
 // 1. Validation Schemas & Types
@@ -149,8 +150,8 @@ export async function assignMembershipAction(input: AssignMembershipInput) {
     const end = new Date(start);
     end.setDate(end.getDate() + plan.duration_days - 1);
 
-    const startDateStr = start.toISOString().split("T")[0];
-    const endDateStr = end.toISOString().split("T")[0];
+    const startDateStr = getISTDateString(start);
+    const endDateStr = getISTDateString(end);
 
     // 4. Protect timeline integrity: expire previous active contracts
     await supabase

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { RefreshCw, X, Loader2, CheckCircle2, IndianRupee } from "lucide-react";
 import { renewMembershipAction } from "@/lib/actions/members";
+import { getTodayIST } from "@/lib/utils";
 
 export interface MembershipPlanOption {
   id: string;
@@ -41,9 +42,7 @@ export function RenewMembershipModal({
   onSuccess,
 }: RenewMembershipModalProps) {
   const [selectedPlanId, setSelectedPlanId] = useState<string>(plans[0]?.id || "");
-  const [startDate, setStartDate] = useState<string>(
-    new Date().toISOString().split("T")[0]
-  );
+  const [startDate, setStartDate] = useState<string>(getTodayIST());
   const [amountPaid, setAmountPaid] = useState<number>(plans[0]?.price || 0);
   const [paymentMethod, setPaymentMethod] = useState<
     "cash" | "upi" | "card" | "bank_transfer" | "cheque" | "other"

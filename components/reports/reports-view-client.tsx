@@ -10,7 +10,9 @@ import {
   Layers,
   MessageSquare,
   Building,
+  Download,
 } from "lucide-react";
+import { getTodayIST } from "@/lib/utils";
 
 export interface ReportPayment {
   id: string;
@@ -87,7 +89,7 @@ export function ReportsViewClient({
   const [dateRange, setDateRange] = useState<"today" | "7days" | "30days" | "all">("30days");
   const [selectedBranchId, setSelectedBranchId] = useState<string>("all");
 
-  const todayStr = new Date().toISOString().split("T")[0];
+  const todayStr = getTodayIST();
 
   const filterByDate = useCallback(
     (dateStr: string) => {
@@ -157,6 +159,152 @@ export function ReportsViewClient({
     (m) => m.status === "active" && m.daysLeft >= 0 && m.daysLeft <= 7
   ).length;
 
+  function handleExportCsv() {
+    let filename = "";
+    let headers: string[] = [];
+    let rows: (string | number | null | undefined)[][] = [];
+
+    const cleanGym = gymName.toLowerCase().replace(/[^a-z0-9]/g, "_");
+
+    if (reportType === "collections") {
+      filename = `${cleanGym}_collections_${dateRange}_${getTodayIST()}.csv`;
+      headers = [
+        "Receipt Ref",
+        "Payment ID",
+        "Date",
+        "Member Name",
+        "Member Phone",
+        "Branch",
+        "Method",
+        "Status",
+        "Amount (INR)",
+      ];
+      rows = filteredPayments.map((p) => [
+        `#${p.id.slice(0, 8).toUpperCase()}`,
+        p.id,
+        p.paymentDate,
+        p.memberName,
+        p.memberPhone,
+        p.branchName,
+        p.paymentMethod.toUpperCase(),
+        p.paymentStatus.toUpperCase(),
+        p.amount.toFixed(2),
+      ]);
+    } else if (reportType === "dues") {
+      filename = `${cleanGym}_dues_${getTodayIST()}.csv`;
+      headers = [
+        "Member Name",
+        "Member Phone",
+        "Branch",
+        "Plan",
+        "Plan Price (INR)",
+        "Paid (INR)",
+        "Due (INR)",
+        "Start Date",
+        "End Date",
+        "Days Left",
+      ];
+      rows = duesList.map((m) => [
+        m.memberName,
+        m.memberPhone,
+        m.branchName,
+        m.planName,
+        m.planPrice.toFixed(2),
+        m.paidAmount.toFixed(2),
+        m.dueAmount.toFixed(2),
+        m.startDate,
+        m.endDate,
+        m.daysLeft,
+      ]);
+    } else if (reportType === "attendance") {
+      filename = `${cleanGym}_attendance_${dateRange}_${getTodayIST()}.csv`;
+      headers = ["Date", "Time", "Member Name", "Branch"];
+      rows = filteredAttendance.map((a) => [
+        a.checkInDate,
+        a.checkInTime,
+        a.memberName,
+        a.branchName,
+      ]);
+    } else if (reportType === "memberships") {
+      filename = `${cleanGym}_memberships_${getTodayIST()}.csv`;
+      headers = [
+        "Member Name",
+        "Member Phone",
+        "Branch",
+        "Plan",
+        "Plan Price (INR)",
+        "Status",
+        "Start Date",
+        "End Date",
+        "Days Left",
+      ];
+      rows = filteredMemberships.map((m) => [
+        m.memberName,
+        m.memberPhone,
+        m.branchName,
+        m.planName,
+        m.planPrice.toFixed(2),
+        m.status.toUpperCase(),
+        m.startDate,
+        m.endDate,
+        m.daysLeft,
+      ]);
+    } else {
+      // pnl
+      filename = `${cleanGym}_pnl_${dateRange}_${getTodayIST()}.csv`;
+      headers = [
+        "Type",
+        "Date",
+        "Description / Member",
+        "Branch",
+        "Method",
+        "Inflow (INR)",
+        "Outflow (INR)",
+      ];
+      const inflowRows = filteredPayments.map((p) => [
+        "COLLECTION",
+        p.paymentDate,
+        p.memberName,
+        p.branchName,
+        p.paymentMethod.toUpperCase(),
+        p.amount.toFixed(2),
+        "0.00",
+      ]);
+      const outflowRows = filteredExpenses.map((e) => [
+        `EXPENSE (${e.category.toUpperCase()})`,
+        e.expenseDate,
+        e.description || e.category,
+        e.branchName,
+        e.paymentMethod.toUpperCase(),
+        "0.00",
+        e.amount.toFixed(2),
+      ]);
+      rows = [...inflowRows, ...outflowRows].sort((a, b) =>
+        String(b[1]).localeCompare(String(a[1]))
+      );
+    }
+
+    const escapeCell = (cell: string | number | null | undefined): string => {
+      if (cell === null || cell === undefined) return '""';
+      const str = String(cell);
+      return `"${str.replace(/"/g, '""')}"`;
+    };
+
+    const headerLine = headers.map(escapeCell).join(",");
+    const rowLines = rows.map((r) => r.map(escapeCell).join(","));
+    const csvContent = "\uFEFF" + [headerLine, ...rowLines].join("\r\n");
+
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", filename);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  }
+
   return (
     <div className="space-y-6">
       {/* Top Header */}
@@ -219,6 +367,16 @@ export function ReportsViewClient({
               </select>
             </div>
           )}
+
+          {/* Export CSV Button */}
+          <button
+            onClick={handleExportCsv}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold transition-all shadow-xs"
+            title="Export currently displayed report as CSV"
+          >
+            <Download className="w-3.5 h-3.5" />
+            <span>Export CSV</span>
+          </button>
         </div>
       </div>
 

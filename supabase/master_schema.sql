@@ -719,6 +719,16 @@ CREATE POLICY "payments_member_select" ON public.payments FOR SELECT USING (
   )
 );
 
+DROP POLICY IF EXISTS "payments_member_insert_pending" ON public.payments;
+CREATE POLICY "payments_member_insert_pending" ON public.payments FOR INSERT WITH CHECK (
+  payment_status = 'pending' AND
+  payment_method = 'upi' AND
+  EXISTS (
+    SELECT 1 FROM public.members m
+    WHERE m.id = public.payments.member_id AND m.user_id = auth.uid()
+  )
+);
+
 -- 8.12 Expenses
 DROP POLICY IF EXISTS "expenses_staff_all" ON public.expenses;
 CREATE POLICY "expenses_staff_all" ON public.expenses FOR ALL USING (public.has_branch_access(branch_id));

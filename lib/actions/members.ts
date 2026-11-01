@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { getAuthorizedActionContext } from "@/lib/auth/guard";
 import { generateInvitationToken, buildInvitationLinks } from "@/lib/auth/invitations";
+import { getISTDateString } from "@/lib/utils";
 
 const quickEnrollMemberSchema = z.object({
   gymId: z.string().uuid("Invalid gym ID"),
@@ -67,8 +68,8 @@ export async function quickEnrollMemberAction(input: QuickEnrollMemberInput) {
         const end = new Date(start);
         end.setDate(end.getDate() + plan.duration_days - 1);
 
-        const startDateStr = start.toISOString().split("T")[0];
-        const endDateStr = end.toISOString().split("T")[0];
+        const startDateStr = getISTDateString(start);
+        const endDateStr = getISTDateString(end);
 
         const { data: membership, error: memError } = await supabase
           .from("memberships")
@@ -250,8 +251,8 @@ export async function renewMembershipAction(input: RenewMembershipInput) {
     const end = new Date(start);
     end.setDate(end.getDate() + plan.duration_days - 1);
 
-    const startDateStr = start.toISOString().split("T")[0];
-    const endDateStr = end.toISOString().split("T")[0];
+    const startDateStr = getISTDateString(start);
+    const endDateStr = getISTDateString(end);
 
     // 3. Mark previous active memberships for this member as expired
     await supabase

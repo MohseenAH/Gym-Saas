@@ -18,13 +18,13 @@ interface PaymentsPageProps {
 }
 
 export default async function MemberPaymentsPage({ params }: PaymentsPageProps) {
-  await params;
+  const { gymId } = await params;
   const user = await getCachedUser();
   const supabase = await createClient();
 
   const { data: member } = await supabase
     .from("members")
-    .select("id, full_name, phone, branches(name, gyms(name))")
+    .select("id, full_name, phone, branch_id, branches(name, gyms(name))")
     .eq("user_id", user?.id)
     .single();
 
@@ -80,6 +80,10 @@ export default async function MemberPaymentsPage({ params }: PaymentsPageProps) 
           </p>
         </div>
         <PayDuesModal
+          gymId={gymId}
+          branchId={member.branch_id}
+          memberId={member.id}
+          membershipId={membership?.id || null}
           gymName={gymName}
           planName={planName}
           amount={planPrice > 0 ? planPrice : 1500}

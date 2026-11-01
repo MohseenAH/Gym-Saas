@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Receipt, CheckCircle2, FileText } from "lucide-react";
+import { Receipt, CheckCircle2, Clock, FileText } from "lucide-react";
 import { ReceiptModal, ReceiptData } from "@/components/payments/receipt-modal";
 
 interface PortalPaymentItem {
@@ -87,9 +87,15 @@ export function PortalPaymentsClient({
                     <div className="text-sm font-black text-slate-900">
                       ₹{p.amount.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
                     </div>
-                    <div className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-600">
-                      <CheckCircle2 className="w-3 h-3" /> Paid
-                    </div>
+                    {p.paymentStatus === "pending" ? (
+                      <div className="inline-flex items-center gap-1 text-[11px] font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded-md border border-amber-200">
+                        <Clock className="w-3 h-3" /> Pending Verification
+                      </div>
+                    ) : (
+                      <div className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-600">
+                        <CheckCircle2 className="w-3 h-3" /> Paid
+                      </div>
+                    )}
                   </div>
                   <button
                     onClick={() => openReceipt(p)}

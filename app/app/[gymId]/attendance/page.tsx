@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getAuthorizedActionContext } from "@/lib/auth/guard";
 import { cookies } from "next/headers";
 import { resolveBranchContext } from "@/lib/auth/branch-context";
+import { getTodayIST } from "@/lib/utils";
 import { StaffCheckInClient, AttendanceMember } from "@/components/attendance/staff-checkin-client";
 
 interface AttendancePageProps {
@@ -33,7 +34,7 @@ export default async function AttendancePage({ params, searchParams }: Attendanc
     requestedBranchId,
   });
 
-  const todayStr = new Date().toISOString().split("T")[0];
+  const todayStr = getTodayIST();
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 

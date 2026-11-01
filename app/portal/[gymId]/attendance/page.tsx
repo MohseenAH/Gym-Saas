@@ -1,6 +1,7 @@
 import { createClient, getCachedUser } from "@/lib/supabase/server";
 import { CalendarCheck, Flame, Clock, CheckCircle } from "lucide-react";
 import { MemberCheckInButton } from "@/components/portal/member-checkin-button";
+import { getTodayIST } from "@/lib/utils";
 
 interface AttendancePageProps {
   params: Promise<{ gymId: string }>;
@@ -25,7 +26,7 @@ export default async function MemberAttendancePage({ params }: AttendancePagePro
     );
   }
 
-  const today = new Date().toISOString().split("T")[0];
+  const today = getTodayIST();
 
   // Fetch today's check-in
   const { data: todayCheckIn } = await supabase

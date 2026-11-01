@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Plus, X, Receipt, Loader2 } from "lucide-react";
 import { createExpenseAction, type CreateExpenseInput } from "@/lib/actions/expenses";
+import { getTodayIST } from "@/lib/utils";
 
 interface RecordExpenseModalProps {
   gymId: string;
@@ -17,9 +18,7 @@ export function RecordExpenseModal({ gymId, branches }: RecordExpenseModalProps)
   const [branchId, setBranchId] = useState(branches[0]?.id || "");
   const [category, setCategory] = useState<string>("rent");
   const [amount, setAmount] = useState<string>("");
-  const [expenseDate, setExpenseDate] = useState<string>(
-    new Date().toISOString().split("T")[0]
-  );
+  const [expenseDate, setExpenseDate] = useState<string>(getTodayIST());
   const [paymentMethod, setPaymentMethod] = useState<string>("cash");
   const [description, setDescription] = useState<string>("");
 

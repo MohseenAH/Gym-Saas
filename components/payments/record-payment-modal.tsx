@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Plus, X, CreditCard, Loader2, MessageSquare, CheckCircle2 } from "lucide-react";
 import { recordPaymentAction } from "@/lib/actions/payments";
+import { getTodayIST } from "@/lib/utils";
 
 interface RecordPaymentModalProps {
   gymId: string;
@@ -19,9 +20,7 @@ export function RecordPaymentModal({ gymId, branches, members }: RecordPaymentMo
   const [memberId, setMemberId] = useState(members[0]?.id || "");
   const [amount, setAmount] = useState<string>("");
   const [paymentMethod, setPaymentMethod] = useState<string>("cash");
-  const [paymentDate, setPaymentDate] = useState<string>(
-    new Date().toISOString().split("T")[0]
-  );
+  const [paymentDate, setPaymentDate] = useState<string>(getTodayIST());
   const [notes, setNotes] = useState<string>("");
   const [idempotencyKey, setIdempotencyKey] = useState<string>(() =>
     typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
