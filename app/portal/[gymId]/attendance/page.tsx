@@ -63,26 +63,26 @@ export default async function MemberAttendancePage({ params }: AttendancePagePro
       />
 
       {/* Streak / Consistency Stats */}
-      <div className="grid grid-cols-2 gap-4">
-        <div className="bg-card p-5 rounded-3xl border border-border shadow-xs flex items-center gap-4 transition-all">
-          <div className="p-3 bg-amber-500/10 text-amber-500 rounded-2xl">
-            <Flame className="w-6 h-6" />
+      <div className="grid grid-cols-2 gap-2.5 sm:gap-4">
+        <div className="bg-card p-3 sm:p-5 rounded-2xl sm:rounded-3xl border border-border shadow-xs flex items-center gap-3 sm:gap-4 text-card-foreground">
+          <div className="h-7 w-7 sm:h-9 sm:w-9 flex items-center justify-center shrink-0 bg-amber-500/10 text-amber-600 rounded-xl sm:rounded-2xl shadow-2xs">
+            <Flame className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
           </div>
-          <div>
-            <div className="text-2xl font-black text-foreground">{allAttendance.length}</div>
-            <div className="text-xs text-muted-foreground font-medium">Total Workouts Logged</div>
+          <div className="min-w-0">
+            <div className="text-lg sm:text-2xl font-bold tracking-tight text-foreground truncate">{allAttendance.length}</div>
+            <div className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-muted-foreground truncate">Total Workouts</div>
           </div>
         </div>
 
-        <div className="bg-card p-5 rounded-3xl border border-border shadow-xs flex items-center gap-4 transition-all">
-          <div className="p-3 bg-primary/10 text-primary rounded-2xl">
-            <CalendarCheck className="w-6 h-6" />
+        <div className="bg-card p-3 sm:p-5 rounded-2xl sm:rounded-3xl border border-border shadow-xs flex items-center gap-3 sm:gap-4 text-card-foreground">
+          <div className="h-7 w-7 sm:h-9 sm:w-9 flex items-center justify-center shrink-0 bg-primary/10 text-primary rounded-xl sm:rounded-2xl shadow-2xs">
+            <CalendarCheck className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
           </div>
-          <div>
-            <div className="text-sm font-bold text-foreground">
+          <div className="min-w-0">
+            <div className="text-xs sm:text-base font-bold text-foreground truncate">
               {todayCheckIn ? "Checked In Today" : "Not Checked In Yet"}
             </div>
-            <div className="text-xs text-muted-foreground font-medium">Today&apos;s Status</div>
+            <div className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-muted-foreground truncate">Today&apos;s Status</div>
           </div>
         </div>
       </div>

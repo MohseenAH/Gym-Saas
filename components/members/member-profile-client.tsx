@@ -211,26 +211,26 @@ export function MemberProfileClient({
         </div>
 
         {/* Action Triggers */}
-        <div className="flex items-center gap-2.5 flex-wrap">
+        <div className="grid grid-cols-2 sm:flex sm:items-center gap-2 sm:gap-2.5 w-full sm:w-auto">
           <a
             href={waDirectUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-1.5 h-11 px-3.5 bg-[#25D366]/10 hover:bg-[#25D366] text-[#25D366] hover:text-white border border-[#25D366]/30 rounded-xl text-xs font-bold transition-all shadow-2xs cursor-pointer"
+            className="inline-flex items-center justify-center gap-1.5 h-10 px-3.5 bg-[#25D366]/10 hover:bg-[#25D366] text-[#25D366] hover:text-white border border-[#25D366]/30 rounded-xl text-xs font-bold transition-all shadow-2xs cursor-pointer"
           >
-            <MessageSquare className="w-4 h-4" />
+            <MessageSquare className="w-3.5 h-3.5" />
             WhatsApp
           </a>
           <button
             onClick={() => setIsEditOpen(true)}
-            className="inline-flex items-center gap-1.5 h-11 px-3.5 bg-muted hover:bg-muted/80 text-foreground border border-border rounded-xl text-xs font-bold transition-colors cursor-pointer"
+            className="inline-flex items-center justify-center gap-1.5 h-10 px-3.5 bg-muted hover:bg-muted/80 text-foreground border border-border rounded-xl text-xs font-bold transition-colors cursor-pointer"
           >
             <Edit2 className="w-3.5 h-3.5" />
             Edit Profile
           </button>
           <button
             onClick={() => setIsRenewOpen(true)}
-            className="inline-flex items-center gap-1.5 h-11 px-4 bg-primary hover:opacity-95 text-primary-foreground rounded-xl text-xs font-bold shadow-md shadow-primary/20 transition-all cursor-pointer"
+            className="col-span-2 sm:col-span-1 inline-flex items-center justify-center gap-1.5 h-10 px-4 bg-primary hover:opacity-95 text-primary-foreground rounded-xl text-xs font-bold shadow-md shadow-primary/20 transition-all cursor-pointer"
           >
             <RefreshCw className="w-3.5 h-3.5" />
             Renew / Change Plan
@@ -239,85 +239,85 @@ export function MemberProfileClient({
       </div>
 
       {/* KPI 4-Grid Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4">
         {/* Active Membership Status */}
-        <div className="bg-card p-6 rounded-3xl border border-border shadow-xs flex items-center gap-4 text-card-foreground">
+        <div className="bg-card p-3 sm:p-5 rounded-2xl sm:rounded-3xl border border-border shadow-xs flex items-center gap-3 sm:gap-4 text-card-foreground">
           <div
-            className={`p-3.5 rounded-2xl shadow-2xs ${
+            className={`h-7 w-7 sm:h-9 sm:w-9 flex items-center justify-center shrink-0 rounded-xl sm:rounded-2xl shadow-2xs ${
               activeMembership && activeMembership.daysLeft > 0
                 ? "bg-emerald-500/10 text-emerald-600"
                 : "bg-rose-500/10 text-rose-600"
             }`}
           >
-            <Calendar className="w-6 h-6" />
+            <Calendar className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
           </div>
-          <div>
-            <div className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Active Plan</div>
-            <div className="text-base font-black text-foreground truncate mt-0.5">
-              {activeMembership ? activeMembership.planName : "No Active Plan"}
+          <div className="min-w-0">
+            <div className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-muted-foreground truncate">Active Plan</div>
+            <div className="text-sm sm:text-base font-bold text-foreground truncate mt-0.5">
+              {activeMembership ? activeMembership.planName : "None"}
             </div>
-            <div className="text-[11px] font-semibold mt-1">
+            <div className="text-[10px] sm:text-[11px] font-semibold mt-0.5 truncate">
               {activeMembership ? (
                 activeMembership.daysLeft > 0 ? (
-                  <span className="text-emerald-600">
-                    {activeMembership.daysLeft}d left (Exp {activeMembership.endDate})
+                  <span className="text-emerald-600 truncate">
+                    {activeMembership.daysLeft}d left
                   </span>
                 ) : (
-                  <span className="text-rose-600">
-                    Expired on {activeMembership.endDate}
+                  <span className="text-rose-600 truncate">
+                    Expired
                   </span>
                 )
               ) : (
-                <span className="text-muted-foreground">Needs plan assignment</span>
+                <span className="text-muted-foreground truncate">No plan</span>
               )}
             </div>
           </div>
         </div>
 
         {/* Total Payments */}
-        <div className="bg-card p-6 rounded-3xl border border-border shadow-xs flex items-center gap-4 text-card-foreground">
-          <div className="p-3.5 bg-primary/10 text-primary rounded-2xl shadow-2xs">
-            <CreditCard className="w-6 h-6" />
+        <div className="bg-card p-3 sm:p-5 rounded-2xl sm:rounded-3xl border border-border shadow-xs flex items-center gap-3 sm:gap-4 text-card-foreground">
+          <div className="h-7 w-7 sm:h-9 sm:w-9 flex items-center justify-center shrink-0 bg-primary/10 text-primary rounded-xl sm:rounded-2xl shadow-2xs">
+            <CreditCard className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
           </div>
-          <div>
-            <div className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Total Paid</div>
-            <div className="text-2xl font-black text-foreground mt-0.5">
+          <div className="min-w-0">
+            <div className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-muted-foreground truncate">Total Paid</div>
+            <div className="text-lg sm:text-2xl font-bold tracking-tight text-foreground truncate mt-0.5">
               ₹{totalPaid.toLocaleString("en-IN")}
             </div>
-            <div className="text-[11px] text-muted-foreground mt-1">
-              Across {payments.length} transactions
+            <div className="text-[10px] sm:text-[11px] text-muted-foreground mt-0.5 truncate">
+              {payments.length} transactions
             </div>
           </div>
         </div>
 
         {/* Outstanding Dues */}
-        <div className="bg-card p-6 rounded-3xl border border-border shadow-xs flex items-center gap-4 text-card-foreground">
+        <div className="bg-card p-3 sm:p-5 rounded-2xl sm:rounded-3xl border border-border shadow-xs flex items-center gap-3 sm:gap-4 text-card-foreground">
           <div
-            className={`p-3.5 rounded-2xl shadow-2xs ${
+            className={`h-7 w-7 sm:h-9 sm:w-9 flex items-center justify-center shrink-0 rounded-xl sm:rounded-2xl shadow-2xs ${
               outstandingDues > 0
                 ? "bg-amber-500/10 text-amber-600"
                 : "bg-emerald-500/10 text-emerald-600"
             }`}
           >
-            <IndianRupee className="w-6 h-6" />
+            <IndianRupee className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
           </div>
-          <div>
-            <div className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Remaining Dues</div>
+          <div className="min-w-0">
+            <div className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-muted-foreground truncate">Remaining Dues</div>
             <div
-              className={`text-2xl font-black mt-0.5 ${
+              className={`text-lg sm:text-2xl font-bold tracking-tight mt-0.5 truncate ${
                 outstandingDues > 0 ? "text-amber-600" : "text-emerald-600"
               }`}
             >
               ₹{outstandingDues.toLocaleString("en-IN")}
             </div>
-            <div className="text-[11px] font-semibold mt-1">
+            <div className="text-[10px] sm:text-[11px] font-semibold mt-0.5 truncate">
               {outstandingDues > 0 ? (
-                <span className="text-amber-600 flex items-center gap-1">
-                  <AlertTriangle className="w-3.5 h-3.5" /> Balance Pending
+                <span className="text-amber-600 flex items-center gap-1 truncate">
+                  <AlertTriangle className="w-3 h-3 shrink-0" /> Pending
                 </span>
               ) : (
-                <span className="text-emerald-600 flex items-center gap-1">
-                  <CheckCircle2 className="w-3.5 h-3.5" /> All Dues Cleared
+                <span className="text-emerald-600 flex items-center gap-1 truncate">
+                  <CheckCircle2 className="w-3 h-3 shrink-0" /> All Cleared
                 </span>
               )}
             </div>
@@ -325,17 +325,17 @@ export function MemberProfileClient({
         </div>
 
         {/* Workouts Check-in count */}
-        <div className="bg-card p-6 rounded-3xl border border-border shadow-xs flex items-center gap-4 text-card-foreground">
-          <div className="p-3.5 bg-purple-500/10 text-purple-600 rounded-2xl shadow-2xs">
-            <Dumbbell className="w-6 h-6" />
+        <div className="bg-card p-3 sm:p-5 rounded-2xl sm:rounded-3xl border border-border shadow-xs flex items-center gap-3 sm:gap-4 text-card-foreground">
+          <div className="h-7 w-7 sm:h-9 sm:w-9 flex items-center justify-center shrink-0 bg-purple-500/10 text-purple-600 rounded-xl sm:rounded-2xl shadow-2xs">
+            <Dumbbell className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
           </div>
-          <div>
-            <div className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Gym Attendance</div>
-            <div className="text-2xl font-black text-foreground mt-0.5">{totalWorkouts} Visits</div>
-            <div className="text-[11px] text-muted-foreground mt-1">
+          <div className="min-w-0">
+            <div className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-muted-foreground truncate">Gym Attendance</div>
+            <div className="text-lg sm:text-2xl font-bold tracking-tight text-foreground mt-0.5 truncate">{totalWorkouts} Visits</div>
+            <div className="text-[10px] sm:text-[11px] text-muted-foreground mt-0.5 truncate">
               {attendance.length > 0
-                ? `Last visit: ${attendance[0].checkInDate}`
-                : "No visits recorded yet"}
+                ? `${attendance[0].checkInDate}`
+                : "No visits yet"}
             </div>
           </div>
         </div>
@@ -347,18 +347,18 @@ export function MemberProfileClient({
           <User className="w-4 h-4 text-primary" />
           Member Details & Health Profile
         </h3>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
-          <div className="p-3.5 bg-muted/40 rounded-2xl border border-border/60">
-            <span className="text-muted-foreground block font-bold uppercase tracking-wider text-[10px] mb-1">Contact Phone</span>
-            <span className="font-bold text-foreground text-sm">{member.phone}</span>
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 sm:gap-3 text-xs">
+          <div className="p-3 sm:p-3.5 bg-muted/40 rounded-xl sm:rounded-2xl border border-border/60">
+            <span className="text-muted-foreground block font-bold uppercase tracking-wider text-[9px] sm:text-[10px] mb-0.5 sm:mb-1 truncate">Contact Phone</span>
+            <span className="font-bold text-foreground text-xs sm:text-sm truncate block">{member.phone}</span>
           </div>
-          <div className="p-3.5 bg-muted/40 rounded-2xl border border-border/60">
-            <span className="text-muted-foreground block font-bold uppercase tracking-wider text-[10px] mb-1">Email Address</span>
-            <span className="font-bold text-foreground text-sm">{member.email || "—"}</span>
+          <div className="p-3 sm:p-3.5 bg-muted/40 rounded-xl sm:rounded-2xl border border-border/60">
+            <span className="text-muted-foreground block font-bold uppercase tracking-wider text-[9px] sm:text-[10px] mb-0.5 sm:mb-1 truncate">Email Address</span>
+            <span className="font-bold text-foreground text-xs sm:text-sm truncate block">{member.email || "—"}</span>
           </div>
-          <div className="p-3.5 bg-muted/40 rounded-2xl border border-border/60">
-            <span className="text-muted-foreground block font-bold uppercase tracking-wider text-[10px] mb-1">Registration Date</span>
-            <span className="font-bold text-foreground text-sm">
+          <div className="col-span-2 sm:col-span-1 p-3 sm:p-3.5 bg-muted/40 rounded-xl sm:rounded-2xl border border-border/60">
+            <span className="text-muted-foreground block font-bold uppercase tracking-wider text-[9px] sm:text-[10px] mb-0.5 sm:mb-1 truncate">Registration Date</span>
+            <span className="font-bold text-foreground text-xs sm:text-sm truncate block">
               {new Date(member.createdAt).toLocaleDateString("en-IN", {
                 year: "numeric",
                 month: "short",

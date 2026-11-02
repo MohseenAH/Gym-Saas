@@ -413,41 +413,41 @@ export function ReportsViewClient({
       {/* Report 1: Collections & Revenue */}
       {reportType === "collections" && (
         <div className="space-y-4">
-          <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
-            <div className="bg-card p-5 rounded-2xl border border-border shadow-xs">
-              <div className="text-xs text-muted-foreground font-semibold uppercase">Total Collections</div>
-              <div className="text-2xl font-black text-emerald-500 mt-1">
-                ₹{totalCollections.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+          <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4">
+            <div className="bg-card p-3 sm:p-5 rounded-2xl sm:rounded-3xl border border-border shadow-xs">
+              <div className="text-[10px] sm:text-xs text-muted-foreground font-semibold uppercase tracking-wider truncate">Total Collections</div>
+              <div className="text-lg sm:text-2xl font-bold tracking-tight text-emerald-500 mt-1 truncate">
+                ₹{totalCollections.toLocaleString("en-IN", { minimumFractionDigits: 0, maximumFractionDigits: 2 })}
               </div>
-              <div className="text-[11px] text-muted-foreground mt-1">{filteredPayments.length} transactions</div>
+              <div className="text-[10px] sm:text-[11px] text-muted-foreground mt-0.5 truncate">{filteredPayments.length} transactions</div>
             </div>
 
-            <div className="bg-card p-5 rounded-2xl border border-border shadow-xs">
-              <div className="text-xs text-muted-foreground font-semibold uppercase">UPI Collections</div>
-              <div className="text-xl font-black text-foreground mt-1">
-                ₹{upiCollections.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+            <div className="bg-card p-3 sm:p-5 rounded-2xl sm:rounded-3xl border border-border shadow-xs">
+              <div className="text-[10px] sm:text-xs text-muted-foreground font-semibold uppercase tracking-wider truncate">UPI Collections</div>
+              <div className="text-lg sm:text-2xl font-bold tracking-tight text-foreground mt-1 truncate">
+                ₹{upiCollections.toLocaleString("en-IN", { minimumFractionDigits: 0, maximumFractionDigits: 2 })}
               </div>
-              <div className="text-[11px] text-muted-foreground mt-1">
+              <div className="text-[10px] sm:text-[11px] text-muted-foreground mt-0.5 truncate">
                 {totalCollections > 0 ? `${Math.round((upiCollections / totalCollections) * 100)}% of total` : "0%"}
               </div>
             </div>
 
-            <div className="bg-card p-5 rounded-2xl border border-border shadow-xs">
-              <div className="text-xs text-muted-foreground font-semibold uppercase">Cash Collections</div>
-              <div className="text-xl font-black text-foreground mt-1">
-                ₹{cashCollections.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+            <div className="bg-card p-3 sm:p-5 rounded-2xl sm:rounded-3xl border border-border shadow-xs">
+              <div className="text-[10px] sm:text-xs text-muted-foreground font-semibold uppercase tracking-wider truncate">Cash Collections</div>
+              <div className="text-lg sm:text-2xl font-bold tracking-tight text-foreground mt-1 truncate">
+                ₹{cashCollections.toLocaleString("en-IN", { minimumFractionDigits: 0, maximumFractionDigits: 2 })}
               </div>
-              <div className="text-[11px] text-muted-foreground mt-1">
+              <div className="text-[10px] sm:text-[11px] text-muted-foreground mt-0.5 truncate">
                 {totalCollections > 0 ? `${Math.round((cashCollections / totalCollections) * 100)}% of total` : "0%"}
               </div>
             </div>
 
-            <div className="bg-card p-5 rounded-2xl border border-border shadow-xs">
-              <div className="text-xs text-muted-foreground font-semibold uppercase">Card & Bank</div>
-              <div className="text-xl font-black text-foreground mt-1">
-                ₹{cardCollections.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+            <div className="bg-card p-3 sm:p-5 rounded-2xl sm:rounded-3xl border border-border shadow-xs">
+              <div className="text-[10px] sm:text-xs text-muted-foreground font-semibold uppercase tracking-wider truncate">Card & Bank</div>
+              <div className="text-lg sm:text-2xl font-bold tracking-tight text-foreground mt-1 truncate">
+                ₹{cardCollections.toLocaleString("en-IN", { minimumFractionDigits: 0, maximumFractionDigits: 2 })}
               </div>
-              <div className="text-[11px] text-muted-foreground mt-1">
+              <div className="text-[10px] sm:text-[11px] text-muted-foreground mt-0.5 truncate">
                 {totalCollections > 0 ? `${Math.round((cardCollections / totalCollections) * 100)}% of total` : "0%"}
               </div>
             </div>
@@ -584,20 +584,20 @@ export function ReportsViewClient({
       {/* Report 3: Attendance & Visits */}
       {reportType === "attendance" && (
         <div className="space-y-4">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="bg-card p-5 rounded-2xl border border-border shadow-xs">
-              <div className="text-xs text-muted-foreground font-semibold uppercase">Total Visits Recorded</div>
-              <div className="text-2xl font-black text-foreground mt-1">{filteredAttendance.length}</div>
-              <div className="text-[11px] text-muted-foreground mt-1">During selected period</div>
+          <div className="grid grid-cols-2 gap-2.5 sm:gap-4">
+            <div className="bg-card p-3 sm:p-5 rounded-2xl sm:rounded-3xl border border-border shadow-xs">
+              <div className="text-[10px] sm:text-xs text-muted-foreground font-semibold uppercase tracking-wider truncate">Total Visits Recorded</div>
+              <div className="text-lg sm:text-2xl font-bold tracking-tight text-foreground mt-1 truncate">{filteredAttendance.length}</div>
+              <div className="text-[10px] sm:text-[11px] text-muted-foreground mt-0.5 truncate">During period</div>
             </div>
-            <div className="bg-card p-5 rounded-2xl border border-border shadow-xs">
-              <div className="text-xs text-muted-foreground font-semibold uppercase">Daily Average Check-Ins</div>
-              <div className="text-2xl font-black text-primary mt-1">
+            <div className="bg-card p-3 sm:p-5 rounded-2xl sm:rounded-3xl border border-border shadow-xs">
+              <div className="text-[10px] sm:text-xs text-muted-foreground font-semibold uppercase tracking-wider truncate">Daily Average</div>
+              <div className="text-lg sm:text-2xl font-bold tracking-tight text-primary mt-1 truncate">
                 {dateRange === "today"
                   ? filteredAttendance.length
                   : Math.round(filteredAttendance.length / (dateRange === "7days" ? 7 : 30))}
               </div>
-              <div className="text-[11px] text-muted-foreground mt-1">Check-ins per day</div>
+              <div className="text-[10px] sm:text-[11px] text-muted-foreground mt-0.5 truncate">Visits per day</div>
             </div>
           </div>
 
@@ -647,21 +647,28 @@ export function ReportsViewClient({
       {/* Report 4: Memberships & Renewals */}
       {reportType === "memberships" && (
         <div className="space-y-4">
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <div className="bg-card p-5 rounded-2xl border border-border shadow-xs">
-              <div className="text-xs text-muted-foreground font-semibold uppercase">Active Subscriptions</div>
-              <div className="text-2xl font-black text-emerald-500 mt-1">{activeMembershipsCount}</div>
-              <div className="text-[11px] text-muted-foreground mt-1">Currently valid contracts</div>
+          <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4">
+            <div className="bg-card p-3 sm:p-5 rounded-2xl sm:rounded-3xl border border-border shadow-xs">
+              <div className="text-[10px] sm:text-xs text-muted-foreground font-semibold uppercase tracking-wider truncate">Active Contracts</div>
+              <div className="text-lg sm:text-2xl font-bold tracking-tight text-emerald-500 mt-1 truncate">{activeMembershipsCount}</div>
+              <div className="text-[10px] sm:text-[11px] text-muted-foreground mt-0.5 truncate">Valid contracts</div>
             </div>
-            <div className="bg-card p-5 rounded-2xl border border-border shadow-xs">
-              <div className="text-xs text-muted-foreground font-semibold uppercase">Expiring in 7 Days</div>
-              <div className="text-2xl font-black text-amber-500 mt-1">{expiringSoonCount}</div>
-              <div className="text-[11px] text-muted-foreground mt-1">Requires renewal follow-up</div>
+            <div className="bg-card p-3 sm:p-5 rounded-2xl sm:rounded-3xl border border-border shadow-xs">
+              <div className="text-[10px] sm:text-xs text-muted-foreground font-semibold uppercase tracking-wider truncate">Expiring (7d)</div>
+              <div className="text-lg sm:text-2xl font-bold tracking-tight text-amber-500 mt-1 truncate">{expiringSoonCount}</div>
+              <div className="text-[10px] sm:text-[11px] text-muted-foreground mt-0.5 truncate">Needs follow-up</div>
             </div>
-            <div className="bg-card p-5 rounded-2xl border border-border shadow-xs">
-              <div className="text-xs text-muted-foreground font-semibold uppercase">Total Contracts Tracked</div>
-              <div className="text-2xl font-black text-foreground mt-1">{filteredMemberships.length}</div>
-              <div className="text-[11px] text-muted-foreground mt-1">Active, expired & renewed</div>
+            <div className="bg-card p-3 sm:p-5 rounded-2xl sm:rounded-3xl border border-border shadow-xs">
+              <div className="text-[10px] sm:text-xs text-muted-foreground font-semibold uppercase tracking-wider truncate">Expired / Lapsed</div>
+              <div className="text-lg sm:text-2xl font-bold tracking-tight text-rose-500 mt-1 truncate">
+                {filteredMemberships.filter((m) => m.status === "expired" || m.daysLeft < 0).length}
+              </div>
+              <div className="text-[10px] sm:text-[11px] text-muted-foreground mt-0.5 truncate">Inactive plans</div>
+            </div>
+            <div className="bg-card p-3 sm:p-5 rounded-2xl sm:rounded-3xl border border-border shadow-xs">
+              <div className="text-[10px] sm:text-xs text-muted-foreground font-semibold uppercase tracking-wider truncate">Total Tracked</div>
+              <div className="text-lg sm:text-2xl font-bold tracking-tight text-foreground mt-1 truncate">{filteredMemberships.length}</div>
+              <div className="text-[10px] sm:text-[11px] text-muted-foreground mt-0.5 truncate">All records</div>
             </div>
           </div>
 
@@ -720,28 +727,38 @@ export function ReportsViewClient({
       {/* Report 5: Cash Flow & Outflow */}
       {reportType === "pnl" && (
         <div className="space-y-4">
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <div className="bg-card p-5 rounded-2xl border border-border shadow-xs">
-              <div className="text-xs text-muted-foreground font-semibold uppercase">Total Revenue (Collections)</div>
-              <div className="text-2xl font-black text-emerald-500 mt-1">
-                ₹{totalCollections.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+          <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4">
+            <div className="bg-card p-3 sm:p-5 rounded-2xl sm:rounded-3xl border border-border shadow-xs">
+              <div className="text-[10px] sm:text-xs text-muted-foreground font-semibold uppercase tracking-wider truncate">Total Collections</div>
+              <div className="text-lg sm:text-2xl font-bold tracking-tight text-emerald-500 mt-1 truncate">
+                ₹{totalCollections.toLocaleString("en-IN", { minimumFractionDigits: 0, maximumFractionDigits: 2 })}
               </div>
+              <div className="text-[10px] sm:text-[11px] text-muted-foreground mt-0.5 truncate">Total revenue</div>
             </div>
-            <div className="bg-card p-5 rounded-2xl border border-border shadow-xs">
-              <div className="text-xs text-muted-foreground font-semibold uppercase">Operational Expenses</div>
-              <div className="text-2xl font-black text-rose-500 mt-1">
-                ₹{totalExpenses.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+            <div className="bg-card p-3 sm:p-5 rounded-2xl sm:rounded-3xl border border-border shadow-xs">
+              <div className="text-[10px] sm:text-xs text-muted-foreground font-semibold uppercase tracking-wider truncate">Expenses</div>
+              <div className="text-lg sm:text-2xl font-bold tracking-tight text-rose-500 mt-1 truncate">
+                ₹{totalExpenses.toLocaleString("en-IN", { minimumFractionDigits: 0, maximumFractionDigits: 2 })}
               </div>
+              <div className="text-[10px] sm:text-[11px] text-muted-foreground mt-0.5 truncate">Operating costs</div>
             </div>
-            <div className="bg-card p-5 rounded-2xl border border-border shadow-xs">
-              <div className="text-xs text-muted-foreground font-semibold uppercase">Net Operating Cash Flow</div>
+            <div className="bg-card p-3 sm:p-5 rounded-2xl sm:rounded-3xl border border-border shadow-xs">
+              <div className="text-[10px] sm:text-xs text-muted-foreground font-semibold uppercase tracking-wider truncate">Net Cash Flow</div>
               <div
-                className={`text-2xl font-black mt-1 ${
+                className={`text-lg sm:text-2xl font-bold tracking-tight mt-1 truncate ${
                   netCashFlow >= 0 ? "text-emerald-500" : "text-rose-500"
                 }`}
               >
-                {netCashFlow >= 0 ? "+" : ""}₹{netCashFlow.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+                {netCashFlow >= 0 ? "+" : ""}₹{netCashFlow.toLocaleString("en-IN", { minimumFractionDigits: 0, maximumFractionDigits: 2 })}
               </div>
+              <div className="text-[10px] sm:text-[11px] text-muted-foreground mt-0.5 truncate">Operating net</div>
+            </div>
+            <div className="bg-card p-3 sm:p-5 rounded-2xl sm:rounded-3xl border border-border shadow-xs">
+              <div className="text-[10px] sm:text-xs text-muted-foreground font-semibold uppercase tracking-wider truncate">Operating Margin</div>
+              <div className="text-lg sm:text-2xl font-bold tracking-tight text-foreground mt-1 truncate">
+                {totalCollections > 0 ? `${Math.round((netCashFlow / totalCollections) * 100)}%` : "0%"}
+              </div>
+              <div className="text-[10px] sm:text-[11px] text-muted-foreground mt-0.5 truncate">Margin ratio</div>
             </div>
           </div>
 

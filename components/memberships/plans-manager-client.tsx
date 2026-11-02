@@ -384,7 +384,7 @@ export function PlansManagerClient({
           {canManagePlans && (
             <button
               onClick={() => setCreateModalOpen(true)}
-              className="flex items-center gap-1.5 h-11 px-4 bg-primary hover:opacity-95 text-primary-foreground text-xs font-bold rounded-xl shadow-md shadow-primary/20 transition-all shrink-0 cursor-pointer"
+              className="flex items-center justify-center gap-1.5 h-10 sm:h-11 px-4 bg-primary hover:opacity-95 text-primary-foreground text-xs sm:text-sm font-bold rounded-xl shadow-md shadow-primary/20 transition-all shrink-0 cursor-pointer w-full sm:w-auto"
             >
               <Plus className="w-4 h-4" />
               <span>New Plan</span>
@@ -408,20 +408,20 @@ export function PlansManagerClient({
           {canManagePlans && (
             <button
               onClick={() => setCreateModalOpen(true)}
-              className="mt-4 inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-primary hover:opacity-95 text-primary-foreground text-xs font-bold shadow-md shadow-primary/25 cursor-pointer"
+              className="mt-4 inline-flex items-center justify-center gap-1.5 px-4 h-10 rounded-xl bg-primary hover:opacity-95 text-primary-foreground text-xs sm:text-sm font-bold shadow-md shadow-primary/25 cursor-pointer w-full sm:w-auto"
             >
               <Plus className="w-4 h-4" /> Create First Plan
             </button>
           )}
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-2.5 sm:gap-4">
           {filteredPlans.map((plan) => {
             const isLoading = actionLoadingId === plan.id;
             return (
               <div
                 key={plan.id}
-                className={`bg-card rounded-3xl border p-6 transition-all shadow-xs flex flex-col justify-between text-card-foreground ${
+                className={`bg-card rounded-2xl sm:rounded-3xl border p-3 sm:p-5 transition-all shadow-xs flex flex-col justify-between text-card-foreground ${
                   plan.isActive
                     ? "border-border hover:border-primary/40 hover:shadow-md"
                     : "border-border/60 bg-muted/20 opacity-80"
@@ -429,17 +429,17 @@ export function PlansManagerClient({
               >
                 <div>
                   {/* Top line: Branch & Status Badge */}
-                  <div className="flex items-center justify-between gap-2 mb-3">
-                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10px] font-bold bg-muted text-muted-foreground border border-border">
-                      <Building2 className="w-3 h-3 text-muted-foreground" />
-                      {plan.branchName}
+                  <div className="flex items-center justify-between gap-1.5 mb-2 sm:mb-3">
+                    <span className="inline-flex items-center gap-1 px-1.5 sm:px-2.5 py-0.5 sm:py-1 rounded-lg text-[9px] sm:text-[10px] font-bold bg-muted text-muted-foreground border border-border truncate">
+                      <Building2 className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-muted-foreground shrink-0" />
+                      <span className="truncate">{plan.branchName}</span>
                     </span>
 
                     <button
                       type="button"
                       onClick={() => handleToggleStatus(plan)}
                       disabled={isLoading || !canManagePlans}
-                      className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold transition-colors cursor-pointer ${
+                      className={`inline-flex items-center gap-1 px-1.5 sm:px-2.5 py-0.5 rounded-full text-[10px] sm:text-xs font-bold transition-colors cursor-pointer shrink-0 ${
                         plan.isActive
                           ? "bg-emerald-500/10 text-emerald-600 border border-emerald-500/20"
                           : "bg-muted text-muted-foreground border border-border"
@@ -447,45 +447,45 @@ export function PlansManagerClient({
                     >
                       {plan.isActive ? (
                         <>
-                          <CheckCircle2 className="w-3 h-3" /> Active
+                          <CheckCircle2 className="w-2.5 h-2.5 sm:w-3 sm:h-3" /> Active
                         </>
                       ) : (
                         <>
-                          <XCircle className="w-3 h-3" /> Inactive
+                          <XCircle className="w-2.5 h-2.5 sm:w-3 sm:h-3" /> Inactive
                         </>
                       )}
                     </button>
                   </div>
 
                   {/* Plan Name & Price */}
-                  <h3 className="text-lg font-black text-foreground tracking-tight">
+                  <h3 className="text-xs sm:text-base font-bold text-foreground tracking-tight truncate">
                     {plan.name}
                   </h3>
                   {plan.description && (
-                    <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
+                    <p className="text-[11px] sm:text-xs text-muted-foreground mt-0.5 sm:mt-1 line-clamp-2">
                       {plan.description}
                     </p>
                   )}
 
-                  <div className="mt-4 flex items-baseline gap-1 text-foreground">
-                    <span className="text-3xl font-black tracking-tight">
+                  <div className="mt-2 sm:mt-4 flex items-baseline gap-1 text-foreground">
+                    <span className="text-lg sm:text-2xl font-bold tracking-tight truncate">
                       ₹{plan.price.toLocaleString("en-IN")}
                     </span>
-                    <span className="text-xs font-bold px-2 py-0.5 rounded-md bg-muted text-muted-foreground border border-border">
-                      {plan.durationDays} days
+                    <span className="text-[10px] sm:text-xs font-bold px-1.5 sm:px-2 py-0.5 rounded-md bg-muted text-muted-foreground border border-border shrink-0">
+                      {plan.durationDays}d
                     </span>
                   </div>
 
                   {/* Metrics bar */}
-                  <div className="mt-4 pt-4 border-t border-border flex items-center justify-between text-xs text-muted-foreground">
-                    <div className="flex items-center gap-1.5">
-                      <Users className="w-3.5 h-3.5 text-primary" />
-                      <span className="font-bold text-foreground">
+                  <div className="mt-2.5 sm:mt-4 pt-2 sm:pt-4 border-t border-border flex items-center justify-between text-[10px] sm:text-xs text-muted-foreground">
+                    <div className="flex items-center gap-1 truncate">
+                      <Users className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-primary shrink-0" />
+                      <span className="font-bold text-foreground truncate">
                         {plan.activeSubscribersCount}
                       </span>{" "}
-                      active members
+                      active
                     </div>
-                    <div className="text-[11px] text-muted-foreground font-medium">
+                    <div className="text-[9px] sm:text-[11px] text-muted-foreground font-medium shrink-0">
                       {plan.usageCount} lifetime
                     </div>
                   </div>
@@ -493,7 +493,7 @@ export function PlansManagerClient({
 
                 {/* Card Actions Footer */}
                 {canManagePlans && (
-                  <div className="mt-5 pt-3.5 border-t border-border flex items-center justify-between gap-2">
+                  <div className="mt-3 sm:mt-5 pt-2 sm:pt-3.5 border-t border-border flex items-center justify-between gap-1 sm:gap-2">
                     <button
                       onClick={() => handleToggleStatus(plan)}
                       disabled={isLoading}

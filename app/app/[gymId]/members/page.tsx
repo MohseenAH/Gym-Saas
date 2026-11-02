@@ -169,46 +169,46 @@ export default async function MembersPage({ params, searchParams }: MembersPageP
       </div>
 
       {/* KPI Stats */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-card p-6 rounded-3xl border border-border shadow-xs flex items-center gap-4 text-card-foreground">
-          <div className="p-3.5 bg-primary/10 text-primary rounded-2xl shadow-2xs">
-            <Users className="w-6 h-6" />
+      <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4">
+        <div className="bg-card p-3 sm:p-5 rounded-2xl sm:rounded-3xl border border-border shadow-xs flex items-center gap-3 sm:gap-4 text-card-foreground">
+          <div className="h-7 w-7 sm:h-9 sm:w-9 flex items-center justify-center shrink-0 bg-primary/10 text-primary rounded-xl sm:rounded-2xl shadow-2xs">
+            <Users className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
           </div>
-          <div>
-            <div className="text-3xl font-black text-foreground">{allMembers.length}</div>
-            <div className="text-xs text-muted-foreground font-medium">Total Registered Members</div>
-          </div>
-        </div>
-
-        <div className="bg-card p-6 rounded-3xl border border-border shadow-xs flex items-center gap-4 text-card-foreground">
-          <div className="p-3.5 bg-emerald-500/10 text-emerald-600 rounded-2xl shadow-2xs">
-            <UserCheck className="w-6 h-6" />
-          </div>
-          <div>
-            <div className="text-3xl font-black text-foreground">{activeMembersCount}</div>
-            <div className="text-xs text-muted-foreground font-medium">Active Subscriptions</div>
+          <div className="min-w-0">
+            <div className="text-lg sm:text-2xl font-bold tracking-tight text-foreground truncate">{allMembers.length}</div>
+            <div className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-muted-foreground truncate">Total Members</div>
           </div>
         </div>
 
-        <div className="bg-card p-6 rounded-3xl border border-border shadow-xs flex items-center gap-4 text-card-foreground">
-          <div className="p-3.5 bg-amber-500/10 text-amber-600 rounded-2xl shadow-2xs">
-            <Clock className="w-6 h-6" />
+        <div className="bg-card p-3 sm:p-5 rounded-2xl sm:rounded-3xl border border-border shadow-xs flex items-center gap-3 sm:gap-4 text-card-foreground">
+          <div className="h-7 w-7 sm:h-9 sm:w-9 flex items-center justify-center shrink-0 bg-emerald-500/10 text-emerald-600 rounded-xl sm:rounded-2xl shadow-2xs">
+            <UserCheck className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
           </div>
-          <div>
-            <div className="text-3xl font-black text-foreground">{expiringSoonCount}</div>
-            <div className="text-xs text-muted-foreground font-medium">Expiring Within 7 Days</div>
+          <div className="min-w-0">
+            <div className="text-lg sm:text-2xl font-bold tracking-tight text-foreground truncate">{activeMembersCount}</div>
+            <div className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-muted-foreground truncate">Active Plans</div>
           </div>
         </div>
 
-        <div className="bg-card p-6 rounded-3xl border border-border shadow-xs flex items-center gap-4 text-card-foreground">
-          <div className="p-3.5 bg-blue-500/10 text-blue-600 rounded-2xl shadow-2xs">
-            <ShieldCheck className="w-6 h-6" />
+        <div className="bg-card p-3 sm:p-5 rounded-2xl sm:rounded-3xl border border-border shadow-xs flex items-center gap-3 sm:gap-4 text-card-foreground">
+          <div className="h-7 w-7 sm:h-9 sm:w-9 flex items-center justify-center shrink-0 bg-amber-500/10 text-amber-600 rounded-xl sm:rounded-2xl shadow-2xs">
+            <Clock className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
           </div>
-          <div>
-            <div className="text-3xl font-black text-foreground">
+          <div className="min-w-0">
+            <div className="text-lg sm:text-2xl font-bold tracking-tight text-foreground truncate">{expiringSoonCount}</div>
+            <div className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-muted-foreground truncate">Expiring Soon</div>
+          </div>
+        </div>
+
+        <div className="bg-card p-3 sm:p-5 rounded-2xl sm:rounded-3xl border border-border shadow-xs flex items-center gap-3 sm:gap-4 text-card-foreground">
+          <div className="h-7 w-7 sm:h-9 sm:w-9 flex items-center justify-center shrink-0 bg-blue-500/10 text-blue-600 rounded-xl sm:rounded-2xl shadow-2xs">
+            <ShieldCheck className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+          </div>
+          <div className="min-w-0">
+            <div className="text-lg sm:text-2xl font-bold tracking-tight text-foreground truncate">
               {allMembers.filter((m) => m.user_id).length}
             </div>
-            <div className="text-xs text-muted-foreground font-medium">Portal Accounts Claimed</div>
+            <div className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-muted-foreground truncate">Portal Claimed</div>
           </div>
         </div>
       </div>

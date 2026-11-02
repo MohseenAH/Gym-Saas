@@ -253,74 +253,74 @@ export function MembershipsClient({
       {activeTab === "contracts" && (
         <>
           {/* KPI Cards Row */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4">
             {/* Active Memberships */}
             <div
               onClick={() => setStatusFilter("active")}
-              className={`p-6 rounded-3xl border transition-all cursor-pointer text-card-foreground ${
+              className={`p-3 sm:p-5 rounded-2xl sm:rounded-3xl border transition-all cursor-pointer text-card-foreground ${
                 statusFilter === "active"
                   ? "bg-card border-emerald-500 ring-2 ring-emerald-500/20 shadow-xs"
                   : "bg-card border-border hover:border-border/80 shadow-xs"
               }`}
             >
-              <div className="flex items-center justify-between text-xs text-muted-foreground font-bold uppercase tracking-wider">
-                <span>Active Contracts</span>
-                <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+              <div className="flex items-center justify-between text-[10px] sm:text-xs text-muted-foreground font-semibold uppercase tracking-wider truncate">
+                <span className="truncate">Active Contracts</span>
+                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
               </div>
-              <div className="text-3xl font-black text-foreground mt-2">
+              <div className="text-lg sm:text-2xl font-bold tracking-tight text-foreground mt-1 truncate">
                 {stats.active}
               </div>
-              <div className="text-[11px] text-muted-foreground mt-1">In good standing</div>
+              <div className="text-[10px] sm:text-[11px] text-muted-foreground mt-0.5 truncate">In good standing</div>
             </div>
 
             {/* Expiring Soon */}
             <div
               onClick={() => setStatusFilter("expiring")}
-              className={`p-6 rounded-3xl border transition-all cursor-pointer text-card-foreground ${
+              className={`p-3 sm:p-5 rounded-2xl sm:rounded-3xl border transition-all cursor-pointer text-card-foreground ${
                 statusFilter === "expiring"
                   ? "bg-card border-amber-500 ring-2 ring-amber-500/20 shadow-xs"
                   : "bg-card border-border hover:border-border/80 shadow-xs"
               }`}
             >
-              <div className="flex items-center justify-between text-xs text-muted-foreground font-bold uppercase tracking-wider">
-                <span>Expiring (7 Days)</span>
-                <AlertTriangle className="w-4 h-4 text-amber-600" />
+              <div className="flex items-center justify-between text-[10px] sm:text-xs text-muted-foreground font-semibold uppercase tracking-wider truncate">
+                <span className="truncate">Expiring (7d)</span>
+                <AlertTriangle className="w-3.5 h-3.5 text-amber-600 shrink-0" />
               </div>
-              <div className="text-3xl font-black text-amber-600 mt-2">
+              <div className="text-lg sm:text-2xl font-bold tracking-tight text-amber-600 mt-1 truncate">
                 {stats.expiring}
               </div>
-              <div className="text-[11px] text-muted-foreground mt-1">Due for renewal</div>
+              <div className="text-[10px] sm:text-[11px] text-muted-foreground mt-0.5 truncate">Due for renewal</div>
             </div>
 
             {/* Expired Contracts */}
             <div
               onClick={() => setStatusFilter("expired")}
-              className={`p-6 rounded-3xl border transition-all cursor-pointer text-card-foreground ${
+              className={`p-3 sm:p-5 rounded-2xl sm:rounded-3xl border transition-all cursor-pointer text-card-foreground ${
                 statusFilter === "expired"
                   ? "bg-card border-rose-500 ring-2 ring-rose-500/20 shadow-xs"
                   : "bg-card border-border hover:border-border/80 shadow-xs"
               }`}
             >
-              <div className="flex items-center justify-between text-xs text-muted-foreground font-bold uppercase tracking-wider">
-                <span>Expired</span>
-                <XCircle className="w-4 h-4 text-rose-600" />
+              <div className="flex items-center justify-between text-[10px] sm:text-xs text-muted-foreground font-semibold uppercase tracking-wider truncate">
+                <span className="truncate">Expired</span>
+                <XCircle className="w-3.5 h-3.5 text-rose-600 shrink-0" />
               </div>
-              <div className="text-3xl font-black text-rose-600 mt-2">
+              <div className="text-lg sm:text-2xl font-bold tracking-tight text-rose-600 mt-1 truncate">
                 {stats.expired}
               </div>
-              <div className="text-[11px] text-muted-foreground mt-1">Require follow-up</div>
+              <div className="text-[10px] sm:text-[11px] text-muted-foreground mt-0.5 truncate">Require follow-up</div>
             </div>
 
             {/* Outstanding Balances */}
-            <div className="p-6 bg-card rounded-3xl border border-border shadow-xs text-card-foreground">
-              <div className="flex items-center justify-between text-xs text-muted-foreground font-bold uppercase tracking-wider">
-                <span>Pending Balances</span>
-                <CreditCard className="w-4 h-4 text-primary" />
+            <div className="p-3 sm:p-5 bg-card rounded-2xl sm:rounded-3xl border border-border shadow-xs text-card-foreground">
+              <div className="flex items-center justify-between text-[10px] sm:text-xs text-muted-foreground font-semibold uppercase tracking-wider truncate">
+                <span className="truncate">Pending Balances</span>
+                <CreditCard className="w-3.5 h-3.5 text-primary shrink-0" />
               </div>
-              <div className="text-3xl font-black text-foreground mt-2">
+              <div className="text-lg sm:text-2xl font-bold tracking-tight text-foreground mt-1 truncate">
                 ₹{stats.totalOutstanding.toLocaleString("en-IN")}
               </div>
-              <div className="text-[11px] text-muted-foreground mt-1">Uncollected plan dues</div>
+              <div className="text-[10px] sm:text-[11px] text-muted-foreground mt-0.5 truncate">Uncollected dues</div>
             </div>
           </div>
 

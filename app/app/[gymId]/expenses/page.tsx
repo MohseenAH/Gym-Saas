@@ -5,7 +5,7 @@ import { hasCapability } from "@/lib/auth/capabilities";
 import { cookies } from "next/headers";
 import { resolveBranchContext } from "@/lib/auth/branch-context";
 import { RecordExpenseModal } from "@/components/expenses/record-expense-modal";
-import { Receipt, TrendingDown, Layers, Trash2 } from "lucide-react";
+import { Receipt, TrendingDown, Layers, Trash2, Tag } from "lucide-react";
 import { deleteExpenseAction } from "@/lib/actions/expenses";
 
 interface ExpensesPageProps {
@@ -81,40 +81,52 @@ export default async function ExpensesPage({ params, searchParams }: ExpensesPag
       </div>
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="bg-card p-5 rounded-2xl border border-border shadow-xs flex items-center gap-4 transition-all">
-          <div className="p-3 bg-rose-500/10 text-rose-500 rounded-xl">
-            <TrendingDown className="w-6 h-6" />
+      <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4">
+        <div className="bg-card p-3 sm:p-5 rounded-2xl sm:rounded-3xl border border-border shadow-xs flex items-center gap-3 sm:gap-4 text-card-foreground">
+          <div className="h-7 w-7 sm:h-9 sm:w-9 flex items-center justify-center shrink-0 bg-rose-500/10 text-rose-600 rounded-xl sm:rounded-2xl shadow-2xs">
+            <TrendingDown className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
           </div>
-          <div>
-            <div className="text-2xl font-black text-card-foreground">
-              ₹{totalExpense.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+          <div className="min-w-0">
+            <div className="text-lg sm:text-2xl font-bold tracking-tight text-foreground truncate">
+              ₹{totalExpense.toLocaleString("en-IN", { minimumFractionDigits: 0, maximumFractionDigits: 2 })}
             </div>
-            <div className="text-xs text-muted-foreground font-medium">Total Expenses Recorded</div>
+            <div className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-muted-foreground truncate">Total Expenses</div>
           </div>
         </div>
 
-        <div className="bg-card p-5 rounded-2xl border border-border shadow-xs flex items-center gap-4 transition-all">
-          <div className="p-3 bg-primary/10 text-primary rounded-xl">
-            <Layers className="w-6 h-6" />
+        <div className="bg-card p-3 sm:p-5 rounded-2xl sm:rounded-3xl border border-border shadow-xs flex items-center gap-3 sm:gap-4 text-card-foreground">
+          <div className="h-7 w-7 sm:h-9 sm:w-9 flex items-center justify-center shrink-0 bg-primary/10 text-primary rounded-xl sm:rounded-2xl shadow-2xs">
+            <Layers className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
           </div>
-          <div>
-            <div className="text-2xl font-black text-card-foreground capitalize">
+          <div className="min-w-0">
+            <div className="text-lg sm:text-2xl font-bold tracking-tight text-foreground truncate capitalize">
               {topCategory ? topCategory[0] : "None"}
             </div>
-            <div className="text-xs text-muted-foreground font-medium">
-              Top Expense Category {topCategory ? `(₹${topCategory[1].toLocaleString()})` : ""}
+            <div className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-muted-foreground truncate">
+              Top Category {topCategory ? `(₹${topCategory[1].toLocaleString()})` : ""}
             </div>
           </div>
         </div>
 
-        <div className="bg-card p-5 rounded-2xl border border-border shadow-xs flex items-center gap-4 transition-all">
-          <div className="p-3 bg-muted text-muted-foreground rounded-xl">
-            <Receipt className="w-6 h-6" />
+        <div className="bg-card p-3 sm:p-5 rounded-2xl sm:rounded-3xl border border-border shadow-xs flex items-center gap-3 sm:gap-4 text-card-foreground">
+          <div className="h-7 w-7 sm:h-9 sm:w-9 flex items-center justify-center shrink-0 bg-amber-500/10 text-amber-600 rounded-xl sm:rounded-2xl shadow-2xs">
+            <Receipt className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
           </div>
-          <div>
-            <div className="text-2xl font-black text-card-foreground">{allExpenses.length}</div>
-            <div className="text-xs text-muted-foreground font-medium">Expense Invoices / Vouchers</div>
+          <div className="min-w-0">
+            <div className="text-lg sm:text-2xl font-bold tracking-tight text-foreground truncate">{allExpenses.length}</div>
+            <div className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-muted-foreground truncate">Expense Vouchers</div>
+          </div>
+        </div>
+
+        <div className="bg-card p-3 sm:p-5 rounded-2xl sm:rounded-3xl border border-border shadow-xs flex items-center gap-3 sm:gap-4 text-card-foreground">
+          <div className="h-7 w-7 sm:h-9 sm:w-9 flex items-center justify-center shrink-0 bg-blue-500/10 text-blue-600 rounded-xl sm:rounded-2xl shadow-2xs">
+            <Tag className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+          </div>
+          <div className="min-w-0">
+            <div className="text-lg sm:text-2xl font-bold tracking-tight text-foreground truncate">
+              {Object.keys(categoryMap).length}
+            </div>
+            <div className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-muted-foreground truncate">Categories</div>
           </div>
         </div>
       </div>

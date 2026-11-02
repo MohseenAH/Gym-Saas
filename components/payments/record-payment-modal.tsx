@@ -95,7 +95,7 @@ export function RecordPaymentModal({ gymId, branches, members }: RecordPaymentMo
     <>
       <button
         onClick={() => setIsOpen(true)}
-        className="h-11 flex items-center gap-2 px-4 bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl text-sm font-bold shadow-xs transition-all active:scale-[0.98]"
+        className="h-10 sm:h-11 flex items-center justify-center gap-2 px-4 bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl text-xs sm:text-sm font-bold shadow-xs transition-all active:scale-[0.98] w-full sm:w-auto"
       >
         <Plus className="w-4 h-4" />
         Record Payment

@@ -102,7 +102,7 @@ export function QuickEnrollModal({ gymId, branchId, plans }: QuickEnrollModalPro
     <>
       <button
         onClick={() => setIsOpen(true)}
-        className="flex items-center gap-2 h-11 px-4 py-2.5 bg-primary hover:opacity-95 text-primary-foreground rounded-xl text-sm font-bold shadow-md shadow-primary/20 transition-all cursor-pointer"
+        className="flex items-center justify-center gap-2 h-10 sm:h-11 px-4 py-2 bg-primary hover:opacity-95 text-primary-foreground rounded-xl text-xs sm:text-sm font-bold shadow-md shadow-primary/20 transition-all cursor-pointer w-full sm:w-auto"
       >
         <UserPlus className="w-4 h-4" />
         Quick Enroll Member

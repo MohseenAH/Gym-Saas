@@ -219,30 +219,30 @@ export default async function MemberPortalDashboardPage({ params }: PageProps) {
       </div>
 
       {/* Quick Links Grid */}
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-2 gap-2.5 sm:gap-4">
         <Link
           href={`/portal/${gymId}/attendance`}
-          className="p-5 bg-card rounded-3xl border border-border shadow-xs hover:border-primary/40 hover:bg-muted/20 transition-all flex items-center gap-3"
+          className="p-3 sm:p-5 bg-card rounded-2xl sm:rounded-3xl border border-border shadow-xs hover:border-primary/40 hover:bg-muted/20 transition-all flex items-center gap-2.5 sm:gap-3"
         >
-          <div className="p-2.5 bg-primary/10 text-primary rounded-xl">
-            <Calendar className="w-5 h-5" />
+          <div className="h-7 w-7 sm:h-9 sm:w-9 flex items-center justify-center shrink-0 bg-primary/10 text-primary rounded-xl sm:rounded-2xl shadow-2xs">
+            <Calendar className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
           </div>
-          <div>
-            <div className="text-xs font-bold text-foreground">Attendance Log</div>
-            <div className="text-[11px] text-muted-foreground">View workout streaks</div>
+          <div className="min-w-0">
+            <div className="text-xs sm:text-sm font-bold text-foreground truncate">Attendance Log</div>
+            <div className="text-[10px] sm:text-[11px] text-muted-foreground truncate">Workout streaks</div>
           </div>
         </Link>
 
         <Link
           href={`/portal/${gymId}/payments`}
-          className="p-5 bg-card rounded-3xl border border-border shadow-xs hover:border-primary/40 hover:bg-muted/20 transition-all flex items-center gap-3"
+          className="p-3 sm:p-5 bg-card rounded-2xl sm:rounded-3xl border border-border shadow-xs hover:border-primary/40 hover:bg-muted/20 transition-all flex items-center gap-2.5 sm:gap-3"
         >
-          <div className="p-2.5 bg-primary/10 text-primary rounded-xl">
-            <CreditCard className="w-5 h-5" />
+          <div className="h-7 w-7 sm:h-9 sm:w-9 flex items-center justify-center shrink-0 bg-primary/10 text-primary rounded-xl sm:rounded-2xl shadow-2xs">
+            <CreditCard className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
           </div>
-          <div>
-            <div className="text-xs font-bold text-foreground">Payment Receipts</div>
-            <div className="text-[11px] text-muted-foreground">Invoices & dues status</div>
+          <div className="min-w-0">
+            <div className="text-xs sm:text-sm font-bold text-foreground truncate">Receipts</div>
+            <div className="text-[10px] sm:text-[11px] text-muted-foreground truncate">Invoices & dues</div>
           </div>
         </Link>
       </div>

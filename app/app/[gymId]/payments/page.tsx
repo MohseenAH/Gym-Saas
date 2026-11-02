@@ -4,7 +4,7 @@ import { cookies } from "next/headers";
 import { resolveBranchContext } from "@/lib/auth/branch-context";
 import { RecordPaymentModal } from "@/components/payments/record-payment-modal";
 import { PaymentsLedgerClient, PaymentLedgerItem } from "@/components/payments/payments-ledger-client";
-import { CreditCard, TrendingUp, Wallet } from "lucide-react";
+import { CreditCard, TrendingUp, Wallet, Banknote, Receipt } from "lucide-react";
 
 interface PaymentsPageProps {
   params: Promise<{ gymId: string }>;
@@ -135,40 +135,50 @@ export default async function PaymentsPage({ params, searchParams }: PaymentsPag
       </div>
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="bg-card p-5 rounded-2xl border border-border shadow-xs flex items-center gap-4 transition-all">
-          <div className="p-3 bg-emerald-500/10 text-emerald-500 rounded-xl">
-            <TrendingUp className="w-6 h-6" />
+      <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4">
+        <div className="bg-card p-3 sm:p-5 rounded-2xl sm:rounded-3xl border border-border shadow-xs flex items-center gap-3 sm:gap-4 text-card-foreground">
+          <div className="h-7 w-7 sm:h-9 sm:w-9 flex items-center justify-center shrink-0 bg-emerald-500/10 text-emerald-600 rounded-xl sm:rounded-2xl shadow-2xs">
+            <TrendingUp className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
           </div>
-          <div>
-            <div className="text-2xl font-black text-card-foreground">
-              ₹{totalRevenue.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+          <div className="min-w-0">
+            <div className="text-lg sm:text-2xl font-bold tracking-tight text-foreground truncate">
+              ₹{totalRevenue.toLocaleString("en-IN", { minimumFractionDigits: 0, maximumFractionDigits: 2 })}
             </div>
-            <div className="text-xs text-muted-foreground font-medium">Total Revenue Collected</div>
+            <div className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-muted-foreground truncate">Total Revenue</div>
           </div>
         </div>
 
-        <div className="bg-card p-5 rounded-2xl border border-border shadow-xs flex items-center gap-4 transition-all">
-          <div className="p-3 bg-primary/10 text-primary rounded-xl">
-            <Wallet className="w-6 h-6" />
+        <div className="bg-card p-3 sm:p-5 rounded-2xl sm:rounded-3xl border border-border shadow-xs flex items-center gap-3 sm:gap-4 text-card-foreground">
+          <div className="h-7 w-7 sm:h-9 sm:w-9 flex items-center justify-center shrink-0 bg-primary/10 text-primary rounded-xl sm:rounded-2xl shadow-2xs">
+            <Wallet className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
           </div>
-          <div>
-            <div className="text-sm font-bold text-card-foreground">
-              UPI: ₹{upiTotal.toLocaleString("en-IN")} • Cash: ₹{cashTotal.toLocaleString("en-IN")}
+          <div className="min-w-0">
+            <div className="text-lg sm:text-2xl font-bold tracking-tight text-foreground truncate">
+              ₹{upiTotal.toLocaleString("en-IN")}
             </div>
-            <div className="text-xs text-muted-foreground font-medium">
-              Card & Others: ₹{cardTotal.toLocaleString("en-IN")}
-            </div>
+            <div className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-muted-foreground truncate">UPI Collections</div>
           </div>
         </div>
 
-        <div className="bg-card p-5 rounded-2xl border border-border shadow-xs flex items-center gap-4 transition-all">
-          <div className="p-3 bg-muted text-muted-foreground rounded-xl">
-            <CreditCard className="w-6 h-6" />
+        <div className="bg-card p-3 sm:p-5 rounded-2xl sm:rounded-3xl border border-border shadow-xs flex items-center gap-3 sm:gap-4 text-card-foreground">
+          <div className="h-7 w-7 sm:h-9 sm:w-9 flex items-center justify-center shrink-0 bg-amber-500/10 text-amber-600 rounded-xl sm:rounded-2xl shadow-2xs">
+            <Banknote className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
           </div>
-          <div>
-            <div className="text-2xl font-black text-card-foreground">{allPayments.length}</div>
-            <div className="text-xs text-muted-foreground font-medium">Payment Receipts Issued</div>
+          <div className="min-w-0">
+            <div className="text-lg sm:text-2xl font-bold tracking-tight text-foreground truncate">
+              ₹{cashTotal.toLocaleString("en-IN")}
+            </div>
+            <div className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-muted-foreground truncate">Cash Collections</div>
+          </div>
+        </div>
+
+        <div className="bg-card p-3 sm:p-5 rounded-2xl sm:rounded-3xl border border-border shadow-xs flex items-center gap-3 sm:gap-4 text-card-foreground">
+          <div className="h-7 w-7 sm:h-9 sm:w-9 flex items-center justify-center shrink-0 bg-blue-500/10 text-blue-600 rounded-xl sm:rounded-2xl shadow-2xs">
+            <Receipt className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+          </div>
+          <div className="min-w-0">
+            <div className="text-lg sm:text-2xl font-bold tracking-tight text-foreground truncate">{allPayments.length}</div>
+            <div className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-muted-foreground truncate">Receipts Issued</div>
           </div>
         </div>
       </div>

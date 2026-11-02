@@ -169,38 +169,47 @@ export function StaffCheckInClient({
       )}
 
       {/* KPI Counters Header */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="bg-card p-6 rounded-3xl border border-border shadow-xs text-card-foreground">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Checked-In Today</span>
-            <div className="p-2.5 rounded-2xl bg-emerald-500/10 text-emerald-600">
-              <CheckCircle className="w-5 h-5" />
-            </div>
+      <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4">
+        <div className="bg-card p-3 sm:p-5 rounded-2xl sm:rounded-3xl border border-border shadow-xs flex items-center gap-3 sm:gap-4 text-card-foreground">
+          <div className="h-7 w-7 sm:h-9 sm:w-9 flex items-center justify-center shrink-0 rounded-xl sm:rounded-2xl bg-emerald-500/10 text-emerald-600 shadow-2xs">
+            <CheckCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
           </div>
-          <div className="text-3xl font-black text-emerald-600 mt-2">{count}</div>
-          <div className="text-[11px] text-muted-foreground mt-1">Verified workout visits</div>
+          <div className="min-w-0">
+            <div className="text-lg sm:text-2xl font-bold tracking-tight text-emerald-600 truncate">{count}</div>
+            <div className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-muted-foreground truncate">Checked-In Today</div>
+          </div>
         </div>
 
-        <div className="bg-card p-6 rounded-3xl border border-border shadow-xs text-card-foreground">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Waiting Check-In</span>
-            <div className="p-2.5 rounded-2xl bg-primary/10 text-primary">
-              <Clock className="w-5 h-5" />
-            </div>
+        <div className="bg-card p-3 sm:p-5 rounded-2xl sm:rounded-3xl border border-border shadow-xs flex items-center gap-3 sm:gap-4 text-card-foreground">
+          <div className="h-7 w-7 sm:h-9 sm:w-9 flex items-center justify-center shrink-0 rounded-xl sm:rounded-2xl bg-primary/10 text-primary shadow-2xs">
+            <Clock className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
           </div>
-          <div className="text-3xl font-black text-foreground mt-2">{waitingCount}</div>
-          <div className="text-[11px] text-muted-foreground mt-1">Members not yet checked in</div>
+          <div className="min-w-0">
+            <div className="text-lg sm:text-2xl font-bold tracking-tight text-foreground truncate">{waitingCount}</div>
+            <div className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-muted-foreground truncate">Waiting Check-In</div>
+          </div>
         </div>
 
-        <div className="bg-card p-6 rounded-3xl border border-border shadow-xs text-card-foreground">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Total Enrolled</span>
-            <div className="p-2.5 rounded-2xl bg-muted text-muted-foreground">
-              <Users className="w-5 h-5" />
-            </div>
+        <div className="bg-card p-3 sm:p-5 rounded-2xl sm:rounded-3xl border border-border shadow-xs flex items-center gap-3 sm:gap-4 text-card-foreground">
+          <div className="h-7 w-7 sm:h-9 sm:w-9 flex items-center justify-center shrink-0 rounded-xl sm:rounded-2xl bg-muted text-muted-foreground shadow-2xs">
+            <Users className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
           </div>
-          <div className="text-3xl font-black text-foreground mt-2">{members.length}</div>
-          <div className="text-[11px] text-muted-foreground mt-1">Registered roster</div>
+          <div className="min-w-0">
+            <div className="text-lg sm:text-2xl font-bold tracking-tight text-foreground truncate">{members.length}</div>
+            <div className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-muted-foreground truncate">Total Enrolled</div>
+          </div>
+        </div>
+
+        <div className="bg-card p-3 sm:p-5 rounded-2xl sm:rounded-3xl border border-border shadow-xs flex items-center gap-3 sm:gap-4 text-card-foreground">
+          <div className="h-7 w-7 sm:h-9 sm:w-9 flex items-center justify-center shrink-0 rounded-xl sm:rounded-2xl bg-blue-500/10 text-blue-600 shadow-2xs">
+            <UserCheck className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+          </div>
+          <div className="min-w-0">
+            <div className="text-lg sm:text-2xl font-bold tracking-tight text-foreground truncate">
+              {members.filter((m) => m.hasActiveMembership && !m.isExpired).length}
+            </div>
+            <div className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-muted-foreground truncate">Active Plans</div>
+          </div>
         </div>
       </div>
 

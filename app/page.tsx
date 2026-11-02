@@ -67,33 +67,33 @@ export default async function HomePage() {
           </Link>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mt-20 w-full text-left">
-          <div className="p-6 bg-white rounded-2xl border border-slate-200/80 shadow-sm">
-            <div className="p-2.5 w-fit rounded-xl bg-emerald-50 text-emerald-600 mb-4">
-              <Zap className="w-5 h-5" />
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-2.5 sm:gap-6 mt-12 sm:mt-20 w-full text-left">
+          <div className="p-3.5 sm:p-6 bg-card rounded-2xl border border-border shadow-xs">
+            <div className="p-2 sm:p-2.5 w-fit rounded-xl bg-emerald-500/10 text-emerald-600 mb-3 sm:mb-4">
+              <Zap className="w-4 h-4 sm:w-5 sm:h-5" />
             </div>
-            <h3 className="font-bold text-slate-900 mb-1">Single-Sheet Checkout</h3>
-            <p className="text-sm text-slate-600">
+            <h3 className="font-bold text-xs sm:text-base text-foreground mb-1 truncate">Single-Sheet Checkout</h3>
+            <p className="text-[11px] sm:text-sm text-muted-foreground line-clamp-3 sm:line-clamp-none">
               Register a member, assign a plan, and log payment in a single 30-second form.
             </p>
           </div>
 
-          <div className="p-6 bg-white rounded-2xl border border-slate-200/80 shadow-sm">
-            <div className="p-2.5 w-fit rounded-xl bg-indigo-50 text-indigo-600 mb-4">
-              <Users className="w-5 h-5" />
+          <div className="p-3.5 sm:p-6 bg-card rounded-2xl border border-border shadow-xs">
+            <div className="p-2 sm:p-2.5 w-fit rounded-xl bg-primary/10 text-primary mb-3 sm:mb-4">
+              <Users className="w-4 h-4 sm:w-5 sm:h-5" />
             </div>
-            <h3 className="font-bold text-slate-900 mb-1">Phone-First Claim</h3>
-            <p className="text-sm text-slate-600">
+            <h3 className="font-bold text-xs sm:text-base text-foreground mb-1 truncate">Phone-First Claim</h3>
+            <p className="text-[11px] sm:text-sm text-muted-foreground line-clamp-3 sm:line-clamp-none">
               Invite members directly via WhatsApp without requiring email upfront. Zero lockouts.
             </p>
           </div>
 
-          <div className="p-6 bg-white rounded-2xl border border-slate-200/80 shadow-sm">
-            <div className="p-2.5 w-fit rounded-xl bg-purple-50 text-purple-600 mb-4">
-              <CreditCard className="w-5 h-5" />
+          <div className="col-span-2 md:col-span-1 p-3.5 sm:p-6 bg-card rounded-2xl border border-border shadow-xs">
+            <div className="p-2 sm:p-2.5 w-fit rounded-xl bg-purple-500/10 text-purple-600 mb-3 sm:mb-4">
+              <CreditCard className="w-4 h-4 sm:w-5 sm:h-5" />
             </div>
-            <h3 className="font-bold text-slate-900 mb-1">Real-World Payments</h3>
-            <p className="text-sm text-slate-600">
+            <h3 className="font-bold text-xs sm:text-base text-foreground mb-1 truncate">Real-World Payments</h3>
+            <p className="text-[11px] sm:text-sm text-muted-foreground line-clamp-3 sm:line-clamp-none">
               Instant logging for Cash, UPI, and Card with automated WhatsApp receipts.
             </p>
           </div>

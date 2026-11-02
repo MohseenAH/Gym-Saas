@@ -77,7 +77,7 @@ export function BranchManagerClient({
         {canManageBranches && (
           <button
             onClick={() => setModalOpen(true)}
-            className="h-11 inline-flex items-center gap-2 px-4 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-bold shadow-xs transition-all active:scale-[0.98]"
+            className="h-10 sm:h-11 inline-flex items-center justify-center gap-2 px-4 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground text-xs sm:text-sm font-bold shadow-xs transition-all active:scale-[0.98] w-full sm:w-auto"
           >
             <Plus className="w-4 h-4" /> Add Branch
           </button>
@@ -85,42 +85,42 @@ export function BranchManagerClient({
       </div>
 
       {/* Grid of Branches */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-2 gap-2.5 sm:gap-4">
         {branches.map((b) => (
           <div
             key={b.id}
-            className="p-6 bg-card rounded-3xl border border-border shadow-xs flex items-start gap-4 hover:border-primary/40 transition-all"
+            className="p-3 sm:p-5 bg-card rounded-2xl sm:rounded-3xl border border-border shadow-xs flex flex-col sm:flex-row items-start gap-2.5 sm:gap-4 hover:border-primary/40 transition-all"
           >
-            <div className="p-3 bg-primary/10 text-primary rounded-2xl shrink-0">
-              <Building2 className="w-6 h-6" />
+            <div className="h-7 w-7 sm:h-9 sm:w-9 flex items-center justify-center bg-primary/10 text-primary rounded-xl sm:rounded-2xl shrink-0">
+              <Building2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
             </div>
 
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center justify-between gap-2">
-                <h3 className="text-base font-bold text-card-foreground truncate">{b.name}</h3>
-                <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold uppercase tracking-wider bg-emerald-500/10 text-emerald-500 border border-emerald-500/20">
+            <div className="flex-1 min-w-0 w-full">
+              <div className="flex items-center justify-between gap-1.5">
+                <h3 className="text-xs sm:text-base font-bold text-card-foreground truncate">{b.name}</h3>
+                <span className="px-1.5 sm:px-2.5 py-0.5 rounded-full text-[9px] sm:text-[11px] font-bold uppercase tracking-wider bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 shrink-0">
                   Active
                 </span>
               </div>
 
-              <div className="mt-2 text-xs text-muted-foreground flex items-center gap-1.5">
-                <MapPin className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+              <div className="mt-1 sm:mt-2 text-[11px] sm:text-xs text-muted-foreground flex items-center gap-1.5">
+                <MapPin className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-muted-foreground shrink-0" />
                 <span className="truncate">{b.address || b.city || "Primary Gym Center"}</span>
               </div>
 
               {b.phone && (
-                <div className="mt-1 text-xs text-muted-foreground flex items-center gap-1.5">
-                  <Phone className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
-                  <span>{b.phone}</span>
+                <div className="mt-0.5 sm:mt-1 text-[11px] sm:text-xs text-muted-foreground flex items-center gap-1.5">
+                  <Phone className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-muted-foreground shrink-0" />
+                  <span className="truncate">{b.phone}</span>
                 </div>
               )}
 
-              <div className="mt-4 pt-3 border-t border-border flex items-center justify-between text-xs">
-                <div className="flex items-center gap-1.5 text-foreground font-semibold">
-                  <Users className="w-3.5 h-3.5 text-muted-foreground" />
-                  <span>{b.memberCount} Enrolled Members</span>
+              <div className="mt-2.5 sm:mt-4 pt-2 sm:pt-3 border-t border-border flex items-center justify-between text-[10px] sm:text-xs">
+                <div className="flex items-center gap-1 text-foreground font-semibold truncate">
+                  <Users className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-muted-foreground shrink-0" />
+                  <span className="truncate">{b.memberCount} Members</span>
                 </div>
-                <span className="font-mono text-[10px] text-muted-foreground">#{b.id.slice(0, 8)}</span>
+                <span className="font-mono text-[9px] sm:text-[10px] text-muted-foreground shrink-0">#{b.id.slice(0, 6)}</span>
               </div>
             </div>
           </div>

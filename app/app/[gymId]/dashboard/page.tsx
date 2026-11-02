@@ -10,6 +10,8 @@ import {
   IndianRupee,
   Sparkles,
   Zap,
+  Building2,
+  Wallet,
 } from "lucide-react";
 import Link from "next/link";
 import { cookies } from "next/headers";
@@ -242,146 +244,177 @@ export default async function DashboardPage({ params, searchParams }: PageProps)
   return (
     <div className="space-y-6 max-w-6xl mx-auto text-foreground">
       {/* Welcome Banner & Pilot Badge */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-card p-6 rounded-3xl border border-border shadow-xs text-card-foreground">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-card p-4 sm:p-6 rounded-3xl border border-border shadow-xs text-card-foreground">
         <div>
           <div className="flex items-center gap-2.5 flex-wrap">
-            <h1 className="text-2xl font-black text-foreground tracking-tight">
+            <h1 className="text-xl sm:text-2xl font-black text-foreground tracking-tight">
               {gym?.name || "GymApra Command Center"}
             </h1>
             {pilotStatus.isPilot && (
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-primary/10 text-primary border border-primary/20">
-                <Sparkles className="w-3.5 h-3.5 text-primary" />
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 sm:px-3 sm:py-1 rounded-full text-[10px] sm:text-xs font-bold bg-primary/10 text-primary border border-primary/20">
+                <Sparkles className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-primary" />
                 {pilotStatus.badgeText}
               </span>
             )}
           </div>
-          <p className="text-xs text-muted-foreground mt-1.5">
+          <p className="text-[11px] sm:text-xs text-muted-foreground mt-1">
             Real-time daily collections, outstanding member dues, attendance, and Indian gym operations
           </p>
         </div>
 
-        <div className="flex items-center gap-3 flex-wrap">
+        {/* Action Header on Mobile: compact 2-column grid or flex on desktop */}
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3 w-full sm:w-auto">
           <BranchSelector
             gymId={gymId}
             branches={branchList}
             currentBranchId={selectedBranchId || undefined}
           />
-          <Link
-            href={`/app/${gymId}/attendance`}
-            className="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-primary hover:opacity-95 text-primary-foreground text-xs font-bold shadow-xs transition-opacity"
-          >
-            <CalendarCheck className="w-4 h-4" />
-            Check-In Kiosk
-          </Link>
-          <Link
-            href={`/app/${gymId}/members`}
-            className="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-muted hover:bg-muted/80 text-foreground text-xs font-bold border border-border transition-colors"
-          >
-            <UserPlus className="w-4 h-4" />
-            Enroll Member
-          </Link>
+          <div className="grid grid-cols-2 gap-2 sm:flex sm:items-center sm:gap-3">
+            <Link
+              href={`/app/${gymId}/attendance`}
+              className="h-10 inline-flex items-center justify-center gap-1.5 px-3 rounded-xl bg-primary hover:opacity-95 text-primary-foreground text-xs sm:text-sm font-semibold shadow-xs transition-opacity"
+            >
+              <CalendarCheck className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
+              <span className="truncate">Check-In</span>
+            </Link>
+            <Link
+              href={`/app/${gymId}/members`}
+              className="h-10 inline-flex items-center justify-center gap-1.5 px-3 rounded-xl bg-muted hover:bg-muted/80 text-foreground text-xs sm:text-sm font-semibold border border-border transition-colors"
+            >
+              <UserPlus className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
+              <span className="truncate">Enroll</span>
+            </Link>
+          </div>
         </div>
       </div>
 
-      {/* Row 1: Priority Cash & Financial Metrics */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      {/* Row 1: Priority Cash & Financial Metrics (Strict 2-Column Mobile Grid) */}
+      <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4">
         {/* Today's Collections */}
-        <div className="p-6 bg-card rounded-3xl border border-border shadow-xs relative overflow-hidden text-card-foreground">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+        <div className="p-3 sm:p-5 bg-card rounded-2xl sm:rounded-3xl border border-border shadow-xs relative overflow-hidden text-card-foreground flex flex-col justify-between">
+          <div className="flex items-center justify-between gap-1.5">
+            <span className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-muted-foreground truncate">
               Today&apos;s Collections
             </span>
-            <div className="p-2.5 rounded-2xl bg-emerald-500/10 text-emerald-600">
-              <Zap className="w-4 h-4" />
+            <div className="h-6 w-6 sm:h-8 sm:w-8 rounded-lg sm:rounded-xl bg-emerald-500/10 text-emerald-600 flex items-center justify-center shrink-0">
+              <Zap className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
             </div>
           </div>
-          <div className="mt-3 text-3xl font-black text-emerald-600 tracking-tight">
+          <div className="mt-2 sm:mt-3 text-lg sm:text-2xl font-bold text-emerald-600 tracking-tight truncate">
             ₹{todayCollections.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
           </div>
-          <div className="mt-2.5 flex items-center gap-2 text-[11px] font-semibold text-muted-foreground">
-            <span className="px-2.5 py-0.5 rounded-lg bg-muted text-foreground border border-border/60">
+          <div className="mt-1.5 sm:mt-2.5 flex items-center gap-1 sm:gap-2 flex-wrap">
+            <span className="text-[10px] px-1.5 py-0.5 rounded bg-muted text-foreground border border-border/60">
               Cash: ₹{todayCash.toLocaleString("en-IN")}
             </span>
-            <span className="px-2.5 py-0.5 rounded-lg bg-muted text-foreground border border-border/60">
+            <span className="text-[10px] px-1.5 py-0.5 rounded bg-muted text-foreground border border-border/60">
               UPI: ₹{todayUpi.toLocaleString("en-IN")}
             </span>
           </div>
         </div>
 
         {/* Outstanding Member Dues */}
-        <div className="p-6 bg-card rounded-3xl border border-border shadow-xs text-card-foreground">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-              Pending Member Dues
+        <div className="p-3 sm:p-5 bg-card rounded-2xl sm:rounded-3xl border border-border shadow-xs text-card-foreground flex flex-col justify-between">
+          <div className="flex items-center justify-between gap-1.5">
+            <span className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-muted-foreground truncate">
+              Pending Dues
             </span>
-            <div className="p-2.5 rounded-2xl bg-amber-500/10 text-amber-600">
-              <IndianRupee className="w-4 h-4" />
+            <div className="h-6 w-6 sm:h-8 sm:w-8 rounded-lg sm:rounded-xl bg-amber-500/10 text-amber-600 flex items-center justify-center shrink-0">
+              <IndianRupee className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
             </div>
           </div>
-          <div className="mt-3 text-3xl font-black text-amber-600 tracking-tight">
+          <div className="mt-2 sm:mt-3 text-lg sm:text-2xl font-bold text-amber-600 tracking-tight truncate">
             ₹{totalOutstandingDues.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
           </div>
-          <div className="mt-2 text-xs text-muted-foreground">
-            Uncollected balance on active contracts
+          <div className="mt-1.5 sm:mt-2 text-[10px] text-muted-foreground truncate">
+            Uncollected balance
           </div>
         </div>
 
         {/* Net Cash Flow (P&L) */}
-        <div className="p-6 bg-card rounded-3xl border border-border shadow-xs text-card-foreground">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+        <div className="p-3 sm:p-5 bg-card rounded-2xl sm:rounded-3xl border border-border shadow-xs text-card-foreground flex flex-col justify-between">
+          <div className="flex items-center justify-between gap-1.5">
+            <span className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-muted-foreground truncate">
               Net Cash Flow
             </span>
             <div
-              className={`p-2.5 rounded-2xl ${
+              className={`h-6 w-6 sm:h-8 sm:w-8 rounded-lg sm:rounded-xl flex items-center justify-center shrink-0 ${
                 isProfitable ? "bg-emerald-500/10 text-emerald-600" : "bg-rose-500/10 text-rose-600"
               }`}
             >
-              <TrendingUp className="w-4 h-4" />
+              <TrendingUp className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
             </div>
           </div>
           <div
-            className={`mt-3 text-3xl font-black tracking-tight ${
+            className={`mt-2 sm:mt-3 text-lg sm:text-2xl font-bold tracking-tight truncate ${
               isProfitable ? "text-emerald-600" : "text-rose-600"
             }`}
           >
             {isProfitable ? "+" : ""}₹{netCashFlow.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
           </div>
-          <div className="mt-2 text-xs text-muted-foreground">
+          <div className="mt-1.5 sm:mt-2 text-[10px] text-muted-foreground truncate">
             Rev ₹{totalRevenue.toLocaleString("en-IN")} &minus; Exp ₹{totalExpenses.toLocaleString("en-IN")}
+          </div>
+        </div>
+
+        {/* Total Revenue Collected */}
+        <div className="p-3 sm:p-5 bg-card rounded-2xl sm:rounded-3xl border border-border shadow-xs text-card-foreground flex flex-col justify-between">
+          <div className="flex items-center justify-between gap-1.5">
+            <span className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-muted-foreground truncate">
+              Total Revenue
+            </span>
+            <div className="h-6 w-6 sm:h-8 sm:w-8 rounded-lg sm:rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
+              <Wallet className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+            </div>
+          </div>
+          <div className="mt-2 sm:mt-3 text-lg sm:text-2xl font-bold text-foreground tracking-tight truncate">
+            ₹{totalRevenue.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+          </div>
+          <div className="mt-1.5 sm:mt-2 text-[10px] text-muted-foreground truncate">
+            {validPayments.length} recorded receipts
           </div>
         </div>
       </div>
 
-      {/* Row 2: Operational Stats Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="p-6 bg-card rounded-3xl border border-border shadow-xs flex items-center gap-4 text-card-foreground">
-          <div className="p-3.5 bg-primary/10 text-primary rounded-2xl shadow-2xs">
-            <Users className="w-6 h-6" />
+      {/* Row 2: Operational Stats Grid (Strict 2-Column Mobile Grid) */}
+      <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4">
+        <div className="p-3 sm:p-5 bg-card rounded-2xl sm:rounded-3xl border border-border shadow-xs flex items-center gap-3 sm:gap-4 text-card-foreground">
+          <div className="h-7 w-7 sm:h-9 sm:w-9 bg-primary/10 text-primary rounded-xl sm:rounded-2xl flex items-center justify-center shrink-0 shadow-2xs">
+            <Users className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
           </div>
-          <div>
-            <div className="text-2xl font-black text-foreground">{membersCount || 0}</div>
-            <div className="text-xs text-muted-foreground font-medium">Active Enrolled Members</div>
-          </div>
-        </div>
-
-        <div className="p-6 bg-card rounded-3xl border border-border shadow-xs flex items-center gap-4 text-card-foreground">
-          <div className="p-3.5 bg-emerald-500/10 text-emerald-600 rounded-2xl shadow-2xs">
-            <CalendarCheck className="w-6 h-6" />
-          </div>
-          <div>
-            <div className="text-2xl font-black text-foreground">{todayCheckIns || 0}</div>
-            <div className="text-xs text-muted-foreground font-medium">Workouts Checked-in Today</div>
+          <div className="min-w-0">
+            <div className="text-lg sm:text-2xl font-bold text-foreground truncate">{membersCount || 0}</div>
+            <div className="text-[10px] sm:text-xs text-muted-foreground font-semibold uppercase tracking-wider truncate">Active Members</div>
           </div>
         </div>
 
-        <div className="p-6 bg-card rounded-3xl border border-border shadow-xs flex items-center gap-4 text-card-foreground">
-          <div className="p-3.5 bg-amber-500/10 text-amber-600 rounded-2xl shadow-2xs">
-            <Bell className="w-6 h-6" />
+        <div className="p-3 sm:p-5 bg-card rounded-2xl sm:rounded-3xl border border-border shadow-xs flex items-center gap-3 sm:gap-4 text-card-foreground">
+          <div className="h-7 w-7 sm:h-9 sm:w-9 bg-emerald-500/10 text-emerald-600 rounded-xl sm:rounded-2xl flex items-center justify-center shrink-0 shadow-2xs">
+            <CalendarCheck className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
           </div>
-          <div>
-            <div className="text-2xl font-black text-foreground">{noticesCount || 0}</div>
-            <div className="text-xs text-muted-foreground font-medium">Active Member Notices</div>
+          <div className="min-w-0">
+            <div className="text-lg sm:text-2xl font-bold text-foreground truncate">{todayCheckIns || 0}</div>
+            <div className="text-[10px] sm:text-xs text-muted-foreground font-semibold uppercase tracking-wider truncate">Check-Ins Today</div>
+          </div>
+        </div>
+
+        <div className="p-3 sm:p-5 bg-card rounded-2xl sm:rounded-3xl border border-border shadow-xs flex items-center gap-3 sm:gap-4 text-card-foreground">
+          <div className="h-7 w-7 sm:h-9 sm:w-9 bg-amber-500/10 text-amber-600 rounded-xl sm:rounded-2xl flex items-center justify-center shrink-0 shadow-2xs">
+            <Bell className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+          </div>
+          <div className="min-w-0">
+            <div className="text-lg sm:text-2xl font-bold text-foreground truncate">{noticesCount || 0}</div>
+            <div className="text-[10px] sm:text-xs text-muted-foreground font-semibold uppercase tracking-wider truncate">Active Notices</div>
+          </div>
+        </div>
+
+        <div className="p-3 sm:p-5 bg-card rounded-2xl sm:rounded-3xl border border-border shadow-xs flex items-center gap-3 sm:gap-4 text-card-foreground">
+          <div className="h-7 w-7 sm:h-9 sm:w-9 bg-blue-500/10 text-blue-600 rounded-xl sm:rounded-2xl flex items-center justify-center shrink-0 shadow-2xs">
+            <Building2 className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+          </div>
+          <div className="min-w-0">
+            <div className="text-lg sm:text-2xl font-bold text-foreground truncate">{branchList.length}</div>
+            <div className="text-[10px] sm:text-xs text-muted-foreground font-semibold uppercase tracking-wider truncate">Facilities</div>
           </div>
         </div>
       </div>
@@ -394,9 +427,9 @@ export default async function DashboardPage({ params, searchParams }: PageProps)
       />
 
       {/* Row 4: Today's Live Attendance Feed & Quick Modules */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
         {/* Today's Live Stream */}
-        <div className="bg-card p-6 rounded-3xl border border-border shadow-xs text-card-foreground">
+        <div className="bg-card p-4 sm:p-6 rounded-2xl sm:rounded-3xl border border-border shadow-xs text-card-foreground">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-sm font-bold text-foreground">Today&apos;s Live Check-Ins</h2>
             <Link
@@ -436,59 +469,59 @@ export default async function DashboardPage({ params, searchParams }: PageProps)
           )}
         </div>
 
-        {/* Quick Operations Hub */}
-        <div className="bg-card p-6 rounded-3xl border border-border shadow-xs text-card-foreground">
+        {/* Quick Operations Hub (2-Column Mobile Grid) */}
+        <div className="bg-card p-4 sm:p-6 rounded-2xl sm:rounded-3xl border border-border shadow-xs text-card-foreground">
           <h2 className="text-sm font-bold text-foreground mb-4">Quick Operations Hub</h2>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 gap-2.5 sm:gap-3">
             <Link
               href={`/app/${gymId}/payments`}
-              className="group p-4 rounded-2xl border border-border hover:border-emerald-500/40 hover:bg-emerald-500/5 transition-all flex flex-col justify-between"
+              className="group p-3 sm:p-4 rounded-xl sm:rounded-2xl border border-border hover:border-emerald-500/40 hover:bg-emerald-500/5 transition-all flex flex-col justify-between"
             >
-              <div className="p-2.5 w-fit rounded-xl bg-emerald-500/10 text-emerald-600 mb-3 shadow-2xs">
-                <CreditCard className="w-4 h-4" />
+              <div className="p-2 sm:p-2.5 w-fit rounded-lg sm:rounded-xl bg-emerald-500/10 text-emerald-600 mb-2 sm:mb-3 shadow-2xs">
+                <CreditCard className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
               </div>
               <div>
-                <div className="text-xs font-bold text-foreground group-hover:text-emerald-600 transition-colors">Record Payment</div>
-                <div className="text-[11px] text-muted-foreground mt-0.5">Collect fees & send WhatsApp receipt</div>
+                <div className="text-xs font-bold text-foreground group-hover:text-emerald-600 transition-colors truncate">Record Payment</div>
+                <div className="text-[10px] text-muted-foreground mt-0.5 truncate">Collect fees & receipts</div>
               </div>
             </Link>
 
             <Link
               href={`/app/${gymId}/expenses`}
-              className="group p-4 rounded-2xl border border-border hover:border-rose-500/40 hover:bg-rose-500/5 transition-all flex flex-col justify-between"
+              className="group p-3 sm:p-4 rounded-xl sm:rounded-2xl border border-border hover:border-rose-500/40 hover:bg-rose-500/5 transition-all flex flex-col justify-between"
             >
-              <div className="p-2.5 w-fit rounded-xl bg-rose-500/10 text-rose-600 mb-3 shadow-2xs">
-                <Receipt className="w-4 h-4" />
+              <div className="p-2 sm:p-2.5 w-fit rounded-lg sm:rounded-xl bg-rose-500/10 text-rose-600 mb-2 sm:mb-3 shadow-2xs">
+                <Receipt className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
               </div>
               <div>
-                <div className="text-xs font-bold text-foreground group-hover:text-rose-600 transition-colors">Track Expense</div>
-                <div className="text-[11px] text-muted-foreground mt-0.5">Log bills, rent, and salaries</div>
+                <div className="text-xs font-bold text-foreground group-hover:text-rose-600 transition-colors truncate">Track Expense</div>
+                <div className="text-[10px] text-muted-foreground mt-0.5 truncate">Log bills & payroll</div>
               </div>
             </Link>
 
             <Link
               href={`/app/${gymId}/notices`}
-              className="group p-4 rounded-2xl border border-border hover:border-amber-500/40 hover:bg-amber-500/5 transition-all flex flex-col justify-between"
+              className="group p-3 sm:p-4 rounded-xl sm:rounded-2xl border border-border hover:border-amber-500/40 hover:bg-amber-500/5 transition-all flex flex-col justify-between"
             >
-              <div className="p-2.5 w-fit rounded-xl bg-amber-500/10 text-amber-600 mb-3 shadow-2xs">
-                <Bell className="w-4 h-4" />
+              <div className="p-2 sm:p-2.5 w-fit rounded-lg sm:rounded-xl bg-amber-500/10 text-amber-600 mb-2 sm:mb-3 shadow-2xs">
+                <Bell className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
               </div>
               <div>
-                <div className="text-xs font-bold text-foreground group-hover:text-amber-600 transition-colors">Post Notice</div>
-                <div className="text-[11px] text-muted-foreground mt-0.5">Broadcast to member portals</div>
+                <div className="text-xs font-bold text-foreground group-hover:text-amber-600 transition-colors truncate">Post Notice</div>
+                <div className="text-[10px] text-muted-foreground mt-0.5 truncate">Member alerts</div>
               </div>
             </Link>
 
             <Link
               href={`/app/${gymId}/members`}
-              className="group p-4 rounded-2xl border border-border hover:border-primary/40 hover:bg-primary/5 transition-all flex flex-col justify-between"
+              className="group p-3 sm:p-4 rounded-xl sm:rounded-2xl border border-border hover:border-primary/40 hover:bg-primary/5 transition-all flex flex-col justify-between"
             >
-              <div className="p-2.5 w-fit rounded-xl bg-primary/10 text-primary mb-3 shadow-2xs">
-                <UserPlus className="w-4 h-4" />
+              <div className="p-2 sm:p-2.5 w-fit rounded-lg sm:rounded-xl bg-primary/10 text-primary mb-2 sm:mb-3 shadow-2xs">
+                <UserPlus className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
               </div>
               <div>
-                <div className="text-xs font-bold text-foreground group-hover:text-primary transition-colors">Manage Members</div>
-                <div className="text-[11px] text-muted-foreground mt-0.5">Directory & WhatsApp invites</div>
+                <div className="text-xs font-bold text-foreground group-hover:text-primary transition-colors truncate">Manage Members</div>
+                <div className="text-[10px] text-muted-foreground mt-0.5 truncate">Roster & WhatsApp</div>
               </div>
             </Link>
           </div>

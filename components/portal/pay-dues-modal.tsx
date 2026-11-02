@@ -81,7 +81,7 @@ export function PayDuesModal({
     <>
       <button
         onClick={() => setIsOpen(true)}
-        className="h-11 inline-flex items-center gap-2 px-5 bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl text-xs font-bold shadow-xs transition-all active:scale-[0.98]"
+        className="h-10 sm:h-11 inline-flex items-center justify-center gap-2 px-5 bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl text-xs sm:text-sm font-bold shadow-xs transition-all active:scale-[0.98] w-full sm:w-auto"
       >
         <CreditCard className="w-4 h-4" />
         Pay / Clear Dues
