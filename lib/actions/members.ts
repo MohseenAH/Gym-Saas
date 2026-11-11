@@ -5,7 +5,7 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { getAuthorizedActionContext } from "@/lib/auth/guard";
 import { generateInvitationToken, buildInvitationLinks } from "@/lib/auth/invitations";
-import { getISTDateString, getTodayIST } from "@/lib/utils";
+import { getISTDateString, getTodayIST, normalizeIndianPhone } from "@/lib/utils";
 
 const quickEnrollMemberSchema = z.object({
   gymId: z.string().uuid("Invalid gym ID"),
@@ -37,17 +37,11 @@ export async function quickEnrollMemberAction(input: QuickEnrollMemberInput) {
     const supabase = await createClient();
 
     // 1. Phone number normalization and duplication check within this gym
-    const digitsOnly = validated.phone.replace(/\D/g, "");
-    const normalizedPhone =
-      digitsOnly.length === 12 && digitsOnly.startsWith("91")
-        ? digitsOnly.slice(2)
-        : digitsOnly.length === 11 && digitsOnly.startsWith("0")
-        ? digitsOnly.slice(1)
-        : digitsOnly;
-
-    if (normalizedPhone.length < 10) {
-      return { success: false, error: "Please enter a valid phone number (at least 10 digits)" };
+    const phoneRes = normalizeIndianPhone(validated.phone);
+    if (!phoneRes.isValid) {
+      return { success: false, error: phoneRes.error || "Please enter a valid phone number" };
     }
+    const normalizedPhone = phoneRes.phone;
 
     const { data: existingMember } = await supabase
       .from("members")
@@ -258,13 +252,18 @@ export async function updateMemberAction(input: UpdateMemberInput) {
       targetBranchId: validated.branchId,
     });
 
+    const phoneRes = normalizeIndianPhone(validated.phone);
+    if (!phoneRes.isValid) {
+      return { success: false, error: phoneRes.error || "Please enter a valid phone number" };
+    }
+
     const supabase = await createClient();
 
     const { error } = await supabase
       .from("members")
       .update({
         full_name: validated.fullName,
-        phone: validated.phone,
+        phone: phoneRes.phone,
         email: validated.email || null,
         branch_id: validated.branchId,
         status: validated.status,
@@ -454,5 +453,421 @@ export async function renewMembershipAction(input: RenewMembershipInput) {
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Failed to renew membership";
     return { success: false, error: message };
+  }
+}
+
+export type ImportRowStatus = "VALID" | "ALREADY_EXISTS" | "INVALID";
+
+export interface PreviewImportRow {
+  rowIndex: number;
+  raw: Record<string, unknown>;
+  parsed: {
+    fullName: string;
+    phone: string;
+    email: string | null;
+    notes: string | null;
+  };
+  status: ImportRowStatus;
+  reasons: string[];
+}
+
+export interface BulkImportPreviewResult {
+  success: boolean;
+  summary: {
+    totalRows: number;
+    validCount: number;
+    alreadyExistsCount: number;
+    invalidCount: number;
+  };
+  rows: PreviewImportRow[];
+  canProceed: boolean;
+  error?: string;
+}
+
+export interface BulkImportExecutionResult {
+  success: boolean;
+  importedCount: number;
+  skippedCount: number;
+  failedCount: number;
+  errors?: Array<{ row: number; phone: string; error: string }>;
+  error?: string;
+}
+
+export async function previewBulkImportMembersAction(
+  gymId: string,
+  branchId: string,
+  rawRows: Array<Record<string, unknown>>
+): Promise<BulkImportPreviewResult> {
+  try {
+    if (!gymId || !branchId) {
+      return {
+        success: false,
+        summary: { totalRows: 0, validCount: 0, alreadyExistsCount: 0, invalidCount: 0 },
+        rows: [],
+        canProceed: false,
+        error: "Gym ID and Branch ID are required",
+      };
+    }
+
+    const context = await getAuthorizedActionContext({
+      gymId,
+      capability: "members:manage",
+      targetBranchId: branchId,
+    });
+
+    if (!Array.isArray(rawRows)) {
+      return {
+        success: false,
+        summary: { totalRows: 0, validCount: 0, alreadyExistsCount: 0, invalidCount: 0 },
+        rows: [],
+        canProceed: false,
+        error: "Invalid input: rawRows must be an array",
+      };
+    }
+
+    if (rawRows.length > 500) {
+      return {
+        success: false,
+        summary: { totalRows: rawRows.length, validCount: 0, alreadyExistsCount: 0, invalidCount: rawRows.length },
+        rows: [],
+        canProceed: false,
+        error: "Maximum batch limit is 500 rows per import.",
+      };
+    }
+
+    const seenPhonesInFile = new Map<string, number>();
+    const previewRows: PreviewImportRow[] = [];
+    const validCandidatePhones: string[] = [];
+
+    for (let i = 0; i < rawRows.length; i++) {
+      const row = rawRows[i] || {};
+      const reasons: string[] = [];
+
+      // Flexible column key extraction
+      const rawFullName =
+        row["Full Name"] ??
+        row["fullName"] ??
+        row["full_name"] ??
+        row["Name"] ??
+        row["name"] ??
+        "";
+      const rawPhone =
+        row["Phone"] ??
+        row["phone"] ??
+        row["Mobile"] ??
+        row["mobile"] ??
+        row["Contact"] ??
+        "";
+      const rawEmail =
+        row["Email"] ??
+        row["email"] ??
+        row["Email Address"] ??
+        "";
+      const rawNotes =
+        row["Notes"] ??
+        row["notes"] ??
+        row["Note"] ??
+        row["note"] ??
+        "";
+
+      const fullName = typeof rawFullName === "string" ? rawFullName.trim() : String(rawFullName || "").trim();
+      const email = typeof rawEmail === "string" && rawEmail.trim() ? rawEmail.trim().toLowerCase() : null;
+      const notes = typeof rawNotes === "string" && rawNotes.trim() ? rawNotes.trim() : null;
+
+      if (!fullName || fullName.length < 2) {
+        reasons.push("Full Name must be at least 2 characters");
+      } else if (fullName.length > 100) {
+        reasons.push("Full Name cannot exceed 100 characters");
+      }
+
+      if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        reasons.push("Invalid email address format");
+      }
+
+      if (notes && notes.length > 500) {
+        reasons.push("Notes cannot exceed 500 characters");
+      }
+
+      const phoneRes = normalizeIndianPhone(rawPhone);
+      let normalizedPhone = "";
+
+      if (!phoneRes.isValid) {
+        reasons.push(phoneRes.error || "Invalid phone number format");
+      } else {
+        normalizedPhone = phoneRes.phone;
+        // Check intra-file duplicate
+        if (seenPhonesInFile.has(normalizedPhone)) {
+          const prevRow = seenPhonesInFile.get(normalizedPhone);
+          reasons.push(`Duplicate phone number within this import file (matches row ${prevRow})`);
+        } else {
+          seenPhonesInFile.set(normalizedPhone, i + 1);
+        }
+      }
+
+      const status: ImportRowStatus = reasons.length > 0 ? "INVALID" : "VALID";
+      if (status === "VALID") {
+        validCandidatePhones.push(normalizedPhone);
+      }
+
+      previewRows.push({
+        rowIndex: i + 1,
+        raw: row,
+        parsed: {
+          fullName,
+          phone: normalizedPhone,
+          email,
+          notes,
+        },
+        status,
+        reasons,
+      });
+    }
+
+    // 4. Batch Database Existence Check against Gym
+    if (validCandidatePhones.length > 0) {
+      const supabase = await createClient();
+      const uniqueCandidatePhones = Array.from(new Set(validCandidatePhones));
+
+      const { data: existingMembers, error: dbErr } = await supabase
+        .from("members")
+        .select("id, full_name, phone, branch_id, branches!inner(id, name, gym_id)")
+        .eq("branches.gym_id", context.gymId)
+        .in("phone", uniqueCandidatePhones);
+
+      if (!dbErr && existingMembers && existingMembers.length > 0) {
+        const existingMap = new Map<string, { fullName: string; branchName: string }>();
+        for (const m of existingMembers) {
+          const branch = m.branches as unknown as { name?: string };
+          existingMap.set(m.phone, {
+            fullName: m.full_name,
+            branchName: branch?.name || "Main Branch",
+          });
+        }
+
+        for (const row of previewRows) {
+          if (row.status === "VALID" && existingMap.has(row.parsed.phone)) {
+            const existing = existingMap.get(row.parsed.phone)!;
+            row.status = "ALREADY_EXISTS";
+            row.reasons.push(
+              `Phone already registered to ${existing.fullName} in branch ${existing.branchName}`
+            );
+          }
+        }
+      }
+    }
+
+    const validCount = previewRows.filter((r) => r.status === "VALID").length;
+    const alreadyExistsCount = previewRows.filter((r) => r.status === "ALREADY_EXISTS").length;
+    const invalidCount = previewRows.filter((r) => r.status === "INVALID").length;
+
+    return {
+      success: true,
+      summary: {
+        totalRows: previewRows.length,
+        validCount,
+        alreadyExistsCount,
+        invalidCount,
+      },
+      rows: previewRows,
+      canProceed: validCount > 0,
+    };
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : "Failed to preview member import";
+    return {
+      success: false,
+      summary: { totalRows: 0, validCount: 0, alreadyExistsCount: 0, invalidCount: 0 },
+      rows: [],
+      canProceed: false,
+      error: message,
+    };
+  }
+}
+
+export interface RowToImport {
+  fullName: string;
+  phone: string;
+  email?: string | null;
+  notes?: string | null;
+}
+
+export async function bulkImportMembersAction(
+  gymId: string,
+  branchId: string,
+  rowsToImport: RowToImport[]
+): Promise<BulkImportExecutionResult> {
+  try {
+    if (!gymId || !branchId) {
+      return {
+        success: false,
+        importedCount: 0,
+        skippedCount: 0,
+        failedCount: 0,
+        error: "Gym ID and Branch ID are required",
+      };
+    }
+
+    const context = await getAuthorizedActionContext({
+      gymId,
+      capability: "members:manage",
+      targetBranchId: branchId,
+    });
+
+    if (!Array.isArray(rowsToImport) || rowsToImport.length === 0) {
+      return {
+        success: false,
+        importedCount: 0,
+        skippedCount: 0,
+        failedCount: 0,
+        error: "No rows provided for import",
+      };
+    }
+
+    if (rowsToImport.length > 500) {
+      return {
+        success: false,
+        importedCount: 0,
+        skippedCount: 0,
+        failedCount: rowsToImport.length,
+        error: "Cannot import more than 500 rows at once",
+      };
+    }
+
+    // 1. Zero-Trust Server Re-validation
+    const seenPhonesInBatch = new Set<string>();
+    const sanitizedRows: Array<{
+      fullName: string;
+      phone: string;
+      email: string | null;
+      notes: string | null;
+    }> = [];
+
+    let skippedCount = 0;
+
+    for (const item of rowsToImport) {
+      const fullName = (item.fullName || "").trim();
+      const phoneRes = normalizeIndianPhone(item.phone);
+
+      if (!fullName || fullName.length < 2 || !phoneRes.isValid) {
+        skippedCount++;
+        continue;
+      }
+
+      if (seenPhonesInBatch.has(phoneRes.phone)) {
+        skippedCount++;
+        continue;
+      }
+      seenPhonesInBatch.add(phoneRes.phone);
+
+      const email = item.email && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(item.email.trim())
+        ? item.email.trim().toLowerCase()
+        : null;
+      const notes = item.notes && item.notes.trim() ? item.notes.trim().slice(0, 500) : null;
+
+      sanitizedRows.push({
+        fullName: fullName.slice(0, 100),
+        phone: phoneRes.phone,
+        email,
+        notes,
+      });
+    }
+
+    if (sanitizedRows.length === 0) {
+      return {
+        success: true,
+        importedCount: 0,
+        skippedCount,
+        failedCount: 0,
+      };
+    }
+
+    // 2. Concurrency Check: Filter out phones already in DB to prevent duplicates
+    const supabase = await createClient();
+    const candidatePhones = sanitizedRows.map((r) => r.phone);
+
+    const { data: existingMembers } = await supabase
+      .from("members")
+      .select("phone, branches!inner(gym_id)")
+      .eq("branches.gym_id", context.gymId)
+      .in("phone", candidatePhones);
+
+    const existingSet = new Set((existingMembers || []).map((m) => m.phone));
+    const recordsToInsert = sanitizedRows
+      .filter((r) => !existingSet.has(r.phone))
+      .map((r) => ({
+        gym_id: context.gymId,
+        branch_id: branchId,
+        full_name: r.fullName,
+        phone: r.phone,
+        email: r.email,
+        notes: r.notes,
+        status: "active" as const,
+      }));
+
+    skippedCount += sanitizedRows.length - recordsToInsert.length;
+
+    if (recordsToInsert.length === 0) {
+      return {
+        success: true,
+        importedCount: 0,
+        skippedCount,
+        failedCount: 0,
+      };
+    }
+
+    // 3. Batch Insertion in chunks of 100
+    // Invariant: Writes strictly to 'members' table only.
+    let importedCount = 0;
+    let failedCount = 0;
+
+    for (let i = 0; i < recordsToInsert.length; i += 100) {
+      const chunk = recordsToInsert.slice(i, i + 100);
+      const { error: insertErr } = await supabase.from("members").insert(chunk);
+
+      if (insertErr) {
+        // If PostgreSQL error 23505 (unique_violation) occurs concurrently, retry per-row to save valid ones
+        if (insertErr.code === "23505") {
+          for (const singleRecord of chunk) {
+            const { error: singleErr } = await supabase.from("members").insert(singleRecord);
+            if (!singleErr) {
+              importedCount++;
+            } else {
+              failedCount++;
+            }
+          }
+        } else {
+          return {
+            success: false,
+            importedCount,
+            skippedCount,
+            failedCount: failedCount + chunk.length,
+            error: `Database insertion error: ${insertErr.message}`,
+          };
+        }
+      } else {
+        importedCount += chunk.length;
+      }
+    }
+
+    // Invalidate affected paths
+    revalidatePath(`/app/${context.gymId}`, "layout");
+    revalidatePath(`/app/${context.gymId}/members`);
+    revalidatePath(`/app/${context.gymId}/dashboard`);
+    revalidatePath(`/app/${context.gymId}/getting-started`);
+
+    return {
+      success: true,
+      importedCount,
+      skippedCount,
+      failedCount,
+    };
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : "Failed to execute bulk member import";
+    return {
+      success: false,
+      importedCount: 0,
+      skippedCount: 0,
+      failedCount: rowsToImport.length,
+      error: message,
+    };
   }
 }

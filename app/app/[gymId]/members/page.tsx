@@ -3,6 +3,7 @@ import { getAuthorizedActionContext } from "@/lib/auth/guard";
 import { cookies } from "next/headers";
 import { resolveBranchContext } from "@/lib/auth/branch-context";
 import { QuickEnrollModal } from "@/components/members/quick-enroll-modal";
+import { BulkImportModal } from "@/components/members/bulk-import-modal";
 import { MembersTableClient, MemberListItem } from "@/components/members/members-table-client";
 import { Users, UserCheck, ShieldCheck, Clock } from "lucide-react";
 
@@ -156,16 +157,23 @@ export default async function MembersPage({ params, searchParams }: MembersPageP
             Enroll new members, monitor expiring subscriptions, and access 360&deg; member records
           </p>
         </div>
-        <QuickEnrollModal
-          gymId={gymId}
-          branchId={branchId}
-          plans={(plans || []).map((p) => ({
-            id: p.id,
-            name: p.name,
-            price: Number(p.price),
-            durationDays: p.duration_days,
-          }))}
-        />
+        <div className="grid grid-cols-2 gap-2 sm:flex sm:items-center sm:gap-2.5 w-full sm:w-auto">
+          <BulkImportModal
+            gymId={gymId}
+            branchId={branchId}
+            branches={(branches || []).map((b) => ({ id: b.id, name: b.name }))}
+          />
+          <QuickEnrollModal
+            gymId={gymId}
+            branchId={branchId}
+            plans={(plans || []).map((p) => ({
+              id: p.id,
+              name: p.name,
+              price: Number(p.price),
+              durationDays: p.duration_days,
+            }))}
+          />
+        </div>
       </div>
 
       {/* KPI Stats */}

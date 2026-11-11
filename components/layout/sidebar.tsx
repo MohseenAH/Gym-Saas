@@ -18,6 +18,7 @@ import {
   Settings,
   Dumbbell,
   ArrowLeftRight,
+  Compass,
 } from "lucide-react";
 
 interface NavItem {
@@ -52,6 +53,11 @@ export function Sidebar({ gymId, gymName, role, onNavigate }: SidebarProps) {
           label: "Dashboard",
           href: `/app/${gymId}/dashboard`,
           icon: LayoutDashboard,
+        },
+        {
+          label: "Getting Started",
+          href: `/app/${gymId}/getting-started`,
+          icon: Compass,
         },
       ],
     },
