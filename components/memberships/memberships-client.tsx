@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
 import {
   IdCard,
@@ -104,6 +104,11 @@ export function MembershipsClient({
       : "active";
 
   const [activeTab, setActiveTab] = useState<WorkspaceTab>(normalizedInitialTab);
+
+  // Sync activeTab if initialTab changes via deep-link navigation
+  useEffect(() => {
+    setActiveTab(normalizedInitialTab);
+  }, [normalizedInitialTab]);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedPlanFilter, setSelectedPlanFilter] = useState<string>("all");
 

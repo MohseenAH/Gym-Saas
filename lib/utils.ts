@@ -305,3 +305,79 @@ export function parseCsv(text: string): Array<Record<string, string>> {
   return rows;
 }
 
+// ============================================================================
+// Lifecycle Stage & Tab Resolution Engine
+// ============================================================================
+
+export type GymLifecycleStage =
+  | "STAGE_1_SETUP"
+  | "STAGE_2_UNASSIGNED"
+  | "STAGE_3_FIRST_CHECKIN"
+  | "STAGE_4_ESTABLISHED";
+
+export interface LifecycleMetrics {
+  membersCount: number;
+  plansCount: number;
+  membershipsCount: number;
+  unassignedCount: number;
+  todayCheckinsCount: number;
+}
+
+/**
+ * Resolves a gym's current operational lifecycle stage deterministically.
+ * - STAGE_1_SETUP: Either zero plans or zero members enrolled
+ * - STAGE_2_UNASSIGNED: Plans and members exist, but unassigned members are awaiting plans
+ * - STAGE_3_FIRST_CHECKIN: All members have plans, active contracts exist, but zero check-ins today
+ * - STAGE_4_ESTABLISHED: Active operations running daily check-ins
+ */
+export function resolveGymLifecycleStage(metrics: LifecycleMetrics): GymLifecycleStage {
+  const { membersCount, plansCount, membershipsCount, unassignedCount, todayCheckinsCount } = metrics;
+
+  if (plansCount === 0 || membersCount === 0) {
+    return "STAGE_1_SETUP";
+  }
+
+  if (unassignedCount > 0) {
+    return "STAGE_2_UNASSIGNED";
+  }
+
+  if (membershipsCount > 0 && todayCheckinsCount === 0) {
+    return "STAGE_3_FIRST_CHECKIN";
+  }
+
+  if (membershipsCount > 0 && todayCheckinsCount > 0) {
+    return "STAGE_4_ESTABLISHED";
+  }
+
+  return "STAGE_1_SETUP";
+}
+
+/**
+ * Resolves initial active tab for the Memberships workspace.
+ * Deep-links via `tabParam` take precedence when valid.
+ * Otherwise, smart-defaults to "unassigned" if members are waiting and no active contracts exist,
+ * else defaults to "active".
+ */
+export function resolveInitialMembershipsTab(params: {
+  tabParam?: string | null;
+  unassignedCount: number;
+  activeCount: number;
+}): "unassigned" | "active" | "expired" | "plans" {
+  const { tabParam, unassignedCount, activeCount } = params;
+
+  if (
+    tabParam === "unassigned" ||
+    tabParam === "active" ||
+    tabParam === "expired" ||
+    tabParam === "plans"
+  ) {
+    return tabParam;
+  }
+
+  if (unassignedCount > 0 && activeCount === 0) {
+    return "unassigned";
+  }
+
+  return "active";
+}
+

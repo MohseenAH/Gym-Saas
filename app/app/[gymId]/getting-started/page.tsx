@@ -84,10 +84,10 @@ export default async function GettingStartedPage({
   const membershipsCount = membershipsRes.count ?? 0;
   const branchesCount = authContext.branches.length;
 
-  const isStep1Done = branchesCount > 0;
-  const isStep2Done = plansCount > 0;
-  const isStep3Done = membersCount > 0;
-  const isStep4Done = membershipsCount > 0;
+  const isStep1Done = plansCount > 0;
+  const isStep2Done = membersCount > 0;
+  const isStep3Done = membershipsCount > 0;
+  const isStep4Done = membershipsCount > 0 && isStep1Done && isStep2Done;
 
   const completedSteps =
     (isStep1Done ? 1 : 0) +
@@ -95,7 +95,7 @@ export default async function GettingStartedPage({
     (isStep3Done ? 1 : 0) +
     (isStep4Done ? 1 : 0);
 
-  const readyForOps = isStep1Done && isStep2Done && isStep3Done && isStep4Done;
+  const readyForOps = isStep1Done && isStep2Done && isStep3Done;
   const completionPercentage = Math.round((completedSteps / 4) * 100);
 
   const csvTemplateData =
@@ -205,12 +205,12 @@ export default async function GettingStartedPage({
 
       {/* 4-Step Checklist Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
-        {/* Step 1: Branches & Physical Center */}
+        {/* Step 1: Membership Pricing Plans */}
         <div
           className={`p-4 sm:p-5 rounded-2xl sm:rounded-3xl border transition-all ${
             isStep1Done
               ? "bg-card border-border shadow-xs"
-              : "bg-card border-border shadow-xs opacity-90"
+              : "bg-card border-primary/40 ring-1 ring-primary/20 shadow-xs"
           }`}
         >
           <div className="flex items-start justify-between gap-3">
@@ -219,7 +219,7 @@ export default async function GettingStartedPage({
                 className={`h-9 w-9 rounded-xl flex items-center justify-center shrink-0 ${
                   isStep1Done
                     ? "bg-emerald-500/10 text-emerald-600"
-                    : "bg-muted text-muted-foreground"
+                    : "bg-primary/10 text-primary"
                 }`}
               >
                 {isStep1Done ? (
@@ -233,7 +233,7 @@ export default async function GettingStartedPage({
                   Step 1
                 </span>
                 <h3 className="text-sm sm:text-base font-bold text-foreground">
-                  Gym Facility & Branches
+                  Configure Membership Plans
                 </h3>
               </div>
             </div>
@@ -242,33 +242,33 @@ export default async function GettingStartedPage({
               className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider shrink-0 ${
                 isStep1Done
                   ? "bg-emerald-500/10 text-emerald-600"
-                  : "bg-muted text-muted-foreground"
+                  : "bg-amber-500/10 text-amber-600"
               }`}
             >
-              {isStep1Done ? `${branchesCount} Branch Active` : "Pending"}
+              {isStep1Done ? `${plansCount} Plans Active` : "Required"}
             </span>
           </div>
 
           <p className="text-xs text-muted-foreground mt-3">
-            Confirm your physical fitness center address, city, and phone details for receipts and invoices.
+            Create standard pricing tiers (e.g. Monthly, Quarterly, Annual) with duration in days and fees.
           </p>
 
           <div className="mt-4 pt-3 border-t border-border flex items-center justify-between">
             <span className="text-xs font-semibold text-foreground flex items-center gap-1.5">
-              <Building2 className="w-3.5 h-3.5 text-muted-foreground" />
-              <span>{branchesCount} physical location(s)</span>
+              <IdCard className="w-3.5 h-3.5 text-muted-foreground" />
+              <span>{plansCount} active plan(s)</span>
             </span>
             <Link
-              href={`/app/${gymId}/branches`}
+              href={`/app/${gymId}/memberships?tab=plans`}
               className="text-xs font-bold text-primary hover:underline flex items-center gap-1"
             >
-              <span>Manage Branches</span>
+              <span>{isStep1Done ? "Manage Plans" : "+ Create First Plan"}</span>
               <ArrowRight className="w-3.5 h-3.5" />
             </Link>
           </div>
         </div>
 
-        {/* Step 2: Membership Plans */}
+        {/* Step 2: Register or Import Members */}
         <div
           className={`p-4 sm:p-5 rounded-2xl sm:rounded-3xl border transition-all ${
             isStep2Done
@@ -296,7 +296,7 @@ export default async function GettingStartedPage({
                   Step 2
                 </span>
                 <h3 className="text-sm sm:text-base font-bold text-foreground">
-                  Configure Membership Plans
+                  Build Member Roster
                 </h3>
               </div>
             </div>
@@ -308,30 +308,30 @@ export default async function GettingStartedPage({
                   : "bg-amber-500/10 text-amber-600"
               }`}
             >
-              {isStep2Done ? `${plansCount} Plans Active` : "Required"}
+              {isStep2Done ? `${membersCount} Enrolled` : "Required"}
             </span>
           </div>
 
           <p className="text-xs text-muted-foreground mt-3">
-            Create standard pricing tiers (e.g. Monthly, Quarterly, Annual) with duration in days and fees.
+            Quick-enroll members individually or upload existing member spreadsheets using our bulk importer.
           </p>
 
           <div className="mt-4 pt-3 border-t border-border flex items-center justify-between">
             <span className="text-xs font-semibold text-foreground flex items-center gap-1.5">
-              <IdCard className="w-3.5 h-3.5 text-muted-foreground" />
-              <span>{plansCount} active plan(s)</span>
+              <Users className="w-3.5 h-3.5 text-muted-foreground" />
+              <span>{membersCount} registered member(s)</span>
             </span>
             <Link
-              href={`/app/${gymId}/memberships?tab=plans`}
+              href={`/app/${gymId}/members`}
               className="text-xs font-bold text-primary hover:underline flex items-center gap-1"
             >
-              <span>{isStep2Done ? "Manage Plans" : "+ Create First Plan"}</span>
+              <span>{isStep2Done ? "View Members Roster" : "Enroll / Import Members"}</span>
               <ArrowRight className="w-3.5 h-3.5" />
             </Link>
           </div>
         </div>
 
-        {/* Step 3: Register or Import Members */}
+        {/* Step 3: Assign Membership Plans */}
         <div
           className={`p-4 sm:p-5 rounded-2xl sm:rounded-3xl border transition-all ${
             isStep3Done
@@ -359,7 +359,7 @@ export default async function GettingStartedPage({
                   Step 3
                 </span>
                 <h3 className="text-sm sm:text-base font-bold text-foreground">
-                  Build Member Roster
+                  Assign Membership Plans
                 </h3>
               </div>
             </div>
@@ -371,24 +371,24 @@ export default async function GettingStartedPage({
                   : "bg-amber-500/10 text-amber-600"
               }`}
             >
-              {isStep3Done ? `${membersCount} Enrolled` : "Required"}
+              {isStep3Done ? `${membershipsCount} Contracts Active` : "Required"}
             </span>
           </div>
 
           <p className="text-xs text-muted-foreground mt-3">
-            Quick-enroll members individually or upload existing member spreadsheets using our bulk importer.
+            Bulk-assign imported members to pricing plans to generate valid digital passes and track dues.
           </p>
 
           <div className="mt-4 pt-3 border-t border-border flex items-center justify-between">
             <span className="text-xs font-semibold text-foreground flex items-center gap-1.5">
-              <Users className="w-3.5 h-3.5 text-muted-foreground" />
-              <span>{membersCount} registered member(s)</span>
+              <IdCard className="w-3.5 h-3.5 text-muted-foreground" />
+              <span>{membershipsCount} contract(s) issued</span>
             </span>
             <Link
-              href={`/app/${gymId}/members`}
+              href={`/app/${gymId}/memberships?tab=unassigned`}
               className="text-xs font-bold text-primary hover:underline flex items-center gap-1"
             >
-              <span>{isStep3Done ? "View Members Roster" : "Enroll / Import Members"}</span>
+              <span>{isStep3Done ? "Manage Assignments" : "Assign Plans in Bulk"}</span>
               <ArrowRight className="w-3.5 h-3.5" />
             </Link>
           </div>
@@ -434,18 +434,18 @@ export default async function GettingStartedPage({
                   : "bg-muted text-muted-foreground"
               }`}
             >
-              {isStep4Done ? `${membershipsCount} Contracts Active` : "Pending"}
+              {isStep4Done ? "Operations Ready" : "Pending"}
             </span>
           </div>
 
           <p className="text-xs text-muted-foreground mt-3">
-            Assign plans to members, generate digital passes, and begin verified daily check-ins at reception.
+            Launch the reception attendance kiosk to record and verify daily check-ins for active members.
           </p>
 
           <div className="mt-4 pt-3 border-t border-border flex items-center justify-between">
             <span className="text-xs font-semibold text-foreground flex items-center gap-1.5">
               <CalendarCheck className="w-3.5 h-3.5 text-muted-foreground" />
-              <span>{membershipsCount} contract(s) issued</span>
+              <span>Front desk check-in system</span>
             </span>
             <Link
               href={`/app/${gymId}/attendance`}

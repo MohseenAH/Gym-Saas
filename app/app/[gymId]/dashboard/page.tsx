@@ -19,7 +19,8 @@ import { getAuthorizedActionContext } from "@/lib/auth/guard";
 import { resolveBranchContext } from "@/lib/auth/branch-context";
 import { BranchSelector } from "@/components/dashboard/branch-selector";
 import { ExpiringSoonAlerts, ExpiringMember } from "@/components/dashboard/expiring-soon-alerts";
-import { getTodayIST } from "@/lib/utils";
+import { LifecycleStageBanner } from "@/components/dashboard/lifecycle-stage-banner";
+import { getTodayIST, resolveGymLifecycleStage } from "@/lib/utils";
 
 interface PageProps {
   params: Promise<{ gymId: string }>;
@@ -54,14 +55,23 @@ export default async function DashboardPage({ params, searchParams }: PageProps)
   const todayStr = getTodayIST();
 
   // Prepare all independent queries simultaneously
-  let membersQuery = supabase
+  let allMembersQuery = supabase
     .from("members")
-    .select("id", { count: "exact", head: true })
-    .eq("status", "active");
+    .select("id, branch_id, status, memberships(id)")
+    .eq("gym_id", gymId);
   if (isValidBranchFilter) {
-    membersQuery = membersQuery.eq("branch_id", selectedBranchId);
+    allMembersQuery = allMembersQuery.eq("branch_id", selectedBranchId);
   } else if (gymBranchIds.length > 0) {
-    membersQuery = membersQuery.in("branch_id", gymBranchIds);
+    allMembersQuery = allMembersQuery.in("branch_id", gymBranchIds);
+  }
+
+  let plansQuery = supabase
+    .from("membership_plans")
+    .select("id, branch_id, branches!inner(gym_id)", { count: "exact", head: true })
+    .eq("branches.gym_id", gymId)
+    .eq("is_active", true);
+  if (isValidBranchFilter) {
+    plansQuery = plansQuery.eq("branch_id", selectedBranchId);
   }
 
   let attendanceCountQuery = supabase
@@ -120,34 +130,48 @@ export default async function DashboardPage({ params, searchParams }: PageProps)
 
   // Execute all dashboard queries concurrently in parallel
   const [
-    membersRes,
+    allMembersRes,
     attendanceCountRes,
     paymentsRes,
     expensesRes,
     membershipsRes,
     noticesRes,
     recentAttendanceRes,
+    plansRes,
   ] = await Promise.all([
-    membersQuery,
+    allMembersQuery,
     attendanceCountQuery,
     paymentsQuery,
     expensesQuery,
     membershipsQuery,
     noticesQuery,
     recentAttendanceQuery,
+    plansQuery,
   ]);
 
   const gym = authContext.gym;
   const pilotStatus = authContext.trialStatus;
   const branchList = authContext.branches;
 
-  const membersCount = membersRes.count;
-  const todayCheckIns = attendanceCountRes.count;
+  const allMembers = allMembersRes.data || [];
+  const membersCount = allMembers.filter((m) => m.status === "active").length;
+  const totalMembersCount = allMembers.length;
+  const unassignedCount = allMembers.filter((m) => !m.memberships || m.memberships.length === 0).length;
+  const plansCount = plansRes.count ?? 0;
+  const todayCheckIns = attendanceCountRes.count ?? 0;
   const allPayments = paymentsRes.data || [];
   const expenses = expensesRes.data || [];
   const rawMemberships = membershipsRes.data || [];
   const noticesCount = noticesRes.count;
   const recentCheckIns = recentAttendanceRes.data || [];
+
+  const lifecycleStage = resolveGymLifecycleStage({
+    membersCount: totalMembersCount,
+    plansCount,
+    membershipsCount: rawMemberships.length,
+    unassignedCount,
+    todayCheckinsCount: todayCheckIns,
+  });
 
   // Business Correctness: Only count completed/partial payments as collected revenue
   const validPayments = allPayments.filter(
@@ -287,6 +311,16 @@ export default async function DashboardPage({ params, searchParams }: PageProps)
           </div>
         </div>
       </div>
+
+      {/* Dynamic Lifecycle Stage Banner & Action Hub */}
+      <LifecycleStageBanner
+        gymId={gymId}
+        stage={lifecycleStage}
+        plansCount={plansCount}
+        membersCount={totalMembersCount}
+        unassignedCount={unassignedCount}
+        userRole={authContext.role}
+      />
 
       {/* Row 1: Priority Cash & Financial Metrics (Strict 2-Column Mobile Grid) */}
       <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4">

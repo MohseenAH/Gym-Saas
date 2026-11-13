@@ -11,6 +11,7 @@ import { MembershipPlanOption } from "@/components/members/renew-membership-moda
 import { PlanDetailItem } from "@/components/memberships/plans-manager-client";
 import { AssignableMember } from "@/components/memberships/assign-membership-modal";
 import { AssignableUnassignedMember } from "@/components/memberships/bulk-assign-modal";
+import { resolveInitialMembershipsTab } from "@/lib/utils";
 
 interface MembershipsPageProps {
   params: Promise<{ gymId: string }>;
@@ -281,18 +282,12 @@ export default async function MembershipsPage({
       createdAt: m.created_at,
     }));
 
-  let initialTab: "contracts" | "plans" | "unassigned" | "active" | "expired" = "active";
-  if (resolvedSearchParams.tab === "plans") {
-    initialTab = "plans";
-  } else if (resolvedSearchParams.tab === "unassigned") {
-    initialTab = "unassigned";
-  } else if (resolvedSearchParams.tab === "expired") {
-    initialTab = "expired";
-  } else if (resolvedSearchParams.tab === "contracts" || resolvedSearchParams.tab === "active") {
-    initialTab = "active";
-  } else if (unassignedMembersList.length > 0) {
-    initialTab = "unassigned";
-  }
+  const activeMembershipsCount = formattedMemberships.filter((m) => m.status === "active").length;
+  const initialTab = resolveInitialMembershipsTab({
+    tabParam: resolvedSearchParams.tab,
+    unassignedCount: unassignedMembersList.length,
+    activeCount: activeMembershipsCount,
+  });
 
   return (
     <MembershipsClient
