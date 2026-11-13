@@ -274,46 +274,46 @@ export function PlansManagerClient({
       )}
 
       {/* KPI Stats */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="p-6 bg-card rounded-3xl border border-border shadow-xs text-card-foreground">
-          <div className="text-xs text-muted-foreground font-bold uppercase tracking-wider">
+      <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4">
+        <div className="p-3 sm:p-5 bg-card rounded-2xl sm:rounded-3xl border border-border shadow-xs text-card-foreground">
+          <div className="text-[10px] sm:text-xs text-muted-foreground font-bold uppercase tracking-wider">
             Total Plans
           </div>
-          <div className="text-3xl font-black text-foreground mt-2">{stats.total}</div>
-          <div className="text-[11px] text-muted-foreground mt-1">Configured templates</div>
+          <div className="text-xl sm:text-3xl font-black text-foreground mt-1 sm:mt-2">{stats.total}</div>
+          <div className="text-[10px] sm:text-[11px] text-muted-foreground mt-0.5 sm:mt-1">Configured templates</div>
         </div>
 
-        <div className="p-6 bg-card rounded-3xl border border-border shadow-xs text-card-foreground">
-          <div className="text-xs text-emerald-600 font-bold uppercase tracking-wider flex items-center justify-between">
+        <div className="p-3 sm:p-5 bg-card rounded-2xl sm:rounded-3xl border border-border shadow-xs text-card-foreground">
+          <div className="text-[10px] sm:text-xs text-emerald-600 font-bold uppercase tracking-wider flex items-center justify-between">
             <span>Active Plans</span>
-            <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+            <CheckCircle2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-emerald-600" />
           </div>
-          <div className="text-3xl font-black text-emerald-600 mt-2">
+          <div className="text-xl sm:text-3xl font-black text-emerald-600 mt-1 sm:mt-2">
             {stats.active}
           </div>
-          <div className="text-[11px] text-muted-foreground mt-1">Available for enrollments</div>
+          <div className="text-[10px] sm:text-[11px] text-muted-foreground mt-0.5 sm:mt-1">Available for enrollments</div>
         </div>
 
-        <div className="p-6 bg-card rounded-3xl border border-border shadow-xs text-card-foreground">
-          <div className="text-xs text-muted-foreground font-bold uppercase tracking-wider flex items-center justify-between">
+        <div className="p-3 sm:p-5 bg-card rounded-2xl sm:rounded-3xl border border-border shadow-xs text-card-foreground">
+          <div className="text-[10px] sm:text-xs text-muted-foreground font-bold uppercase tracking-wider flex items-center justify-between">
             <span>Archived Plans</span>
-            <XCircle className="w-4 h-4 text-muted-foreground" />
+            <XCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-muted-foreground" />
           </div>
-          <div className="text-3xl font-black text-muted-foreground mt-2">
+          <div className="text-xl sm:text-3xl font-black text-muted-foreground mt-1 sm:mt-2">
             {stats.inactive}
           </div>
-          <div className="text-[11px] text-muted-foreground mt-1">Paused or retired</div>
+          <div className="text-[10px] sm:text-[11px] text-muted-foreground mt-0.5 sm:mt-1">Paused or retired</div>
         </div>
 
-        <div className="p-6 bg-card rounded-3xl border border-border shadow-xs text-card-foreground">
-          <div className="text-xs text-primary font-bold uppercase tracking-wider flex items-center justify-between">
+        <div className="p-3 sm:p-5 bg-card rounded-2xl sm:rounded-3xl border border-border shadow-xs text-card-foreground">
+          <div className="text-[10px] sm:text-xs text-primary font-bold uppercase tracking-wider flex items-center justify-between">
             <span>Subscribers</span>
-            <Users className="w-4 h-4 text-primary" />
+            <Users className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-primary" />
           </div>
-          <div className="text-3xl font-black text-foreground mt-2">
+          <div className="text-xl sm:text-3xl font-black text-foreground mt-1 sm:mt-2">
             {stats.totalSubscribers}
           </div>
-          <div className="text-[11px] text-muted-foreground mt-1">Members currently subscribed</div>
+          <div className="text-[10px] sm:text-[11px] text-muted-foreground mt-0.5 sm:mt-1">Members currently subscribed</div>
         </div>
       </div>
 
@@ -472,7 +472,8 @@ export function PlansManagerClient({
                       ₹{plan.price.toLocaleString("en-IN")}
                     </span>
                     <span className="text-[10px] sm:text-xs font-bold px-1.5 sm:px-2 py-0.5 rounded-md bg-muted text-muted-foreground border border-border shrink-0">
-                      {plan.durationDays}d
+                      <span className="hidden sm:inline">{plan.durationDays} Days</span>
+                      <span className="sm:hidden">{plan.durationDays}d</span>
                     </span>
                   </div>
 
@@ -497,7 +498,7 @@ export function PlansManagerClient({
                     <button
                       onClick={() => handleToggleStatus(plan)}
                       disabled={isLoading}
-                      className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-colors disabled:opacity-50 cursor-pointer ${
+                      className={`inline-flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1 sm:py-1.5 rounded-xl text-[10px] sm:text-xs font-bold transition-colors disabled:opacity-50 cursor-pointer ${
                         plan.isActive
                           ? "text-muted-foreground hover:text-amber-600 hover:bg-amber-500/10"
                           : "text-emerald-600 hover:bg-emerald-500/10"
@@ -505,30 +506,32 @@ export function PlansManagerClient({
                       title={plan.isActive ? "Deactivate plan" : "Activate plan"}
                     >
                       {isLoading ? (
-                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        <Loader2 className="w-3 h-3 sm:w-3.5 sm:h-3.5 animate-spin" />
                       ) : (
-                        <Power className="w-3.5 h-3.5" />
+                        <Power className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
                       )}
                       <span>{plan.isActive ? "Archive" : "Activate"}</span>
                     </button>
 
-                    <div className="flex items-center gap-1">
+                    <div className="flex items-center gap-0.5 sm:gap-1">
                       <button
                         onClick={() => handleOpenEdit(plan)}
-                        className="p-2 rounded-xl text-muted-foreground hover:text-primary hover:bg-muted transition-colors cursor-pointer"
+                        className="p-1.5 sm:p-2 rounded-xl text-muted-foreground hover:text-primary hover:bg-muted transition-colors cursor-pointer"
                         title="Edit plan details"
+                        aria-label="Edit plan"
                       >
-                        <Edit2 className="w-4 h-4" />
+                        <Edit2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                       </button>
 
                       {plan.usageCount === 0 && (
                         <button
                           onClick={() => handleDeletePlan(plan)}
                           disabled={isLoading}
-                          className="p-2 rounded-xl text-muted-foreground hover:text-rose-600 hover:bg-rose-500/10 transition-colors cursor-pointer"
+                          className="p-1.5 sm:p-2 rounded-xl text-muted-foreground hover:text-rose-600 hover:bg-rose-500/10 transition-colors cursor-pointer"
                           title="Delete unreferenced plan"
+                          aria-label="Delete plan"
                         >
-                          <Trash2 className="w-4 h-4" />
+                          <Trash2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                         </button>
                       )}
                     </div>

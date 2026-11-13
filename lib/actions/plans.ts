@@ -16,6 +16,7 @@ export const createPlanSchema = z.object({
   description: z.string().trim().max(500, "Description too long").optional().nullable(),
   durationDays: z.number().int("Duration must be an integer").min(1, "Duration must be at least 1 day").max(3650, "Duration cannot exceed 3,650 days (10 years)"),
   price: z.number().min(0, "Price cannot be negative").max(10000000, "Price cannot exceed ₹1,00,00,000"),
+  isActive: z.boolean().optional(),
 });
 
 export const updatePlanSchema = z.object({
@@ -85,7 +86,7 @@ export async function createPlanAction(input: CreatePlanInput) {
         description: validated.description?.trim() || null,
         duration_days: validated.durationDays,
         price: validated.price,
-        is_active: true,
+        is_active: validated.isActive !== undefined ? validated.isActive : true,
       })
       .select("id, name, price, duration_days, is_active")
       .single();
@@ -327,29 +328,11 @@ export async function deletePlanAction(input: DeletePlanInput) {
       return { success: false, error: `Failed to check plan usage: ${countErr.message}` };
     }
 
-    // If referenced by existing active or historical memberships, BLOCK hard deletion and safely soft-archive
+    // If referenced by existing active or historical memberships, BLOCK hard deletion
     if ((membershipCount ?? 0) > 0) {
-      const { error: archiveErr } = await supabase
-        .from("membership_plans")
-        .update({
-          is_active: false,
-          updated_at: new Date().toISOString(),
-        })
-        .eq("id", validated.planId);
-
-      if (archiveErr) {
-        return { success: false, error: `Failed to archive plan: ${archiveErr.message}` };
-      }
-
-      revalidatePath(`/app/${context.gymId}`, "layout");
-      revalidatePath(`/app/${context.gymId}/memberships`);
-      revalidatePath(`/app/${context.gymId}/members`);
-      revalidatePath(`/app/${context.gymId}/settings`);
-
       return {
-        success: true,
-        archived: true,
-        message: `Plan "${plan.name}" is linked to ${membershipCount} member contract(s). Hard deletion was blocked and the plan has been safely soft-archived (deactivated).`,
+        success: false,
+        error: "Cannot delete plan with existing member contracts. Archive it instead.",
       };
     }
 
