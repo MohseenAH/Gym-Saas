@@ -22,20 +22,17 @@ export default async function MembershipsPage({
   params,
   searchParams,
 }: MembershipsPageProps) {
-  const { gymId } = await params;
-  const resolvedSearchParams = searchParams ? await searchParams : {};
-
-  // Server-side authorization check
-  const authContext = await getAuthorizedActionContext({
-    gymId,
-    capability: "members:view",
-  });
+  const [{ gymId }, resolvedSearchParams, cookieStore, authContext] = await Promise.all([
+    params,
+    searchParams ? searchParams : Promise.resolve({} as { branchId?: string; tab?: string }),
+    cookies(),
+    params.then(({ gymId: id }) => getAuthorizedActionContext({ gymId: id, capability: "members:view" })),
+  ]);
 
   const canManagePlans = hasCapability(authContext.role, "plans:manage");
   const canManageMembers = hasCapability(authContext.role, "members:manage");
 
   // Resolve branch context from searchParams or persistent cookie
-  const cookieStore = await cookies();
   const cookieBranch = cookieStore.get(`gymapra_branch_${gymId}`)?.value;
   const requestedBranchId =
     resolvedSearchParams.branchId !== undefined

@@ -11,15 +11,13 @@ interface AttendancePageProps {
 }
 
 export default async function AttendancePage({ params, searchParams }: AttendancePageProps) {
-  const { gymId } = await params;
-  const resolvedSearchParams = searchParams ? await searchParams : {};
+  const [{ gymId }, resolvedSearchParams, cookieStore, authContext] = await Promise.all([
+    params,
+    searchParams ? searchParams : Promise.resolve({} as { branchId?: string }),
+    cookies(),
+    params.then(({ gymId: id }) => getAuthorizedActionContext({ gymId: id, capability: "attendance:record" })),
+  ]);
 
-  const authContext = await getAuthorizedActionContext({
-    gymId,
-    capability: "attendance:record",
-  });
-
-  const cookieStore = await cookies();
   const cookieBranch = cookieStore.get(`gymapra_branch_${gymId}`)?.value;
   const requestedBranchId =
     resolvedSearchParams.branchId !== undefined

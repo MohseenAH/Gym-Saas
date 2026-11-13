@@ -28,11 +28,13 @@ interface PageProps {
 }
 
 export default async function DashboardPage({ params, searchParams }: PageProps) {
-  const { gymId } = await params;
-  const resolvedSearchParams = searchParams ? await searchParams : {};
+  const [{ gymId }, resolvedSearchParams, cookieStore, authContext] = await Promise.all([
+    params,
+    searchParams ? searchParams : Promise.resolve({} as { branchId?: string }),
+    cookies(),
+    params.then(({ gymId: id }) => getAuthorizedActionContext({ gymId: id })),
+  ]);
 
-  const authContext = await getAuthorizedActionContext({ gymId });
-  const cookieStore = await cookies();
   const cookieBranch = cookieStore.get(`gymapra_branch_${gymId}`)?.value;
   const requestedBranchId =
     resolvedSearchParams.branchId !== undefined

@@ -13,15 +13,13 @@ interface MembersPageProps {
 }
 
 export default async function MembersPage({ params, searchParams }: MembersPageProps) {
-  const { gymId } = await params;
-  const resolvedSearchParams = searchParams ? await searchParams : {};
+  const [{ gymId }, resolvedSearchParams, cookieStore, authContext] = await Promise.all([
+    params,
+    searchParams ? searchParams : Promise.resolve({} as { branchId?: string }),
+    cookies(),
+    params.then(({ gymId: id }) => getAuthorizedActionContext({ gymId: id, capability: "members:view" })),
+  ]);
 
-  const authContext = await getAuthorizedActionContext({
-    gymId,
-    capability: "members:view",
-  });
-
-  const cookieStore = await cookies();
   const cookieBranch = cookieStore.get(`gymapra_branch_${gymId}`)?.value;
   const requestedBranchId =
     resolvedSearchParams.branchId !== undefined

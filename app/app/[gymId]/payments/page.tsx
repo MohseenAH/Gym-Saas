@@ -12,15 +12,13 @@ interface PaymentsPageProps {
 }
 
 export default async function PaymentsPage({ params, searchParams }: PaymentsPageProps) {
-  const { gymId } = await params;
-  const resolvedSearchParams = searchParams ? await searchParams : {};
+  const [{ gymId }, resolvedSearchParams, cookieStore, authContext] = await Promise.all([
+    params,
+    searchParams ? searchParams : Promise.resolve({} as { branchId?: string; memberId?: string }),
+    cookies(),
+    params.then(({ gymId: id }) => getAuthorizedActionContext({ gymId: id, capability: "payments:record" })),
+  ]);
 
-  const authContext = await getAuthorizedActionContext({
-    gymId,
-    capability: "payments:record",
-  });
-
-  const cookieStore = await cookies();
   const cookieBranch = cookieStore.get(`gymapra_branch_${gymId}`)?.value;
   const requestedBranchId =
     resolvedSearchParams.branchId !== undefined

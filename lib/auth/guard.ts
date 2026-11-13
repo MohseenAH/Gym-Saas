@@ -308,3 +308,21 @@ export async function getAuthorizedActionContext(params: {
 
   return context;
 }
+
+/**
+ * Request-level cached gym access check.
+ * Direct wrapper around getAuthorizedActionContext to share identical promises within the same render pass.
+ */
+export const requireGymAccess = cache(
+  async (gymId: string, capability?: Capability, targetBranchId?: string) => {
+    return getAuthorizedActionContext({ gymId, capability, targetBranchId });
+  }
+);
+
+/**
+ * Request-level cached current user lookup.
+ */
+export const getCurrentUser = cache(async () => {
+  return getCachedUser();
+});
+

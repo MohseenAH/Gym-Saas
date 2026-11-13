@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname, useSearchParams } from "next/navigation";
+import { usePathname, useSearchParams, useRouter } from "next/navigation";
 import { StaffRole } from "@/lib/auth/roles";
 import { Capability, hasCapability } from "@/lib/auth/capabilities";
 import {
@@ -41,6 +41,7 @@ interface SidebarProps {
 }
 
 export function Sidebar({ gymId, gymName, role, onNavigate }: SidebarProps) {
+  const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const currentBranchId = searchParams.get("branchId");
@@ -198,6 +199,9 @@ export function Sidebar({ gymId, gymName, role, onNavigate }: SidebarProps) {
                     <Link
                       key={item.href}
                       href={targetHref}
+                      prefetch={true}
+                      onMouseEnter={() => router.prefetch(targetHref)}
+                      onTouchStart={() => router.prefetch(targetHref)}
                       onClick={onNavigate}
                       className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-medium transition-all duration-150 ${
                         isActive
@@ -224,6 +228,9 @@ export function Sidebar({ gymId, gymName, role, onNavigate }: SidebarProps) {
       <div className="p-3 border-t border-border shrink-0 bg-card">
         <Link
           href="/select-workspace"
+          prefetch={true}
+          onMouseEnter={() => router.prefetch("/select-workspace")}
+          onTouchStart={() => router.prefetch("/select-workspace")}
           className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted border border-border transition-all shadow-2xs"
         >
           <ArrowLeftRight className="w-3.5 h-3.5" />

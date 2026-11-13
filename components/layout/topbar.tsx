@@ -233,6 +233,9 @@ export function Topbar({
       <div className="flex items-center gap-2.5 md:gap-3">
         <Link
           href={`/app/${gymId}/members`}
+          prefetch={true}
+          onMouseEnter={() => router.prefetch(`/app/${gymId}/members`)}
+          onTouchStart={() => router.prefetch(`/app/${gymId}/members`)}
           className="hidden sm:inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-primary hover:opacity-95 text-primary-foreground font-semibold text-xs shadow-xs transition-opacity"
         >
           <Plus className="w-3.5 h-3.5" /> Quick Member Add
@@ -330,6 +333,9 @@ export function Topbar({
               <div className="space-y-0.5">
                 <Link
                   href={`/app/${gymId}/settings`}
+                  prefetch={true}
+                  onMouseEnter={() => router.prefetch(`/app/${gymId}/settings`)}
+                  onTouchStart={() => router.prefetch(`/app/${gymId}/settings`)}
                   onClick={() => setMenuOpen(false)}
                   className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-medium text-foreground hover:bg-muted transition-colors"
                   role="menuitem"
@@ -340,6 +346,9 @@ export function Topbar({
 
                 <Link
                   href="/select-workspace"
+                  prefetch={true}
+                  onMouseEnter={() => router.prefetch("/select-workspace")}
+                  onTouchStart={() => router.prefetch("/select-workspace")}
                   onClick={() => setMenuOpen(false)}
                   className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-medium text-foreground hover:bg-muted transition-colors"
                   role="menuitem"
