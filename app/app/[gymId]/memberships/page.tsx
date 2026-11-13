@@ -10,6 +10,7 @@ import {
 import { MembershipPlanOption } from "@/components/members/renew-membership-modal";
 import { PlanDetailItem } from "@/components/memberships/plans-manager-client";
 import { AssignableMember } from "@/components/memberships/assign-membership-modal";
+import { AssignableUnassignedMember } from "@/components/memberships/bulk-assign-modal";
 
 interface MembershipsPageProps {
   params: Promise<{ gymId: string }>;
@@ -64,7 +65,9 @@ export default async function MembershipsPage({
         .eq("gym_id", gymId),
       supabase
         .from("members")
-        .select("id, full_name, phone, branch_id, branches(name)")
+        .select(
+          "id, full_name, phone, branch_id, status, created_at, branches(id, name), memberships(id)"
+        )
         .eq("status", "active")
         .order("full_name", { ascending: true }),
       supabase
@@ -93,7 +96,9 @@ export default async function MembershipsPage({
     full_name: string;
     phone: string;
     branch_id: string;
-    branches?: { name?: string } | null;
+    created_at?: string;
+    branches?: { id?: string; name?: string } | null;
+    memberships?: Array<{ id: string }> | null;
   }>;
 
   const selectedBranch = branches.find(
@@ -255,12 +260,45 @@ export default async function MembershipsPage({
       branchName: m.branches?.name || "Main Branch",
     }));
 
-  const initialTab = resolvedSearchParams.tab === "plans" ? "plans" : "contracts";
+  // 7. Extract unassigned members (strictly zero membership history ever)
+  const unassignedMembersList: AssignableUnassignedMember[] = rawMembers
+    .filter((m) => !m.memberships || m.memberships.length === 0)
+    .filter((m) => {
+      if (branchContext.selectedBranchId) {
+        return m.branch_id === branchContext.selectedBranchId;
+      }
+      if (branchContext.effectiveBranchIds.length > 0) {
+        return branchContext.effectiveBranchIds.includes(m.branch_id);
+      }
+      return true;
+    })
+    .map((m) => ({
+      id: m.id,
+      fullName: m.full_name,
+      phone: m.phone,
+      branchId: m.branch_id,
+      branchName: m.branches?.name || "Main Branch",
+      createdAt: m.created_at,
+    }));
+
+  let initialTab: "contracts" | "plans" | "unassigned" | "active" | "expired" = "active";
+  if (resolvedSearchParams.tab === "plans") {
+    initialTab = "plans";
+  } else if (resolvedSearchParams.tab === "unassigned") {
+    initialTab = "unassigned";
+  } else if (resolvedSearchParams.tab === "expired") {
+    initialTab = "expired";
+  } else if (resolvedSearchParams.tab === "contracts" || resolvedSearchParams.tab === "active") {
+    initialTab = "active";
+  } else if (unassignedMembersList.length > 0) {
+    initialTab = "unassigned";
+  }
 
   return (
     <MembershipsClient
       gymId={gymId}
       memberships={formattedMemberships}
+      unassignedMembers={unassignedMembersList}
       plans={availablePlans}
       detailedPlans={detailedPlans}
       branches={branches}

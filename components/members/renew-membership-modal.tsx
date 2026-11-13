@@ -17,6 +17,7 @@ interface RenewMembershipModalProps {
   branchId: string;
   memberId: string;
   memberName: string;
+  currentPlanId?: string;
   plans: MembershipPlanOption[];
   isOpen: boolean;
   onClose: () => void;
@@ -36,14 +37,21 @@ export function RenewMembershipModal({
   branchId,
   memberId,
   memberName,
+  currentPlanId,
   plans,
   isOpen,
   onClose,
   onSuccess,
 }: RenewMembershipModalProps) {
-  const [selectedPlanId, setSelectedPlanId] = useState<string>(plans[0]?.id || "");
+  const isPreviousPlanArchived = Boolean(currentPlanId && !plans.some((p) => p.id === currentPlanId));
+  const initialPlanId = (currentPlanId && plans.some((p) => p.id === currentPlanId))
+    ? currentPlanId
+    : plans[0]?.id || "";
+  const initialPlan = plans.find((p) => p.id === initialPlanId);
+
+  const [selectedPlanId, setSelectedPlanId] = useState<string>(initialPlanId);
   const [startDate, setStartDate] = useState<string>(getTodayIST());
-  const [amountPaid, setAmountPaid] = useState<number>(plans[0]?.price || 0);
+  const [amountPaid, setAmountPaid] = useState<number>(initialPlan?.price || 0);
   const [paymentMethod, setPaymentMethod] = useState<
     "cash" | "upi" | "card" | "bank_transfer" | "cheque" | "other"
   >("upi");
@@ -124,6 +132,12 @@ export function RenewMembershipModal({
         {error && (
           <div className="mt-4 p-3.5 bg-rose-500/10 border border-rose-500/20 text-rose-600 rounded-xl text-xs font-semibold">
             {error}
+          </div>
+        )}
+
+        {isPreviousPlanArchived && (
+          <div className="mt-4 p-3 bg-amber-500/10 border border-amber-500/20 text-amber-600 rounded-xl text-xs font-semibold">
+            The previous plan for this membership was archived or updated. Please select an active plan below.
           </div>
         )}
 

@@ -259,6 +259,22 @@ export async function updateMemberAction(input: UpdateMemberInput) {
 
     const supabase = await createClient();
 
+    // Check for phone collision with another member in this gym
+    const { data: existingMember } = await supabase
+      .from("members")
+      .select("id, full_name, phone, branches!inner(gym_id)")
+      .eq("branches.gym_id", context.gymId)
+      .eq("phone", phoneRes.phone)
+      .neq("id", validated.memberId)
+      .maybeSingle();
+
+    if (existingMember) {
+      return {
+        success: false,
+        error: `A member with phone number ${phoneRes.phone} already exists (${existingMember.full_name}).`,
+      };
+    }
+
     const { error } = await supabase
       .from("members")
       .update({

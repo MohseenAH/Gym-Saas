@@ -221,6 +221,18 @@ export function normalizeIndianPhone(rawPhone: unknown): NormalizedPhoneResult {
 }
 
 /**
+ * Calculates a contract's end date in Indian Standard Time (YYYY-MM-DD)
+ * given a start date string (YYYY-MM-DD) and duration in days.
+ * The end date is inclusive: startDate + durationDays - 1 day.
+ */
+export function calculateMembershipEndDate(startDateStr: string, durationDays: number): string {
+  const start = new Date(startDateStr + "T00:00:00+05:30");
+  const end = new Date(start);
+  end.setDate(end.getDate() + durationDays - 1);
+  return getISTDateString(end);
+}
+
+/**
  * RFC 4180 compliant CSV parser.
  * Handles quoted fields with embedded commas, escaped quotes (""), and newlines.
  * Returns an array of records where keys are the trimmed headers from the first row.

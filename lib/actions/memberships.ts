@@ -4,7 +4,8 @@ import { z } from "zod";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { getAuthorizedActionContext } from "@/lib/auth/guard";
-import { getISTDateString } from "@/lib/utils";
+import { getISTDateString, getTodayIST, calculateMembershipEndDate } from "@/lib/utils";
+export { calculateMembershipEndDate };
 
 // ============================================================================
 // 1. Validation Schemas & Types
@@ -21,7 +22,29 @@ export const assignMembershipSchema = z.object({
   notes: z.string().max(500, "Notes too long").optional().nullable(),
 });
 
+export const bulkAssignMembershipsSchema = z.object({
+  gymId: z.string().uuid("Invalid gym ID"),
+  branchId: z.string().uuid("Invalid branch ID"),
+  memberIds: z.array(z.string().uuid("Invalid member ID")).min(1, "Select at least 1 member"),
+  planId: z.string().uuid("Invalid plan ID"),
+  startDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Invalid start date format (YYYY-MM-DD)"),
+});
+
 export type AssignMembershipInput = z.infer<typeof assignMembershipSchema>;
+export type BulkAssignMembershipsInput = z.infer<typeof bulkAssignMembershipsSchema>;
+
+export interface SkippedBulkMember {
+  memberId: string;
+  fullName: string;
+  reason: string;
+}
+
+export interface BulkAssignMembershipsResult {
+  success: boolean;
+  assignedCount: number;
+  skippedMembers: SkippedBulkMember[];
+  error?: string;
+}
 
 export interface MembershipLifecycleStatus {
   status: "active" | "expired" | "frozen" | "cancelled" | "upcoming";
@@ -232,3 +255,223 @@ export async function assignMembershipAction(input: AssignMembershipInput) {
     return { success: false, error: message };
   }
 }
+
+/**
+ * Bulk assigns a membership plan to multiple members.
+ * Atomic, branch-isolated, date-overlap protected, and preserves payment invariants (zero payment rows).
+ */
+export async function bulkAssignMembershipsAction(
+  input: BulkAssignMembershipsInput
+): Promise<BulkAssignMembershipsResult> {
+  try {
+    const validated = bulkAssignMembershipsSchema.parse(input);
+
+    const context = await getAuthorizedActionContext({
+      gymId: validated.gymId,
+      capability: "members:manage",
+      targetBranchId: validated.branchId,
+    });
+
+    const supabase = await createClient();
+
+    // 1. Fetch and verify membership plan
+    const { data: plan, error: planErr } = await supabase
+      .from("membership_plans")
+      .select("id, name, duration_days, price, is_active, branch_id, branches!inner(gym_id)")
+      .eq("id", validated.planId)
+      .single();
+
+    if (planErr || !plan) {
+      return {
+        success: false,
+        assignedCount: 0,
+        skippedMembers: [],
+        error: "Membership plan not found",
+      };
+    }
+
+    const planGymId = (plan.branches as unknown as { gym_id: string })?.gym_id;
+    if (planGymId && planGymId !== context.gymId) {
+      return {
+        success: false,
+        assignedCount: 0,
+        skippedMembers: [],
+        error: "Unauthorized plan access across gym boundary",
+      };
+    }
+
+    if (!plan.is_active) {
+      return {
+        success: false,
+        assignedCount: 0,
+        skippedMembers: [],
+        error: "Cannot assign an inactive membership plan",
+      };
+    }
+
+    if (plan.branch_id && plan.branch_id !== validated.branchId) {
+      return {
+        success: false,
+        assignedCount: 0,
+        skippedMembers: [],
+        error: "Plan belongs to a different branch than the target assignment branch",
+      };
+    }
+
+    // 2. Fetch target members belonging to this gym and branch
+    const { data: members, error: membersErr } = await supabase
+      .from("members")
+      .select("id, full_name, branch_id, branches!inner(gym_id)")
+      .in("id", validated.memberIds)
+      .eq("branches.gym_id", context.gymId);
+
+    if (membersErr) {
+      return {
+        success: false,
+        assignedCount: 0,
+        skippedMembers: [],
+        error: `Failed to fetch target members: ${membersErr.message}`,
+      };
+    }
+
+    const membersMap = new Map((members || []).map((m) => [m.id, m]));
+    const skippedMembers: SkippedBulkMember[] = [];
+    const eligibleMembers: Array<{ id: string; full_name: string }> = [];
+
+    // Verify each member belongs to this gym and branch
+    for (const memberId of validated.memberIds) {
+      const member = membersMap.get(memberId);
+      if (!member) {
+        skippedMembers.push({
+          memberId,
+          fullName: "Unknown Member",
+          reason: "Member not found or unauthorized across gym boundary",
+        });
+        continue;
+      }
+
+      if (member.branch_id !== validated.branchId) {
+        skippedMembers.push({
+          memberId,
+          fullName: member.full_name,
+          reason: "Member belongs to a different branch than the target assignment branch",
+        });
+        continue;
+      }
+
+      eligibleMembers.push({ id: member.id, full_name: member.full_name });
+    }
+
+    if (eligibleMembers.length === 0) {
+      return {
+        success: true,
+        assignedCount: 0,
+        skippedMembers,
+      };
+    }
+
+    // 3. Compute contract validity dates
+    const startDateStr = validated.startDate;
+    const endDateStr = calculateMembershipEndDate(startDateStr, plan.duration_days);
+    const todayIST = getTodayIST();
+    const contractStatus = endDateStr < todayIST ? "expired" : "active";
+
+    // 4. Overlap Safeguards: Query existing contracts for eligible members
+    const eligibleIds = eligibleMembers.map((m) => m.id);
+    const { data: existingContracts, error: contractsErr } = await supabase
+      .from("memberships")
+      .select("id, member_id, start_date, end_date, status")
+      .in("member_id", eligibleIds)
+      .lte("start_date", endDateStr)
+      .gte("end_date", startDateStr);
+
+    if (contractsErr) {
+      return {
+        success: false,
+        assignedCount: 0,
+        skippedMembers,
+        error: `Failed to check contract overlaps: ${contractsErr.message}`,
+      };
+    }
+
+    const overlapMap = new Map<string, { start: string; end: string }>();
+    (existingContracts || []).forEach((c) => {
+      if (c.status !== "cancelled") {
+        overlapMap.set(c.member_id, { start: c.start_date, end: c.end_date });
+      }
+    });
+
+    const membersToAssign: Array<{ id: string; full_name: string }> = [];
+    for (const member of eligibleMembers) {
+      if (overlapMap.has(member.id)) {
+        const o = overlapMap.get(member.id)!;
+        skippedMembers.push({
+          memberId: member.id,
+          fullName: member.full_name,
+          reason: `Overlaps with existing contract (${o.start} to ${o.end})`,
+        });
+      } else {
+        membersToAssign.push(member);
+      }
+    }
+
+    if (membersToAssign.length === 0) {
+      return {
+        success: true,
+        assignedCount: 0,
+        skippedMembers,
+      };
+    }
+
+    // 5. Batch Insert Contracts in chunks of 100
+    // Invariant: Writes strictly to 'memberships'. Zero payment records are inserted.
+    const recordsToInsert = membersToAssign.map((m) => ({
+      gym_id: context.gymId,
+      branch_id: validated.branchId,
+      member_id: m.id,
+      plan_id: plan.id,
+      start_date: startDateStr,
+      end_date: endDateStr,
+      status: contractStatus,
+      notes: `Bulk assigned: ${plan.name}`,
+    }));
+
+    let assignedCount = 0;
+    for (let i = 0; i < recordsToInsert.length; i += 100) {
+      const chunk = recordsToInsert.slice(i, i + 100);
+      const { error: insertErr } = await supabase.from("memberships").insert(chunk);
+
+      if (insertErr) {
+        return {
+          success: false,
+          assignedCount,
+          skippedMembers,
+          error: `Database insertion error: ${insertErr.message}`,
+        };
+      }
+      assignedCount += chunk.length;
+    }
+
+    // 6. Invalidate Affected Paths
+    revalidatePath(`/app/${context.gymId}`, "layout");
+    revalidatePath(`/app/${context.gymId}/memberships`);
+    revalidatePath(`/app/${context.gymId}/members`);
+    revalidatePath(`/app/${context.gymId}/dashboard`);
+    revalidatePath(`/app/${context.gymId}/getting-started`);
+
+    return {
+      success: true,
+      assignedCount,
+      skippedMembers,
+    };
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : "Failed to bulk assign memberships";
+    return {
+      success: false,
+      assignedCount: 0,
+      skippedMembers: [],
+      error: message,
+    };
+  }
+}
+
