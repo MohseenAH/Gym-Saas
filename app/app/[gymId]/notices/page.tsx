@@ -3,6 +3,7 @@ import { getAuthorizedActionContext } from "@/lib/auth/guard";
 import { CreateNoticeModal } from "@/components/notices/create-notice-modal";
 import { Bell, AlertTriangle, Info, Flame, Trash2, Eye, EyeOff } from "lucide-react";
 import { toggleNoticeAction, deleteNoticeAction } from "@/lib/actions/notices";
+import { formatDate } from "@/lib/utils";
 
 interface NoticesPageProps {
   params: Promise<{ gymId: string }>;
@@ -119,15 +120,15 @@ export default async function NoticesPage({ params }: NoticesPageProps) {
                         {notice.content}
                       </p>
 
-                      <div className="flex items-center gap-3 text-[11px] text-muted-foreground mt-3">
+                      <div className="flex items-center gap-3 text-xs sm:text-sm text-muted-foreground mt-3">
                         <span>
-                          Posted: {new Date(notice.published_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+                          Posted: {formatDate(notice.published_at)}
                         </span>
                         {notice.expires_at && (
                           <>
                             <span>•</span>
                             <span>
-                              Expires: {new Date(notice.expires_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                              Expires: {formatDate(notice.expires_at)}
                             </span>
                           </>
                         )}

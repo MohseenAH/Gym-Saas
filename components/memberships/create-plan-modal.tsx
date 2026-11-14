@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, startTransition } from "react";
 import { useRouter } from "next/navigation";
 import { PlusCircle, X, Loader2, IndianRupee, Clock, Building2 } from "lucide-react";
 import { createPlanAction } from "@/lib/actions/plans";
@@ -124,9 +124,13 @@ export function CreatePlanModal({
         setDurationSelection("30");
         setIsActive(true);
 
-        // Close modal immediately and refresh in background
+        // Close modal immediately and refresh in background without tick collision
         onClose();
-        router.refresh();
+        setTimeout(() => {
+          startTransition(() => {
+            router.refresh();
+          });
+        }, 150);
       }
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Failed to create membership plan");

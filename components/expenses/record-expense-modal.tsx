@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, startTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Plus, X, Receipt, Loader2 } from "lucide-react";
 import { createExpenseAction, type CreateExpenseInput } from "@/lib/actions/expenses";
@@ -53,7 +53,11 @@ export function RecordExpenseModal({ gymId, branches }: RecordExpenseModalProps)
         setIsOpen(false);
         setAmount("");
         setDescription("");
-        router.refresh();
+        setTimeout(() => {
+          startTransition(() => {
+            router.refresh();
+          });
+        }, 150);
       }
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Failed to record expense");

@@ -209,7 +209,6 @@ export async function assignMembershipAction(input: AssignMembershipInput) {
     if (validated.amountPaid > 0) {
       const planPrice = Number(plan.price);
       const isFull = validated.amountPaid >= planPrice;
-      const idempotencyKey = `assign_${newMembership.id}_${validated.memberId}`;
 
       const { data: payment, error: payErr } = await supabase
         .from("payments")
@@ -224,7 +223,6 @@ export async function assignMembershipAction(input: AssignMembershipInput) {
           payment_date: startDateStr,
           notes: validated.notes || `Initial payment for ${plan.name}`,
           created_by: context.userId,
-          idempotency_key: idempotencyKey,
         })
         .select("id")
         .single();

@@ -26,7 +26,7 @@ import {
   MembershipPlanOption,
 } from "@/components/members/renew-membership-modal";
 import { ReceiptModal, ReceiptData } from "@/components/payments/receipt-modal";
-import { getStatusBadgeClass } from "@/lib/utils";
+import { getStatusBadgeClass, formatDate } from "@/lib/utils";
 
 export interface MemberProfileClientProps {
   gymId: string;
@@ -359,11 +359,7 @@ export function MemberProfileClient({
           <div className="col-span-2 sm:col-span-1 p-3 sm:p-3.5 bg-muted/40 rounded-xl sm:rounded-2xl border border-border/60">
             <span className="text-muted-foreground block font-bold uppercase tracking-wider text-[9px] sm:text-[10px] mb-0.5 sm:mb-1 truncate">Registration Date</span>
             <span className="font-bold text-foreground text-xs sm:text-sm truncate block">
-              {new Date(member.createdAt).toLocaleDateString("en-IN", {
-                year: "numeric",
-                month: "short",
-                day: "numeric",
-              })}
+              {formatDate(member.createdAt)}
             </span>
           </div>
         </div>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, startTransition } from "react";
 import { useRouter } from "next/navigation";
 import { UserPlus, X, Loader2, IndianRupee, Calendar, CheckCircle2, AlertTriangle } from "lucide-react";
 import { assignMembershipAction } from "@/lib/actions/memberships";
@@ -158,7 +158,11 @@ export function AssignMembershipModal({
           endDate: res.endDate!,
         });
         onClose();
-        router.refresh();
+        setTimeout(() => {
+          startTransition(() => {
+            router.refresh();
+          });
+        }, 150);
       }
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Failed to assign membership");

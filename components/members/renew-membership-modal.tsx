@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, startTransition } from "react";
 import { useRouter } from "next/navigation";
 import { RefreshCw, X, Loader2, CheckCircle2, IndianRupee } from "lucide-react";
 import { renewMembershipAction } from "@/lib/actions/members";
@@ -108,7 +108,11 @@ export function RenewMembershipModal({
           paymentMethod,
         });
         onClose();
-        router.refresh();
+        setTimeout(() => {
+          startTransition(() => {
+            router.refresh();
+          });
+        }, 150);
       }
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Failed to renew membership");

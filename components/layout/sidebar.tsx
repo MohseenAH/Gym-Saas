@@ -158,11 +158,11 @@ export function Sidebar({ gymId, gymName, role, onNavigate }: SidebarProps) {
                 {gymName}
               </div>
               <div className="flex items-center gap-1.5 mt-0.5">
-                <span className="text-[10px] font-semibold text-primary uppercase tracking-wider">
+                <span className="text-xs font-semibold text-primary uppercase tracking-wider">
                   {role}
                 </span>
                 <span className="inline-block w-1 h-1 rounded-full bg-border" />
-                <span className="inline-flex items-center px-1.5 py-0.2 rounded text-[9px] font-bold bg-primary/10 text-primary">
+                <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-primary/10 text-primary">
                   Pilot Pro
                 </span>
               </div>
@@ -184,7 +184,7 @@ export function Sidebar({ gymId, gymName, role, onNavigate }: SidebarProps) {
 
             return (
               <div key={group.title} className="space-y-1">
-                <div className="px-3 text-[10px] font-bold uppercase tracking-wider text-muted-foreground/80 mb-1">
+                <div className="px-3 text-xs font-bold uppercase tracking-wider text-muted-foreground/80 mb-1.5">
                   {group.title}
                 </div>
                 {visibleItems.map((item) => {
@@ -203,7 +203,7 @@ export function Sidebar({ gymId, gymName, role, onNavigate }: SidebarProps) {
                       onMouseEnter={() => router.prefetch(targetHref)}
                       onTouchStart={() => router.prefetch(targetHref)}
                       onClick={onNavigate}
-                      className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-medium transition-all duration-150 ${
+                      className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-150 ${
                         isActive
                           ? "bg-primary/10 text-primary font-semibold ring-1 ring-primary/25 shadow-2xs"
                           : "text-muted-foreground hover:text-foreground hover:bg-muted/70"
@@ -231,12 +231,12 @@ export function Sidebar({ gymId, gymName, role, onNavigate }: SidebarProps) {
           prefetch={true}
           onMouseEnter={() => router.prefetch("/select-workspace")}
           onTouchStart={() => router.prefetch("/select-workspace")}
-          className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted border border-border transition-all shadow-2xs"
+          className="w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted border border-border transition-all shadow-2xs"
         >
           <ArrowLeftRight className="w-3.5 h-3.5" />
           <span>Switch Workspace</span>
         </Link>
-        <div className="mt-2 text-center text-[10px] text-muted-foreground/70 font-medium">
+        <div className="mt-2 text-center text-xs text-muted-foreground/70 font-medium">
           GymApra OS &bull; V2.0 Enterprise
         </div>
       </div>

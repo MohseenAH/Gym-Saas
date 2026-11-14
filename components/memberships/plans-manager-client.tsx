@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, startTransition } from "react";
 import { useRouter } from "next/navigation";
 import {
   Plus,
@@ -142,7 +142,9 @@ export function PlansManagerClient({
           "success",
           `Plan "${plan.name}" is now ${nextState ? "Active" : "Archived/Inactive"}.`
         );
-        router.refresh();
+        startTransition(() => {
+          router.refresh();
+        });
       }
     } catch (err: unknown) {
       showMessage("error", err instanceof Error ? err.message : "Failed to update plan status");
@@ -178,7 +180,9 @@ export function PlansManagerClient({
       } else {
         setPlans((prev) => prev.filter((p) => p.id !== plan.id));
         showMessage("success", `Plan "${plan.name}" permanently deleted.`);
-        router.refresh();
+        startTransition(() => {
+          router.refresh();
+        });
       }
     } catch (err: unknown) {
       showMessage("error", err instanceof Error ? err.message : "Failed to delete plan");
@@ -224,7 +228,9 @@ export function PlansManagerClient({
     };
     setPlans([item, ...plans]);
     showMessage("success", `Plan "${newPlan.name}" created successfully!`);
-    router.refresh();
+    startTransition(() => {
+      router.refresh();
+    });
   }
 
   function handlePlanEdited(result: {
@@ -257,7 +263,9 @@ export function PlansManagerClient({
         "success",
         `Plan updated with new terms! Historical contracts preserved.`
       );
-      router.refresh();
+      startTransition(() => {
+        router.refresh();
+      });
     } else {
       setPlans((prev) =>
         prev.map((p) =>
@@ -273,7 +281,9 @@ export function PlansManagerClient({
         )
       );
       showMessage("success", `Plan "${result.name}" updated successfully.`);
-      router.refresh();
+      startTransition(() => {
+        router.refresh();
+      });
     }
   }
 

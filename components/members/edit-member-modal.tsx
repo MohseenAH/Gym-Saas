@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, startTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Edit2, X, Loader2, Save } from "lucide-react";
 import { updateMemberAction } from "@/lib/actions/members";
@@ -69,7 +69,11 @@ export function EditMemberModal({
       } else {
         onSuccess?.();
         onClose();
-        router.refresh();
+        setTimeout(() => {
+          startTransition(() => {
+            router.refresh();
+          });
+        }, 150);
       }
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Failed to update member");

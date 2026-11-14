@@ -314,11 +314,11 @@ export function ReportsViewClient({
             <div className="p-2.5 bg-primary/10 text-primary rounded-xl">
               <FileSpreadsheet className="w-5 h-5" />
             </div>
-            <h1 className="text-xl font-black text-foreground tracking-tight">
+            <h1 className="text-xl sm:text-2xl font-black text-foreground tracking-tight">
               Business & Financial Reports
             </h1>
           </div>
-          <p className="text-xs text-muted-foreground mt-1">
+          <p className="text-sm text-muted-foreground mt-1">
             Reconciled collections, member dues, attendance volume, and operational cash movement
           </p>
         </div>
@@ -326,7 +326,7 @@ export function ReportsViewClient({
         {/* Filters */}
         <div className="flex items-center gap-2 flex-wrap">
           {/* Date range filter */}
-          <div className="flex items-center bg-muted p-1 rounded-xl text-xs">
+          <div className="flex items-center bg-muted p-1 rounded-xl text-sm">
             {(
               [
                 { id: "today", label: "Today" },
@@ -351,7 +351,7 @@ export function ReportsViewClient({
 
           {/* Branch filter */}
           {branches.length > 1 && (
-            <div className="flex items-center gap-2 h-10 px-3 bg-muted/40 border border-border rounded-xl text-xs font-semibold text-foreground">
+            <div className="flex items-center gap-2 h-10 px-3 bg-muted/40 border border-border rounded-xl text-sm font-semibold text-foreground">
               <Building className="w-3.5 h-3.5 text-muted-foreground" />
               <select
                 value={selectedBranchId}
@@ -371,7 +371,7 @@ export function ReportsViewClient({
           {/* Export CSV Button */}
           <button
             onClick={handleExportCsv}
-            className="inline-flex items-center gap-2 h-10 px-4 bg-foreground text-background hover:opacity-90 rounded-xl text-xs font-bold transition-all shadow-xs"
+            className="inline-flex items-center gap-2 h-10 px-4 bg-foreground text-background hover:opacity-90 rounded-xl text-sm font-bold transition-all shadow-xs"
             title="Export currently displayed report as CSV"
           >
             <Download className="w-3.5 h-3.5" />
@@ -397,7 +397,7 @@ export function ReportsViewClient({
             <button
               key={tab.id}
               onClick={() => setReportType(tab.id)}
-              className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all ${
+              className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold whitespace-nowrap transition-all ${
                 isActive
                   ? "bg-primary text-primary-foreground shadow-xs ring-1 ring-primary/25"
                   : "text-muted-foreground hover:bg-muted hover:text-foreground"
@@ -414,40 +414,40 @@ export function ReportsViewClient({
       {reportType === "collections" && (
         <div className="space-y-4">
           <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4">
-            <div className="bg-card p-3 sm:p-5 rounded-2xl sm:rounded-3xl border border-border shadow-xs">
-              <div className="text-[10px] sm:text-xs text-muted-foreground font-semibold uppercase tracking-wider truncate">Total Collections</div>
-              <div className="text-lg sm:text-2xl font-bold tracking-tight text-emerald-500 mt-1 truncate">
+            <div className="bg-card p-3.5 sm:p-5 rounded-2xl sm:rounded-3xl border border-border shadow-xs">
+              <div className="text-xs sm:text-sm text-muted-foreground font-semibold uppercase tracking-wider truncate">Total Collections</div>
+              <div className="text-xl sm:text-3xl font-bold tracking-tight text-emerald-500 mt-1 truncate">
                 ₹{totalCollections.toLocaleString("en-IN", { minimumFractionDigits: 0, maximumFractionDigits: 2 })}
               </div>
-              <div className="text-[10px] sm:text-[11px] text-muted-foreground mt-0.5 truncate">{filteredPayments.length} transactions</div>
+              <div className="text-xs text-muted-foreground mt-0.5 truncate">{filteredPayments.length} transactions</div>
             </div>
 
-            <div className="bg-card p-3 sm:p-5 rounded-2xl sm:rounded-3xl border border-border shadow-xs">
-              <div className="text-[10px] sm:text-xs text-muted-foreground font-semibold uppercase tracking-wider truncate">UPI Collections</div>
-              <div className="text-lg sm:text-2xl font-bold tracking-tight text-foreground mt-1 truncate">
+            <div className="bg-card p-3.5 sm:p-5 rounded-2xl sm:rounded-3xl border border-border shadow-xs">
+              <div className="text-xs sm:text-sm text-muted-foreground font-semibold uppercase tracking-wider truncate">UPI Collections</div>
+              <div className="text-xl sm:text-3xl font-bold tracking-tight text-foreground mt-1 truncate">
                 ₹{upiCollections.toLocaleString("en-IN", { minimumFractionDigits: 0, maximumFractionDigits: 2 })}
               </div>
-              <div className="text-[10px] sm:text-[11px] text-muted-foreground mt-0.5 truncate">
+              <div className="text-xs text-muted-foreground mt-0.5 truncate">
                 {totalCollections > 0 ? `${Math.round((upiCollections / totalCollections) * 100)}% of total` : "0%"}
               </div>
             </div>
 
-            <div className="bg-card p-3 sm:p-5 rounded-2xl sm:rounded-3xl border border-border shadow-xs">
-              <div className="text-[10px] sm:text-xs text-muted-foreground font-semibold uppercase tracking-wider truncate">Cash Collections</div>
-              <div className="text-lg sm:text-2xl font-bold tracking-tight text-foreground mt-1 truncate">
+            <div className="bg-card p-3.5 sm:p-5 rounded-2xl sm:rounded-3xl border border-border shadow-xs">
+              <div className="text-xs sm:text-sm text-muted-foreground font-semibold uppercase tracking-wider truncate">Cash Collections</div>
+              <div className="text-xl sm:text-3xl font-bold tracking-tight text-foreground mt-1 truncate">
                 ₹{cashCollections.toLocaleString("en-IN", { minimumFractionDigits: 0, maximumFractionDigits: 2 })}
               </div>
-              <div className="text-[10px] sm:text-[11px] text-muted-foreground mt-0.5 truncate">
+              <div className="text-xs text-muted-foreground mt-0.5 truncate">
                 {totalCollections > 0 ? `${Math.round((cashCollections / totalCollections) * 100)}% of total` : "0%"}
               </div>
             </div>
 
-            <div className="bg-card p-3 sm:p-5 rounded-2xl sm:rounded-3xl border border-border shadow-xs">
-              <div className="text-[10px] sm:text-xs text-muted-foreground font-semibold uppercase tracking-wider truncate">Card & Bank</div>
-              <div className="text-lg sm:text-2xl font-bold tracking-tight text-foreground mt-1 truncate">
+            <div className="bg-card p-3.5 sm:p-5 rounded-2xl sm:rounded-3xl border border-border shadow-xs">
+              <div className="text-xs sm:text-sm text-muted-foreground font-semibold uppercase tracking-wider truncate">Card & Bank</div>
+              <div className="text-xl sm:text-3xl font-bold tracking-tight text-foreground mt-1 truncate">
                 ₹{cardCollections.toLocaleString("en-IN", { minimumFractionDigits: 0, maximumFractionDigits: 2 })}
               </div>
-              <div className="text-[10px] sm:text-[11px] text-muted-foreground mt-0.5 truncate">
+              <div className="text-xs text-muted-foreground mt-0.5 truncate">
                 {totalCollections > 0 ? `${Math.round((cardCollections / totalCollections) * 100)}% of total` : "0%"}
               </div>
             </div>
@@ -455,12 +455,12 @@ export function ReportsViewClient({
 
           {/* Table */}
           <div className="bg-card rounded-2xl border border-border shadow-xs overflow-hidden">
-            <div className="p-4 border-b border-border font-bold text-sm text-card-foreground">
+            <div className="p-4 border-b border-border font-bold text-base text-card-foreground">
               Payment Transactions ({filteredPayments.length})
             </div>
             <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs">
-                <thead className="bg-muted/40 text-muted-foreground font-semibold border-b border-border">
+              <table className="w-full text-left text-sm">
+                <thead className="bg-muted/40 text-muted-foreground font-bold uppercase tracking-wider text-xs border-b border-border">
                   <tr>
                     <th className="p-3.5 pl-4">Receipt Ref</th>
                     <th className="p-3.5">Date</th>
@@ -487,7 +487,7 @@ export function ReportsViewClient({
                         <td className="p-3.5 font-bold text-foreground">{p.memberName}</td>
                         <td className="p-3.5 text-muted-foreground">{p.branchName}</td>
                         <td className="p-3.5 uppercase font-medium">{p.paymentMethod}</td>
-                        <td className="p-3.5 text-right pr-4 font-black text-foreground">
+                        <td className="p-3.5 text-right pr-4 font-black text-foreground text-base">
                           ₹{p.amount.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
                         </td>
                       </tr>
@@ -505,23 +505,23 @@ export function ReportsViewClient({
         <div className="space-y-4">
           <div className="bg-amber-500/10 border border-amber-500/20 p-5 rounded-3xl flex items-center justify-between">
             <div>
-              <div className="text-xs font-bold text-amber-500 uppercase tracking-wider">Total Uncollected Balance</div>
-              <div className="text-3xl font-black text-amber-500 mt-1">
+              <div className="text-sm font-bold text-amber-500 uppercase tracking-wider">Total Uncollected Balance</div>
+              <div className="text-2xl sm:text-4xl font-black text-amber-500 mt-1">
                 ₹{totalDues.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
               </div>
-              <div className="text-xs text-muted-foreground mt-1">
+              <div className="text-sm text-muted-foreground mt-1">
                 Across {duesList.length} members with partial payments on active contracts
               </div>
             </div>
           </div>
 
           <div className="bg-card rounded-2xl border border-border shadow-xs overflow-hidden">
-            <div className="p-4 border-b border-border font-bold text-sm text-card-foreground">
+            <div className="p-4 border-b border-border font-bold text-base text-card-foreground">
               Members with Pending Dues
             </div>
             <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs">
-                <thead className="bg-muted/40 text-muted-foreground font-semibold border-b border-border">
+              <table className="w-full text-left text-sm">
+                <thead className="bg-muted/40 text-muted-foreground font-bold uppercase tracking-wider text-xs border-b border-border">
                   <tr>
                     <th className="p-3.5 pl-4">Member Name</th>
                     <th className="p-3.5">Phone</th>
@@ -556,7 +556,7 @@ export function ReportsViewClient({
                           <td className="p-3.5 text-emerald-500 font-semibold">
                             ₹{m.paidAmount.toLocaleString("en-IN")}
                           </td>
-                          <td className="p-3.5 font-black text-amber-500">
+                          <td className="p-3.5 font-black text-amber-500 text-base">
                             ₹{m.dueAmount.toLocaleString("en-IN")}
                           </td>
                           <td className="p-3.5 text-right pr-4">
@@ -585,29 +585,29 @@ export function ReportsViewClient({
       {reportType === "attendance" && (
         <div className="space-y-4">
           <div className="grid grid-cols-2 gap-2.5 sm:gap-4">
-            <div className="bg-card p-3 sm:p-5 rounded-2xl sm:rounded-3xl border border-border shadow-xs">
-              <div className="text-[10px] sm:text-xs text-muted-foreground font-semibold uppercase tracking-wider truncate">Total Visits Recorded</div>
-              <div className="text-lg sm:text-2xl font-bold tracking-tight text-foreground mt-1 truncate">{filteredAttendance.length}</div>
-              <div className="text-[10px] sm:text-[11px] text-muted-foreground mt-0.5 truncate">During period</div>
+            <div className="bg-card p-3.5 sm:p-5 rounded-2xl sm:rounded-3xl border border-border shadow-xs">
+              <div className="text-xs sm:text-sm text-muted-foreground font-semibold uppercase tracking-wider truncate">Total Visits Recorded</div>
+              <div className="text-xl sm:text-3xl font-bold tracking-tight text-foreground mt-1 truncate">{filteredAttendance.length}</div>
+              <div className="text-xs text-muted-foreground mt-0.5 truncate">During period</div>
             </div>
-            <div className="bg-card p-3 sm:p-5 rounded-2xl sm:rounded-3xl border border-border shadow-xs">
-              <div className="text-[10px] sm:text-xs text-muted-foreground font-semibold uppercase tracking-wider truncate">Daily Average</div>
-              <div className="text-lg sm:text-2xl font-bold tracking-tight text-primary mt-1 truncate">
+            <div className="bg-card p-3.5 sm:p-5 rounded-2xl sm:rounded-3xl border border-border shadow-xs">
+              <div className="text-xs sm:text-sm text-muted-foreground font-semibold uppercase tracking-wider truncate">Daily Average</div>
+              <div className="text-xl sm:text-3xl font-bold tracking-tight text-primary mt-1 truncate">
                 {dateRange === "today"
                   ? filteredAttendance.length
                   : Math.round(filteredAttendance.length / (dateRange === "7days" ? 7 : 30))}
               </div>
-              <div className="text-[10px] sm:text-[11px] text-muted-foreground mt-0.5 truncate">Visits per day</div>
+              <div className="text-xs text-muted-foreground mt-0.5 truncate">Visits per day</div>
             </div>
           </div>
 
           <div className="bg-card rounded-2xl border border-border shadow-xs overflow-hidden">
-            <div className="p-4 border-b border-border font-bold text-sm text-card-foreground">
+            <div className="p-4 border-b border-border font-bold text-base text-card-foreground">
               Check-In Logs ({filteredAttendance.length})
             </div>
             <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs">
-                <thead className="bg-muted/40 text-muted-foreground font-semibold border-b border-border">
+              <table className="w-full text-left text-sm">
+                <thead className="bg-muted/40 text-muted-foreground font-bold uppercase tracking-wider text-xs border-b border-border">
                   <tr>
                     <th className="p-3.5 pl-4">Date</th>
                     <th className="p-3.5">Time</th>
@@ -648,37 +648,37 @@ export function ReportsViewClient({
       {reportType === "memberships" && (
         <div className="space-y-4">
           <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4">
-            <div className="bg-card p-3 sm:p-5 rounded-2xl sm:rounded-3xl border border-border shadow-xs">
-              <div className="text-[10px] sm:text-xs text-muted-foreground font-semibold uppercase tracking-wider truncate">Active Contracts</div>
-              <div className="text-lg sm:text-2xl font-bold tracking-tight text-emerald-500 mt-1 truncate">{activeMembershipsCount}</div>
-              <div className="text-[10px] sm:text-[11px] text-muted-foreground mt-0.5 truncate">Valid contracts</div>
+            <div className="bg-card p-3.5 sm:p-5 rounded-2xl sm:rounded-3xl border border-border shadow-xs">
+              <div className="text-xs sm:text-sm text-muted-foreground font-semibold uppercase tracking-wider truncate">Active Contracts</div>
+              <div className="text-xl sm:text-3xl font-bold tracking-tight text-emerald-500 mt-1 truncate">{activeMembershipsCount}</div>
+              <div className="text-xs text-muted-foreground mt-0.5 truncate">Valid contracts</div>
             </div>
-            <div className="bg-card p-3 sm:p-5 rounded-2xl sm:rounded-3xl border border-border shadow-xs">
-              <div className="text-[10px] sm:text-xs text-muted-foreground font-semibold uppercase tracking-wider truncate">Expiring (7d)</div>
-              <div className="text-lg sm:text-2xl font-bold tracking-tight text-amber-500 mt-1 truncate">{expiringSoonCount}</div>
-              <div className="text-[10px] sm:text-[11px] text-muted-foreground mt-0.5 truncate">Needs follow-up</div>
+            <div className="bg-card p-3.5 sm:p-5 rounded-2xl sm:rounded-3xl border border-border shadow-xs">
+              <div className="text-xs sm:text-sm text-muted-foreground font-semibold uppercase tracking-wider truncate">Expiring (7d)</div>
+              <div className="text-xl sm:text-3xl font-bold tracking-tight text-amber-500 mt-1 truncate">{expiringSoonCount}</div>
+              <div className="text-xs text-muted-foreground mt-0.5 truncate">Needs follow-up</div>
             </div>
-            <div className="bg-card p-3 sm:p-5 rounded-2xl sm:rounded-3xl border border-border shadow-xs">
-              <div className="text-[10px] sm:text-xs text-muted-foreground font-semibold uppercase tracking-wider truncate">Expired / Lapsed</div>
-              <div className="text-lg sm:text-2xl font-bold tracking-tight text-rose-500 mt-1 truncate">
+            <div className="bg-card p-3.5 sm:p-5 rounded-2xl sm:rounded-3xl border border-border shadow-xs">
+              <div className="text-xs sm:text-sm text-muted-foreground font-semibold uppercase tracking-wider truncate">Expired / Lapsed</div>
+              <div className="text-xl sm:text-3xl font-bold tracking-tight text-rose-500 mt-1 truncate">
                 {filteredMemberships.filter((m) => m.status === "expired" || m.daysLeft < 0).length}
               </div>
-              <div className="text-[10px] sm:text-[11px] text-muted-foreground mt-0.5 truncate">Inactive plans</div>
+              <div className="text-xs text-muted-foreground mt-0.5 truncate">Inactive plans</div>
             </div>
-            <div className="bg-card p-3 sm:p-5 rounded-2xl sm:rounded-3xl border border-border shadow-xs">
-              <div className="text-[10px] sm:text-xs text-muted-foreground font-semibold uppercase tracking-wider truncate">Total Tracked</div>
-              <div className="text-lg sm:text-2xl font-bold tracking-tight text-foreground mt-1 truncate">{filteredMemberships.length}</div>
-              <div className="text-[10px] sm:text-[11px] text-muted-foreground mt-0.5 truncate">All records</div>
+            <div className="bg-card p-3.5 sm:p-5 rounded-2xl sm:rounded-3xl border border-border shadow-xs">
+              <div className="text-xs sm:text-sm text-muted-foreground font-semibold uppercase tracking-wider truncate">Total Tracked</div>
+              <div className="text-xl sm:text-3xl font-bold tracking-tight text-foreground mt-1 truncate">{filteredMemberships.length}</div>
+              <div className="text-xs text-muted-foreground mt-0.5 truncate">All records</div>
             </div>
           </div>
 
           <div className="bg-card rounded-2xl border border-border shadow-xs overflow-hidden">
-            <div className="p-4 border-b border-border font-bold text-sm text-card-foreground">
+            <div className="p-4 border-b border-border font-bold text-base text-card-foreground">
               Membership Contracts
             </div>
             <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs">
-                <thead className="bg-muted/40 text-muted-foreground font-semibold border-b border-border">
+              <table className="w-full text-left text-sm">
+                <thead className="bg-muted/40 text-muted-foreground font-bold uppercase tracking-wider text-xs border-b border-border">
                   <tr>
                     <th className="p-3.5 pl-4">Member Name</th>
                     <th className="p-3.5">Plan</th>
@@ -697,7 +697,7 @@ export function ReportsViewClient({
                       <td className="p-3.5 text-muted-foreground">{m.endDate}</td>
                       <td className="p-3.5">
                         <span
-                          className={`px-2.5 py-0.5 rounded-full font-bold uppercase text-[10px] tracking-wider ${getStatusBadgeClass(m.status)}`}
+                          className={`px-2.5 py-0.5 rounded-full font-bold uppercase text-xs tracking-wider ${getStatusBadgeClass(m.status)}`}
                         >
                           {m.status}
                         </span>
@@ -728,47 +728,47 @@ export function ReportsViewClient({
       {reportType === "pnl" && (
         <div className="space-y-4">
           <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4">
-            <div className="bg-card p-3 sm:p-5 rounded-2xl sm:rounded-3xl border border-border shadow-xs">
-              <div className="text-[10px] sm:text-xs text-muted-foreground font-semibold uppercase tracking-wider truncate">Total Collections</div>
-              <div className="text-lg sm:text-2xl font-bold tracking-tight text-emerald-500 mt-1 truncate">
+            <div className="bg-card p-3.5 sm:p-5 rounded-2xl sm:rounded-3xl border border-border shadow-xs">
+              <div className="text-xs sm:text-sm text-muted-foreground font-semibold uppercase tracking-wider truncate">Total Collections</div>
+              <div className="text-xl sm:text-3xl font-bold tracking-tight text-emerald-500 mt-1 truncate">
                 ₹{totalCollections.toLocaleString("en-IN", { minimumFractionDigits: 0, maximumFractionDigits: 2 })}
               </div>
-              <div className="text-[10px] sm:text-[11px] text-muted-foreground mt-0.5 truncate">Total revenue</div>
+              <div className="text-xs text-muted-foreground mt-0.5 truncate">Total revenue</div>
             </div>
-            <div className="bg-card p-3 sm:p-5 rounded-2xl sm:rounded-3xl border border-border shadow-xs">
-              <div className="text-[10px] sm:text-xs text-muted-foreground font-semibold uppercase tracking-wider truncate">Expenses</div>
-              <div className="text-lg sm:text-2xl font-bold tracking-tight text-rose-500 mt-1 truncate">
+            <div className="bg-card p-3.5 sm:p-5 rounded-2xl sm:rounded-3xl border border-border shadow-xs">
+              <div className="text-xs sm:text-sm text-muted-foreground font-semibold uppercase tracking-wider truncate">Expenses</div>
+              <div className="text-xl sm:text-3xl font-bold tracking-tight text-rose-500 mt-1 truncate">
                 ₹{totalExpenses.toLocaleString("en-IN", { minimumFractionDigits: 0, maximumFractionDigits: 2 })}
               </div>
-              <div className="text-[10px] sm:text-[11px] text-muted-foreground mt-0.5 truncate">Operating costs</div>
+              <div className="text-xs text-muted-foreground mt-0.5 truncate">Operating costs</div>
             </div>
-            <div className="bg-card p-3 sm:p-5 rounded-2xl sm:rounded-3xl border border-border shadow-xs">
-              <div className="text-[10px] sm:text-xs text-muted-foreground font-semibold uppercase tracking-wider truncate">Net Cash Flow</div>
+            <div className="bg-card p-3.5 sm:p-5 rounded-2xl sm:rounded-3xl border border-border shadow-xs">
+              <div className="text-xs sm:text-sm text-muted-foreground font-semibold uppercase tracking-wider truncate">Net Cash Flow</div>
               <div
-                className={`text-lg sm:text-2xl font-bold tracking-tight mt-1 truncate ${
+                className={`text-xl sm:text-3xl font-bold tracking-tight mt-1 truncate ${
                   netCashFlow >= 0 ? "text-emerald-500" : "text-rose-500"
                 }`}
               >
                 {netCashFlow >= 0 ? "+" : ""}₹{netCashFlow.toLocaleString("en-IN", { minimumFractionDigits: 0, maximumFractionDigits: 2 })}
               </div>
-              <div className="text-[10px] sm:text-[11px] text-muted-foreground mt-0.5 truncate">Operating net</div>
+              <div className="text-xs text-muted-foreground mt-0.5 truncate">Operating net</div>
             </div>
-            <div className="bg-card p-3 sm:p-5 rounded-2xl sm:rounded-3xl border border-border shadow-xs">
-              <div className="text-[10px] sm:text-xs text-muted-foreground font-semibold uppercase tracking-wider truncate">Operating Margin</div>
-              <div className="text-lg sm:text-2xl font-bold tracking-tight text-foreground mt-1 truncate">
+            <div className="bg-card p-3.5 sm:p-5 rounded-2xl sm:rounded-3xl border border-border shadow-xs">
+              <div className="text-xs sm:text-sm text-muted-foreground font-semibold uppercase tracking-wider truncate">Operating Margin</div>
+              <div className="text-xl sm:text-3xl font-bold tracking-tight text-foreground mt-1 truncate">
                 {totalCollections > 0 ? `${Math.round((netCashFlow / totalCollections) * 100)}%` : "0%"}
               </div>
-              <div className="text-[10px] sm:text-[11px] text-muted-foreground mt-0.5 truncate">Margin ratio</div>
+              <div className="text-xs text-muted-foreground mt-0.5 truncate">Margin ratio</div>
             </div>
           </div>
 
           <div className="bg-card rounded-2xl border border-border shadow-xs overflow-hidden">
-            <div className="p-4 border-b border-border font-bold text-sm text-card-foreground">
+            <div className="p-4 border-b border-border font-bold text-base text-card-foreground">
               Expenses Recorded ({filteredExpenses.length})
             </div>
             <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs">
-                <thead className="bg-muted/40 text-muted-foreground font-semibold border-b border-border">
+              <table className="w-full text-left text-sm">
+                <thead className="bg-muted/40 text-muted-foreground font-bold uppercase tracking-wider text-xs border-b border-border">
                   <tr>
                     <th className="p-3.5 pl-4">Date</th>
                     <th className="p-3.5">Category</th>
@@ -789,13 +789,13 @@ export function ReportsViewClient({
                       <tr key={e.id} className="hover:bg-muted/30 transition-colors">
                         <td className="p-3.5 pl-4 font-semibold text-foreground">{e.expenseDate}</td>
                         <td className="p-3.5">
-                          <span className="px-2.5 py-0.5 rounded-full bg-rose-500/10 text-rose-500 border border-rose-500/20 font-bold capitalize text-[10px] tracking-wider">
+                          <span className="px-2.5 py-0.5 rounded-full bg-rose-500/10 text-rose-500 border border-rose-500/20 font-bold capitalize text-xs tracking-wider">
                             {e.category}
                           </span>
                         </td>
                         <td className="p-3.5 text-muted-foreground">{e.branchName}</td>
                         <td className="p-3.5 text-muted-foreground">{e.description || "—"}</td>
-                        <td className="p-3.5 text-right pr-4 font-black text-foreground">
+                        <td className="p-3.5 text-right pr-4 font-black text-foreground text-base">
                           ₹{e.amount.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
                         </td>
                       </tr>

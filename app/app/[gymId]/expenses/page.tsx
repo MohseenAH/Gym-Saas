@@ -72,8 +72,8 @@ export default async function ExpensesPage({ params, searchParams }: ExpensesPag
       {/* Top Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-black text-foreground tracking-tight">Expense Management</h1>
-          <p className="text-xs text-muted-foreground mt-1">
+          <h1 className="text-2xl sm:text-3xl font-black text-foreground tracking-tight">Expense Management</h1>
+          <p className="text-sm text-muted-foreground mt-1">
             Track operational expenses, utility bills, maintenance, and staff payroll
           </p>
         </div>
@@ -82,51 +82,51 @@ export default async function ExpensesPage({ params, searchParams }: ExpensesPag
 
       {/* KPI Cards */}
       <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4">
-        <div className="bg-card p-3 sm:p-5 rounded-2xl sm:rounded-3xl border border-border shadow-xs flex items-center gap-3 sm:gap-4 text-card-foreground">
-          <div className="h-7 w-7 sm:h-9 sm:w-9 flex items-center justify-center shrink-0 bg-rose-500/10 text-rose-600 rounded-xl sm:rounded-2xl shadow-2xs">
-            <TrendingDown className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+        <div className="bg-card p-3.5 sm:p-5 rounded-2xl sm:rounded-3xl border border-border shadow-xs flex items-center gap-3 sm:gap-4 text-card-foreground">
+          <div className="h-8 w-8 sm:h-10 sm:w-10 flex items-center justify-center shrink-0 bg-rose-500/10 text-rose-600 rounded-xl sm:rounded-2xl shadow-2xs">
+            <TrendingDown className="w-4 h-4 sm:w-5 sm:h-5" />
           </div>
           <div className="min-w-0">
-            <div className="text-lg sm:text-2xl font-bold tracking-tight text-foreground truncate">
+            <div className="text-xl sm:text-3xl font-bold tracking-tight text-foreground truncate">
               ₹{totalExpense.toLocaleString("en-IN", { minimumFractionDigits: 0, maximumFractionDigits: 2 })}
             </div>
-            <div className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-muted-foreground truncate">Total Expenses</div>
+            <div className="text-xs sm:text-sm font-semibold uppercase tracking-wider text-muted-foreground truncate">Total Expenses</div>
           </div>
         </div>
 
-        <div className="bg-card p-3 sm:p-5 rounded-2xl sm:rounded-3xl border border-border shadow-xs flex items-center gap-3 sm:gap-4 text-card-foreground">
-          <div className="h-7 w-7 sm:h-9 sm:w-9 flex items-center justify-center shrink-0 bg-primary/10 text-primary rounded-xl sm:rounded-2xl shadow-2xs">
-            <Layers className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+        <div className="bg-card p-3.5 sm:p-5 rounded-2xl sm:rounded-3xl border border-border shadow-xs flex items-center gap-3 sm:gap-4 text-card-foreground">
+          <div className="h-8 w-8 sm:h-10 sm:w-10 flex items-center justify-center shrink-0 bg-primary/10 text-primary rounded-xl sm:rounded-2xl shadow-2xs">
+            <Layers className="w-4 h-4 sm:w-5 sm:h-5" />
           </div>
           <div className="min-w-0">
-            <div className="text-lg sm:text-2xl font-bold tracking-tight text-foreground truncate capitalize">
+            <div className="text-xl sm:text-3xl font-bold tracking-tight text-foreground truncate capitalize">
               {topCategory ? topCategory[0] : "None"}
             </div>
-            <div className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-muted-foreground truncate">
+            <div className="text-xs sm:text-sm font-semibold uppercase tracking-wider text-muted-foreground truncate">
               Top Category {topCategory ? `(₹${topCategory[1].toLocaleString()})` : ""}
             </div>
           </div>
         </div>
 
-        <div className="bg-card p-3 sm:p-5 rounded-2xl sm:rounded-3xl border border-border shadow-xs flex items-center gap-3 sm:gap-4 text-card-foreground">
-          <div className="h-7 w-7 sm:h-9 sm:w-9 flex items-center justify-center shrink-0 bg-amber-500/10 text-amber-600 rounded-xl sm:rounded-2xl shadow-2xs">
-            <Receipt className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+        <div className="bg-card p-3.5 sm:p-5 rounded-2xl sm:rounded-3xl border border-border shadow-xs flex items-center gap-3 sm:gap-4 text-card-foreground">
+          <div className="h-8 w-8 sm:h-10 sm:w-10 flex items-center justify-center shrink-0 bg-amber-500/10 text-amber-600 rounded-xl sm:rounded-2xl shadow-2xs">
+            <Receipt className="w-4 h-4 sm:w-5 sm:h-5" />
           </div>
           <div className="min-w-0">
-            <div className="text-lg sm:text-2xl font-bold tracking-tight text-foreground truncate">{allExpenses.length}</div>
-            <div className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-muted-foreground truncate">Expense Vouchers</div>
+            <div className="text-xl sm:text-3xl font-bold tracking-tight text-foreground truncate">{allExpenses.length}</div>
+            <div className="text-xs sm:text-sm font-semibold uppercase tracking-wider text-muted-foreground truncate">Expense Vouchers</div>
           </div>
         </div>
 
-        <div className="bg-card p-3 sm:p-5 rounded-2xl sm:rounded-3xl border border-border shadow-xs flex items-center gap-3 sm:gap-4 text-card-foreground">
-          <div className="h-7 w-7 sm:h-9 sm:w-9 flex items-center justify-center shrink-0 bg-blue-500/10 text-blue-600 rounded-xl sm:rounded-2xl shadow-2xs">
-            <Tag className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+        <div className="bg-card p-3.5 sm:p-5 rounded-2xl sm:rounded-3xl border border-border shadow-xs flex items-center gap-3 sm:gap-4 text-card-foreground">
+          <div className="h-8 w-8 sm:h-10 sm:w-10 flex items-center justify-center shrink-0 bg-blue-500/10 text-blue-600 rounded-xl sm:rounded-2xl shadow-2xs">
+            <Tag className="w-4 h-4 sm:w-5 sm:h-5" />
           </div>
           <div className="min-w-0">
-            <div className="text-lg sm:text-2xl font-bold tracking-tight text-foreground truncate">
+            <div className="text-xl sm:text-3xl font-bold tracking-tight text-foreground truncate">
               {Object.keys(categoryMap).length}
             </div>
-            <div className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-muted-foreground truncate">Categories</div>
+            <div className="text-xs sm:text-sm font-semibold uppercase tracking-wider text-muted-foreground truncate">Categories</div>
           </div>
         </div>
       </div>
@@ -134,12 +134,12 @@ export default async function ExpensesPage({ params, searchParams }: ExpensesPag
       {/* Category Distribution Pills */}
       {Object.keys(categoryMap).length > 0 && (
         <div className="bg-card p-4 rounded-2xl border border-border shadow-xs">
-          <div className="text-xs font-bold text-foreground mb-2">Category Breakdown</div>
+          <div className="text-sm font-bold text-foreground mb-2">Category Breakdown</div>
           <div className="flex flex-wrap gap-2">
             {Object.entries(categoryMap).map(([cat, val]) => (
               <div
                 key={cat}
-                className="flex items-center gap-2 px-3 py-1.5 bg-muted/40 rounded-xl border border-border text-xs"
+                className="flex items-center gap-2 px-3 py-1.5 bg-muted/40 rounded-xl border border-border text-sm"
               >
                 <span className="font-semibold text-foreground capitalize">{cat}:</span>
                 <span className="font-bold text-rose-500">₹{val.toLocaleString()}</span>
@@ -152,13 +152,13 @@ export default async function ExpensesPage({ params, searchParams }: ExpensesPag
       {/* Expense Ledger Table */}
       <div className="bg-card rounded-2xl border border-border shadow-xs overflow-hidden">
         <div className="p-4 border-b border-border flex items-center justify-between">
-          <div className="text-sm font-bold text-card-foreground">Expense Ledger</div>
-          <div className="text-xs text-muted-foreground font-medium">{allExpenses.length} records</div>
+          <div className="text-base font-bold text-card-foreground">Expense Ledger</div>
+          <div className="text-sm text-muted-foreground font-medium">{allExpenses.length} records</div>
         </div>
 
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs">
-            <thead className="bg-muted/40 text-muted-foreground font-semibold border-b border-border">
+          <table className="w-full text-left text-sm">
+            <thead className="bg-muted/40 text-muted-foreground font-bold uppercase tracking-wider text-xs border-b border-border">
               <tr>
                 <th className="p-3.5 pl-4">Date</th>
                 <th className="p-3.5">Category</th>
@@ -183,7 +183,7 @@ export default async function ExpensesPage({ params, searchParams }: ExpensesPag
                       {expense.expense_date}
                     </td>
                     <td className="p-3.5">
-                      <span className="px-2.5 py-1 bg-rose-500/10 text-rose-500 border border-rose-500/20 rounded-full font-bold text-[11px] capitalize tracking-wide">
+                      <span className="px-2.5 py-1 bg-rose-500/10 text-rose-500 border border-rose-500/20 rounded-full font-bold text-xs capitalize tracking-wide">
                         {expense.category}
                       </span>
                     </td>
@@ -196,7 +196,7 @@ export default async function ExpensesPage({ params, searchParams }: ExpensesPag
                     <td className="p-3.5 max-w-xs truncate text-muted-foreground">
                       {expense.description || "—"}
                     </td>
-                    <td className="p-3.5 text-right font-black text-foreground whitespace-nowrap">
+                    <td className="p-3.5 text-right font-black text-foreground whitespace-nowrap text-base">
                       ₹{Number(expense.amount).toFixed(2)}
                     </td>
                     <td className="p-3.5 pr-4 text-right">

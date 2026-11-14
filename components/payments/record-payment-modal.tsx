@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, startTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Plus, X, CreditCard, Loader2, MessageSquare, CheckCircle2 } from "lucide-react";
 import { recordPaymentAction } from "@/lib/actions/payments";
@@ -24,11 +24,6 @@ export function RecordPaymentModal({ gymId, branches, members }: RecordPaymentMo
   const [paymentMethod, setPaymentMethod] = useState<string>("cash");
   const [paymentDate, setPaymentDate] = useState<string>(getTodayIST());
   const [notes, setNotes] = useState<string>("");
-  const [idempotencyKey, setIdempotencyKey] = useState<string>(() =>
-    typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
-      ? crypto.randomUUID()
-      : `pay_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`
-  );
 
   const selectedMember = members.find((m) => m.id === memberId);
   const branchId = selectedMember?.branchId || branches[0]?.id || "";
@@ -61,24 +56,22 @@ export function RecordPaymentModal({ gymId, branches, members }: RecordPaymentMo
         paymentDate,
         notes: notes || null,
         paymentStatus: "paid",
-        idempotencyKey,
       });
 
       if (!res.success) {
         setError(res.error || "Failed to record payment");
       } else {
-        router.refresh();
         if (res.receiptUrl) {
           setWaReceiptUrl(res.receiptUrl);
         } else {
           setIsOpen(false);
           setAmount("");
           setNotes("");
-          setIdempotencyKey(
-            typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
-              ? crypto.randomUUID()
-              : `pay_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`
-          );
+          setTimeout(() => {
+            startTransition(() => {
+              router.refresh();
+            });
+          }, 150);
         }
       }
     } catch (err: unknown) {
@@ -93,40 +86,39 @@ export function RecordPaymentModal({ gymId, branches, members }: RecordPaymentMo
     setWaReceiptUrl(null);
     setAmount("");
     setNotes("");
-    setIdempotencyKey(
-      typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
-        ? crypto.randomUUID()
-        : `pay_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`
-    );
-    router.refresh();
+    setTimeout(() => {
+      startTransition(() => {
+        router.refresh();
+      });
+    }, 150);
   }
 
   return (
     <>
       <button
         onClick={() => setIsOpen(true)}
-        className="h-10 sm:h-11 flex items-center justify-center gap-2 px-4 bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl text-xs sm:text-sm font-bold shadow-xs transition-all active:scale-[0.98] w-full sm:w-auto"
+        className="h-10 sm:h-11 flex items-center justify-center gap-2 px-4 bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl text-sm font-bold shadow-xs transition-all active:scale-[0.98] w-full sm:w-auto"
       >
         <Plus className="w-4 h-4" />
         Record Payment
       </button>
 
       {isOpen && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-card text-card-foreground rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-border animate-in fade-in zoom-in-95 duration-150">
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
+          <div className="bg-card text-card-foreground rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-border animate-in fade-in zoom-in-95 duration-150 my-auto">
             <div className="flex items-center justify-between pb-4 border-b border-border">
               <div className="flex items-center gap-3">
                 <div className="p-2.5 bg-primary/10 text-primary rounded-xl">
                   <CreditCard className="w-5 h-5" />
                 </div>
                 <div>
-                  <h3 className="text-base font-bold text-card-foreground">Record Member Payment</h3>
-                  <p className="text-xs text-muted-foreground">Collect fees and generate instant receipt</p>
+                  <h3 className="text-lg font-bold text-card-foreground">Record Member Payment</h3>
+                  <p className="text-sm text-muted-foreground">Collect fees and generate instant receipt</p>
                 </div>
               </div>
               <button
                 onClick={handleClose}
-                className="p-2 rounded-xl text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                className="p-2 rounded-xl text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -138,8 +130,8 @@ export function RecordPaymentModal({ gymId, branches, members }: RecordPaymentMo
                   <CheckCircle2 className="w-8 h-8" />
                 </div>
                 <div>
-                  <h4 className="text-base font-bold text-card-foreground">Payment Recorded Successfully!</h4>
-                  <p className="text-xs text-muted-foreground mt-1">
+                  <h4 className="text-lg font-bold text-card-foreground">Payment Recorded Successfully!</h4>
+                  <p className="text-sm text-muted-foreground mt-1">
                     Send the official digital receipt directly to {selectedMember?.fullName}&apos;s WhatsApp
                   </p>
                 </div>
@@ -148,14 +140,14 @@ export function RecordPaymentModal({ gymId, branches, members }: RecordPaymentMo
                     href={waReceiptUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="h-11 flex items-center justify-center gap-2 w-full px-4 bg-[#25D366] hover:bg-[#20bd5a] text-white rounded-xl text-xs font-bold transition-all shadow-xs"
+                    className="h-11 flex items-center justify-center gap-2 w-full px-4 bg-[#25D366] hover:bg-[#20bd5a] text-white rounded-xl text-sm font-bold transition-all shadow-xs cursor-pointer"
                   >
                     <MessageSquare className="w-4 h-4" />
                     Send Receipt via WhatsApp
                   </a>
                   <button
                     onClick={handleClose}
-                    className="h-10 w-full text-xs font-semibold text-muted-foreground hover:text-foreground"
+                    className="h-10 w-full text-sm font-semibold text-muted-foreground hover:text-foreground cursor-pointer"
                   >
                     Done & Close
                   </button>
@@ -164,24 +156,24 @@ export function RecordPaymentModal({ gymId, branches, members }: RecordPaymentMo
             ) : (
               <form onSubmit={handleSubmit} className="mt-5 space-y-4">
                 {error && (
-                  <div className="p-3 bg-destructive/10 border border-destructive/20 text-destructive rounded-xl text-xs font-medium">
+                  <div className="p-3 bg-destructive/10 border border-destructive/20 text-destructive rounded-xl text-sm font-medium">
                     {error}
                   </div>
                 )}
 
                 <div>
-                  <label className="block text-xs font-semibold text-foreground mb-1.5">
-                    Select Member
+                  <label className="block text-sm font-semibold text-foreground mb-1.5">
+                    Select Member *
                   </label>
                   {members.length === 0 ? (
-                    <div className="text-xs text-amber-500 bg-amber-500/10 p-3 rounded-xl border border-amber-500/20 font-medium">
+                    <div className="text-sm text-amber-500 bg-amber-500/10 p-3 rounded-xl border border-amber-500/20 font-medium">
                       No members enrolled yet. Please add a member first.
                     </div>
                   ) : (
                     <select
                       value={memberId}
                       onChange={(e) => setMemberId(e.target.value)}
-                      className="w-full h-11 px-3.5 bg-background border border-border rounded-xl text-sm text-foreground focus:outline-hidden focus:ring-2 focus:ring-primary/30 transition-all font-medium"
+                      className="w-full h-11 px-3.5 bg-background border border-border rounded-xl text-sm text-foreground focus:outline-hidden focus:ring-2 focus:ring-primary/30 transition-all font-medium cursor-pointer"
                     >
                       {members.map((m) => (
                         <option key={m.id} value={m.id}>
@@ -192,10 +184,11 @@ export function RecordPaymentModal({ gymId, branches, members }: RecordPaymentMo
                   )}
                 </div>
 
-                <div className="grid grid-cols-2 gap-3">
+                {/* Amount and Date with full mobile width to prevent truncation */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                   <div>
-                    <label className="block text-xs font-semibold text-foreground mb-1.5">
-                      Amount Collected (₹)
+                    <label className="block text-sm font-semibold text-foreground mb-1.5">
+                      Amount Collected (₹) *
                     </label>
                     <input
                       type="number"
@@ -211,43 +204,40 @@ export function RecordPaymentModal({ gymId, branches, members }: RecordPaymentMo
                   </div>
 
                   <div>
-                    <label className="block text-xs font-semibold text-foreground mb-1.5">
-                      Payment Date
+                    <label className="block text-sm font-semibold text-foreground mb-1.5">
+                      Payment Date *
                     </label>
                     <input
                       type="date"
                       required
                       value={paymentDate}
                       onChange={(e) => setPaymentDate(e.target.value)}
-                      className="w-full h-12 px-3.5 bg-background border border-border rounded-xl text-sm text-foreground focus:outline-hidden focus:ring-2 focus:ring-primary/30 transition-all font-medium"
+                      className="w-full h-12 px-3.5 bg-background border border-border rounded-xl text-sm sm:text-base text-foreground focus:outline-hidden focus:ring-2 focus:ring-primary/30 transition-all font-medium"
                     />
                   </div>
                 </div>
 
+                {/* Clean Payment Method Dropdown */}
                 <div>
-                  <label className="block text-xs font-semibold text-foreground mb-1.5">
-                    Payment Method
+                  <label className="block text-sm font-semibold text-foreground mb-1.5">
+                    Payment Method *
                   </label>
-                  <div className="grid grid-cols-3 gap-2">
-                    {["cash", "upi", "card", "bank_transfer", "cheque", "other"].map((method) => (
-                      <button
-                        key={method}
-                        type="button"
-                        onClick={() => setPaymentMethod(method)}
-                        className={`h-10 px-3 text-xs font-bold rounded-xl border capitalize transition-all ${
-                          paymentMethod === method
-                            ? "bg-primary/10 border-primary text-primary shadow-xs ring-1 ring-primary/20"
-                            : "bg-muted/40 border-border text-muted-foreground hover:bg-muted hover:text-foreground"
-                        }`}
-                      >
-                        {method.replace("_", " ")}
-                      </button>
-                    ))}
-                  </div>
+                  <select
+                    value={paymentMethod}
+                    onChange={(e) => setPaymentMethod(e.target.value)}
+                    className="w-full h-12 px-3.5 bg-background border border-border rounded-xl text-sm sm:text-base text-foreground focus:outline-hidden focus:ring-2 focus:ring-primary/30 font-medium transition-all cursor-pointer capitalize"
+                  >
+                    <option value="cash">Cash</option>
+                    <option value="upi">UPI (GPay / PhonePe / Paytm)</option>
+                    <option value="card">Card (Debit / Credit / POS)</option>
+                    <option value="bank_transfer">Bank Transfer (IMPS / NEFT)</option>
+                    <option value="cheque">Cheque</option>
+                    <option value="other">Other</option>
+                  </select>
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-foreground mb-1.5">
+                  <label className="block text-sm font-semibold text-foreground mb-1.5">
                     Notes / Remarks (Optional)
                   </label>
                   <input
@@ -263,14 +253,14 @@ export function RecordPaymentModal({ gymId, branches, members }: RecordPaymentMo
                   <button
                     type="button"
                     onClick={handleClose}
-                    className="h-11 px-4 text-xs font-semibold text-muted-foreground hover:text-foreground hover:bg-muted rounded-xl transition-colors"
+                    className="h-11 px-4 text-sm font-semibold text-muted-foreground hover:text-foreground hover:bg-muted rounded-xl transition-colors cursor-pointer"
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
                     disabled={loading || members.length === 0}
-                    className="h-11 flex items-center gap-2 px-5 bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-bold rounded-xl shadow-xs transition-all disabled:opacity-50 active:scale-[0.98]"
+                    className="h-11 flex items-center gap-2 px-5 bg-primary hover:bg-primary/90 text-primary-foreground text-sm font-bold rounded-xl shadow-xs transition-all disabled:opacity-50 active:scale-[0.98] cursor-pointer"
                   >
                     {loading && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
                     Confirm & Record Payment

@@ -32,13 +32,13 @@ export function ExpiringSoonAlerts({
             <div className="p-2 rounded-xl bg-emerald-500/10 text-emerald-600">
               <Clock className="w-4 h-4" />
             </div>
-            <h2 className="text-sm font-bold text-foreground">Expiring Memberships (Next 7 Days)</h2>
+            <h2 className="text-base font-bold text-foreground">Expiring Memberships (Next 7 Days)</h2>
           </div>
-          <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 text-[11px] font-bold border border-emerald-500/20">
+          <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 text-xs font-bold border border-emerald-500/20">
             0 Renewals Due
           </span>
         </div>
-        <p className="text-xs text-muted-foreground mt-1">
+        <p className="text-sm text-muted-foreground mt-1">
           No subscriptions are expiring in the next 7 days. Member retention is steady! 🎉
         </p>
       </div>
@@ -53,10 +53,10 @@ export function ExpiringSoonAlerts({
             <AlertTriangle className="w-5 h-5" />
           </div>
           <div>
-            <h2 className="text-sm font-bold text-foreground">
+            <h2 className="text-base font-bold text-foreground">
               Expiring Soon &bull; Action Required
             </h2>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-sm text-muted-foreground">
               Send instant WhatsApp reminders before contracts lapse
             </p>
           </div>
@@ -85,15 +85,15 @@ export function ExpiringSoonAlerts({
               className="py-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-muted/40 rounded-xl px-2.5 transition-colors"
             >
               <div className="flex items-center gap-3.5">
-                <div className="w-9 h-9 rounded-full bg-amber-500/10 text-amber-600 font-bold flex items-center justify-center text-xs border border-amber-500/20 shrink-0">
+                <div className="w-10 h-10 rounded-full bg-amber-500/10 text-amber-600 font-bold flex items-center justify-center text-sm border border-amber-500/20 shrink-0">
                   {m.fullName.charAt(0).toUpperCase()}
                 </div>
                 <div>
                   <div className="flex items-center gap-2">
-                    <span className="text-xs font-bold text-foreground">{m.fullName}</span>
-                    <span className="text-[10px] text-muted-foreground font-medium">({m.branchName})</span>
+                    <span className="text-sm font-bold text-foreground">{m.fullName}</span>
+                    <span className="text-xs text-muted-foreground font-medium">({m.branchName})</span>
                   </div>
-                  <div className="text-[11px] text-muted-foreground flex items-center gap-2 mt-0.5">
+                  <div className="text-xs text-muted-foreground flex items-center gap-2 mt-0.5">
                     <span>{m.phone}</span>
                     <span>•</span>
                     <span className="font-semibold text-amber-600 dark:text-amber-400">

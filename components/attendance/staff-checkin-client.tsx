@@ -152,7 +152,7 @@ export function StaffCheckInClient({
       {/* Top Feedback Banner */}
       {feedback && (
         <div
-          className={`p-4 rounded-2xl text-xs font-bold flex items-center justify-between animate-in fade-in ${
+          className={`p-4 rounded-2xl text-sm font-bold flex items-center justify-between animate-in fade-in ${
             feedback.type === "success"
               ? "bg-emerald-500/10 border border-emerald-500/20 text-emerald-600"
               : "bg-rose-500/10 border border-rose-500/20 text-rose-600"
@@ -170,45 +170,45 @@ export function StaffCheckInClient({
 
       {/* KPI Counters Header */}
       <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4">
-        <div className="bg-card p-3 sm:p-5 rounded-2xl sm:rounded-3xl border border-border shadow-xs flex items-center gap-3 sm:gap-4 text-card-foreground">
-          <div className="h-7 w-7 sm:h-9 sm:w-9 flex items-center justify-center shrink-0 rounded-xl sm:rounded-2xl bg-emerald-500/10 text-emerald-600 shadow-2xs">
-            <CheckCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+        <div className="bg-card p-3.5 sm:p-5 rounded-2xl sm:rounded-3xl border border-border shadow-xs flex items-center gap-3 sm:gap-4 text-card-foreground">
+          <div className="h-8 w-8 sm:h-10 sm:w-10 flex items-center justify-center shrink-0 rounded-xl sm:rounded-2xl bg-emerald-500/10 text-emerald-600 shadow-2xs">
+            <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5" />
           </div>
           <div className="min-w-0">
-            <div className="text-lg sm:text-2xl font-bold tracking-tight text-emerald-600 truncate">{count}</div>
-            <div className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-muted-foreground truncate">Checked-In Today</div>
+            <div className="text-xl sm:text-3xl font-bold tracking-tight text-emerald-600 truncate">{count}</div>
+            <div className="text-xs sm:text-sm font-semibold uppercase tracking-wider text-muted-foreground truncate">Checked-In Today</div>
           </div>
         </div>
 
-        <div className="bg-card p-3 sm:p-5 rounded-2xl sm:rounded-3xl border border-border shadow-xs flex items-center gap-3 sm:gap-4 text-card-foreground">
-          <div className="h-7 w-7 sm:h-9 sm:w-9 flex items-center justify-center shrink-0 rounded-xl sm:rounded-2xl bg-primary/10 text-primary shadow-2xs">
-            <Clock className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+        <div className="bg-card p-3.5 sm:p-5 rounded-2xl sm:rounded-3xl border border-border shadow-xs flex items-center gap-3 sm:gap-4 text-card-foreground">
+          <div className="h-8 w-8 sm:h-10 sm:w-10 flex items-center justify-center shrink-0 rounded-xl sm:rounded-2xl bg-primary/10 text-primary shadow-2xs">
+            <Clock className="w-4 h-4 sm:w-5 sm:h-5" />
           </div>
           <div className="min-w-0">
-            <div className="text-lg sm:text-2xl font-bold tracking-tight text-foreground truncate">{waitingCount}</div>
-            <div className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-muted-foreground truncate">Waiting Check-In</div>
+            <div className="text-xl sm:text-3xl font-bold tracking-tight text-foreground truncate">{waitingCount}</div>
+            <div className="text-xs sm:text-sm font-semibold uppercase tracking-wider text-muted-foreground truncate">Waiting Check-In</div>
           </div>
         </div>
 
-        <div className="bg-card p-3 sm:p-5 rounded-2xl sm:rounded-3xl border border-border shadow-xs flex items-center gap-3 sm:gap-4 text-card-foreground">
-          <div className="h-7 w-7 sm:h-9 sm:w-9 flex items-center justify-center shrink-0 rounded-xl sm:rounded-2xl bg-muted text-muted-foreground shadow-2xs">
-            <Users className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+        <div className="bg-card p-3.5 sm:p-5 rounded-2xl sm:rounded-3xl border border-border shadow-xs flex items-center gap-3 sm:gap-4 text-card-foreground">
+          <div className="h-8 w-8 sm:h-10 sm:w-10 flex items-center justify-center shrink-0 rounded-xl sm:rounded-2xl bg-muted text-muted-foreground shadow-2xs">
+            <Users className="w-4 h-4 sm:w-5 sm:h-5" />
           </div>
           <div className="min-w-0">
-            <div className="text-lg sm:text-2xl font-bold tracking-tight text-foreground truncate">{members.length}</div>
-            <div className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-muted-foreground truncate">Total Enrolled</div>
+            <div className="text-xl sm:text-3xl font-bold tracking-tight text-foreground truncate">{members.length}</div>
+            <div className="text-xs sm:text-sm font-semibold uppercase tracking-wider text-muted-foreground truncate">Total Enrolled</div>
           </div>
         </div>
 
-        <div className="bg-card p-3 sm:p-5 rounded-2xl sm:rounded-3xl border border-border shadow-xs flex items-center gap-3 sm:gap-4 text-card-foreground">
-          <div className="h-7 w-7 sm:h-9 sm:w-9 flex items-center justify-center shrink-0 rounded-xl sm:rounded-2xl bg-blue-500/10 text-blue-600 shadow-2xs">
-            <UserCheck className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+        <div className="bg-card p-3.5 sm:p-5 rounded-2xl sm:rounded-3xl border border-border shadow-xs flex items-center gap-3 sm:gap-4 text-card-foreground">
+          <div className="h-8 w-8 sm:h-10 sm:w-10 flex items-center justify-center shrink-0 rounded-xl sm:rounded-2xl bg-blue-500/10 text-blue-600 shadow-2xs">
+            <UserCheck className="w-4 h-4 sm:w-5 sm:h-5" />
           </div>
           <div className="min-w-0">
-            <div className="text-lg sm:text-2xl font-bold tracking-tight text-foreground truncate">
+            <div className="text-xl sm:text-3xl font-bold tracking-tight text-foreground truncate">
               {members.filter((m) => m.hasActiveMembership && !m.isExpired).length}
             </div>
-            <div className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-muted-foreground truncate">Active Plans</div>
+            <div className="text-xs sm:text-sm font-semibold uppercase tracking-wider text-muted-foreground truncate">Active Plans</div>
           </div>
         </div>
       </div>
@@ -230,7 +230,7 @@ export function StaffCheckInClient({
 
           {/* Filter Pills */}
           <div className="flex items-center gap-2 flex-wrap">
-            <div className="flex items-center bg-muted/60 p-1 rounded-2xl text-xs border border-border/60">
+            <div className="flex items-center bg-muted/60 p-1 rounded-2xl text-sm border border-border/60">
               <button
                 onClick={() => setStatusFilter("all")}
                 className={`px-3 py-1.5 rounded-xl font-bold transition-all cursor-pointer ${
@@ -277,7 +277,7 @@ export function StaffCheckInClient({
               <select
                 value={selectedBranchId}
                 onChange={(e) => setSelectedBranchId(e.target.value)}
-                className="h-11 px-3 bg-muted/40 border border-input rounded-xl text-xs text-foreground font-semibold focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary/40 cursor-pointer"
+                className="h-11 px-3 bg-muted/40 border border-input rounded-xl text-sm text-foreground font-semibold focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary/40 cursor-pointer"
               >
                 <option value="all">All Branches</option>
                 {branches.map((b) => (
@@ -293,7 +293,7 @@ export function StaffCheckInClient({
         {/* Members Check-in Feed */}
         <div className="divide-y divide-border">
           {filtered.length === 0 ? (
-            <div className="p-12 text-center text-xs text-muted-foreground">
+            <div className="p-12 text-center text-sm text-muted-foreground">
               No matching members found for the current query.
             </div>
           ) : (
@@ -304,7 +304,7 @@ export function StaffCheckInClient({
               >
                 <div className="flex items-center gap-3.5">
                   <div
-                    className={`w-11 h-11 rounded-2xl flex items-center justify-center font-bold text-xs shadow-2xs ${
+                    className={`w-11 h-11 rounded-2xl flex items-center justify-center font-bold text-sm shadow-2xs ${
                       member.checkedInToday
                         ? "bg-emerald-500/10 text-emerald-600 border border-emerald-500/20"
                         : "bg-primary/10 text-primary border border-primary/20"
@@ -320,35 +320,35 @@ export function StaffCheckInClient({
                     <div className="flex items-center gap-2">
                       <Link
                         href={`/app/${gymId}/members/${member.id}`}
-                        className="text-sm font-bold text-foreground hover:text-primary transition-colors flex items-center gap-1 group"
+                        className="text-base font-bold text-foreground hover:text-primary transition-colors flex items-center gap-1 group"
                       >
                         {member.fullName}
                         <ExternalLink className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 transition-opacity text-primary" />
                       </Link>
-                      <span className="text-[11px] text-muted-foreground">
+                      <span className="text-xs text-muted-foreground">
                         • {member.branchName}
                       </span>
                     </div>
 
-                    <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1 flex-wrap">
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1 flex-wrap">
                       <span className="font-semibold text-foreground/80">{member.phone}</span>
                       <span>•</span>
                       {member.hasActiveMembership ? (
                         member.isExpired ? (
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-rose-500/10 text-rose-600 font-bold text-[11px] border border-rose-500/20">
+                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-rose-500/10 text-rose-600 font-bold text-xs border border-rose-500/20">
                             Expired ({member.planEndDate})
                           </span>
                         ) : member.daysLeft !== undefined && member.daysLeft <= 7 ? (
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-600 font-bold text-[11px] border border-amber-500/20">
+                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-amber-500/10 text-amber-600 font-bold text-xs border border-amber-500/20">
                             {member.planName} &bull; {member.daysLeft}d left
                           </span>
                         ) : (
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 font-bold text-[11px] border border-emerald-500/20">
+                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 font-bold text-xs border border-emerald-500/20">
                             {member.planName} &bull; Active
                           </span>
                         )
                       ) : (
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-muted text-muted-foreground font-bold text-[11px] border border-border">
+                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-muted text-muted-foreground font-bold text-xs border border-border">
                           No Active Plan
                         </span>
                       )}
@@ -358,7 +358,7 @@ export function StaffCheckInClient({
 
                 <div className="flex items-center gap-2">
                   {member.checkedInToday ? (
-                    <div className="flex items-center gap-1.5 h-11 px-4 bg-emerald-500/10 text-emerald-600 rounded-xl text-xs font-bold border border-emerald-500/20">
+                    <div className="flex items-center gap-1.5 h-11 px-4 bg-emerald-500/10 text-emerald-600 rounded-xl text-sm font-bold border border-emerald-500/20">
                       <CheckCircle className="w-4 h-4 text-emerald-600" />
                       <span>
                         {member.checkInTime
@@ -373,7 +373,7 @@ export function StaffCheckInClient({
                     <div className="flex items-center gap-2">
                       <Link
                         href={`/app/${gymId}/members/${member.id}`}
-                        className="flex items-center gap-1.5 h-11 px-4 bg-amber-500/15 hover:bg-amber-500/25 text-amber-700 dark:text-amber-400 border border-amber-500/30 rounded-xl text-xs font-bold transition-all shadow-2xs cursor-pointer"
+                        className="flex items-center gap-1.5 h-11 px-4 bg-amber-500/15 hover:bg-amber-500/25 text-amber-700 dark:text-amber-400 border border-amber-500/30 rounded-xl text-sm font-bold transition-all shadow-2xs cursor-pointer"
                         title="Open Member Profile to Renew Plan"
                       >
                         <RefreshCw className="w-3.5 h-3.5 text-amber-600" />
@@ -383,7 +383,7 @@ export function StaffCheckInClient({
                         type="button"
                         disabled
                         title="Membership is expired or inactive. Renewal required before check in."
-                        className="hidden md:flex items-center gap-1.5 h-11 px-4 bg-muted text-muted-foreground border border-border rounded-xl text-xs font-semibold cursor-not-allowed opacity-50"
+                        className="hidden md:flex items-center gap-1.5 h-11 px-4 bg-muted text-muted-foreground border border-border rounded-xl text-sm font-semibold cursor-not-allowed opacity-50"
                       >
                         <UserCheck className="w-4 h-4" />
                         <span>Check In</span>
@@ -393,7 +393,7 @@ export function StaffCheckInClient({
                     <button
                       onClick={() => handleCheckIn(member)}
                       disabled={loadingMemberId === member.id}
-                      className="flex items-center gap-2 h-11 px-5 bg-primary hover:opacity-95 text-primary-foreground rounded-xl text-xs font-bold shadow-md shadow-primary/20 transition-all cursor-pointer disabled:opacity-50 active:scale-[0.98]"
+                      className="flex items-center gap-2 h-11 px-5 bg-primary hover:opacity-95 text-primary-foreground rounded-xl text-sm font-bold shadow-md shadow-primary/20 transition-all cursor-pointer disabled:opacity-50 active:scale-[0.98]"
                     >
                       {loadingMemberId === member.id ? (
                         <Loader2 className="w-4 h-4 animate-spin" />

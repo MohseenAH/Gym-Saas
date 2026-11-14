@@ -156,8 +156,8 @@ export function MembersTableClient({
 
       {/* Table */}
       <div className="overflow-x-auto">
-        <table className="w-full text-left text-xs">
-          <thead className="bg-muted/40 text-muted-foreground font-bold border-b border-border uppercase tracking-wider text-[10px]">
+        <table className="w-full text-left text-sm">
+          <thead className="bg-muted/40 text-muted-foreground font-bold border-b border-border uppercase tracking-wider text-xs">
             <tr>
               <th className="p-4 pl-5">Member Name</th>
               <th className="p-4">Contact</th>
@@ -195,9 +195,9 @@ export function MembersTableClient({
                     <td className="p-4 pl-5 whitespace-nowrap">
                       <Link
                         href={`/app/${gymId}/members/${member.id}`}
-                        className="flex items-center gap-3 font-bold text-foreground hover:text-primary transition-colors"
+                        className="flex items-center gap-3 font-bold text-foreground hover:text-primary transition-colors text-base"
                       >
-                        <div className="w-9 h-9 rounded-full bg-primary/10 text-primary font-bold flex items-center justify-center text-xs border border-primary/20 shrink-0">
+                        <div className="w-9 h-9 rounded-full bg-primary/10 text-primary font-bold flex items-center justify-center text-sm border border-primary/20 shrink-0">
                           {member.fullName.charAt(0).toUpperCase()}
                         </div>
                         <div>
@@ -206,7 +206,7 @@ export function MembersTableClient({
                             <ArrowRight className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 transition-opacity text-primary" />
                           </div>
                           {member.status !== "active" && (
-                            <span className="text-[10px] text-rose-600 uppercase font-bold">
+                            <span className="text-xs text-rose-600 uppercase font-bold">
                               {member.status}
                             </span>
                           )}
@@ -215,15 +215,15 @@ export function MembersTableClient({
                     </td>
 
                     <td className="p-4 font-medium text-muted-foreground whitespace-nowrap">
-                      <div className="text-foreground font-semibold">{member.phone}</div>
+                      <div className="text-foreground font-semibold text-sm">{member.phone}</div>
                       {member.email && (
-                        <div className="text-[11px] text-muted-foreground">{member.email}</div>
+                        <div className="text-xs text-muted-foreground">{member.email}</div>
                       )}
                     </td>
 
                     <td className="p-4 whitespace-nowrap text-muted-foreground font-medium">
-                      <span className="inline-flex items-center gap-1">
-                        <Building2 className="w-3 h-3 text-muted-foreground/70" />
+                      <span className="inline-flex items-center gap-1 text-sm">
+                        <Building2 className="w-3.5 h-3.5 text-muted-foreground/70" />
                         {member.branchName}
                       </span>
                     </td>
@@ -264,16 +264,16 @@ export function MembersTableClient({
 
                     <td className="p-4 whitespace-nowrap">
                       {member.userId ? (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 bg-primary/10 text-primary rounded-full font-bold text-[11px] border border-primary/20">
+                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 bg-primary/10 text-primary rounded-full font-bold text-xs border border-primary/20">
                           <ShieldCheck className="w-3 h-3" />
                           Connected
                         </span>
                       ) : member.hasPendingInvite ? (
-                        <span className="px-2.5 py-0.5 bg-amber-500/10 text-amber-600 rounded-full font-bold text-[11px] border border-amber-500/20">
+                        <span className="px-2.5 py-0.5 bg-amber-500/10 text-amber-600 rounded-full font-bold text-xs border border-amber-500/20">
                           Invite Sent
                         </span>
                       ) : (
-                        <span className="px-2.5 py-0.5 bg-muted text-muted-foreground rounded-full font-medium text-[11px] border border-border">
+                        <span className="px-2.5 py-0.5 bg-muted text-muted-foreground rounded-full font-medium text-xs border border-border">
                           Not Claimed
                         </span>
                       )}
@@ -292,7 +292,7 @@ export function MembersTableClient({
                         </a>
                         <Link
                           href={`/app/${gymId}/members/${member.id}`}
-                          className="px-3 py-1.5 bg-primary/10 hover:bg-primary text-primary hover:text-primary-foreground rounded-xl font-bold text-xs transition-all shadow-2xs"
+                          className="px-3 py-1.5 bg-primary/10 hover:bg-primary text-primary hover:text-primary-foreground rounded-xl font-bold text-sm transition-all shadow-2xs"
                         >
                           Profile 360 &rarr;
                         </Link>
@@ -307,7 +307,7 @@ export function MembersTableClient({
       </div>
 
       {/* Footer */}
-      <div className="p-4 bg-muted/30 border-t border-border text-xs text-muted-foreground flex items-center justify-between">
+      <div className="p-4 bg-muted/30 border-t border-border text-sm text-muted-foreground flex items-center justify-between">
         <div>
           Showing <span className="font-bold text-foreground">{filteredMembers.length}</span> of <span className="font-bold text-foreground">{members.length}</span> members
         </div>

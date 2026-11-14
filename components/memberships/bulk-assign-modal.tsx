@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, startTransition } from "react";
 import { useRouter } from "next/navigation";
 import {
   Users,
@@ -88,7 +88,11 @@ export function BulkAssignModal({
     setAssignedCount(null);
     onClose();
     if (shouldRefresh) {
-      router.refresh();
+      setTimeout(() => {
+        startTransition(() => {
+          router.refresh();
+        });
+      }, 150);
     }
   }
 
@@ -128,7 +132,6 @@ export function BulkAssignModal({
         setSkippedList(res.skippedMembers || []);
         if (res.assignedCount > 0) {
           onSuccess();
-          router.refresh();
         }
       }
     } catch (err: unknown) {

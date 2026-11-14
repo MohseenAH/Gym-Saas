@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, startTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Edit2, X, Loader2, IndianRupee, Clock, Building2, ShieldCheck } from "lucide-react";
 import { updatePlanAction } from "@/lib/actions/plans";
@@ -140,7 +140,11 @@ function EditPlanForm({
 
         // Close modal immediately and refresh in background
         onClose();
-        router.refresh();
+        setTimeout(() => {
+          startTransition(() => {
+            router.refresh();
+          });
+        }, 150);
       }
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Failed to update membership plan");

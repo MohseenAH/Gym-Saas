@@ -125,10 +125,10 @@ export default async function AttendancePage({ params, searchParams }: Attendanc
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-black text-foreground tracking-tight">
+          <h1 className="text-2xl sm:text-3xl font-black text-foreground tracking-tight">
             Attendance & Front Desk Kiosk
           </h1>
-          <p className="text-xs text-muted-foreground mt-1">
+          <p className="text-sm text-muted-foreground mt-1">
             Tap to record daily member workout check-ins with automatic plan validation
           </p>
         </div>

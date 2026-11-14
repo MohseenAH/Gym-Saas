@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, startTransition } from "react";
 import { useRouter } from "next/navigation";
 import { UserPlus, X, Loader2, CheckCircle2, MessageSquare, Copy, Check, IndianRupee } from "lucide-react";
 import { quickEnrollMemberAction } from "@/lib/actions/members";
@@ -79,7 +79,6 @@ export function QuickEnrollModal({ gymId, branchId, plans }: QuickEnrollModalPro
       } else {
         setCreatedInviteUrl(res.inviteUrl || null);
         setCreatedWaUrl(res.waShareUrl || null);
-        router.refresh();
       }
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Failed to enroll member");
@@ -97,7 +96,11 @@ export function QuickEnrollModal({ gymId, branchId, plans }: QuickEnrollModalPro
     setEmail("");
     setNotes("");
     setDiscount("");
-    router.refresh();
+    setTimeout(() => {
+      startTransition(() => {
+        router.refresh();
+      });
+    }, 150);
   }
 
   function handleCopy() {

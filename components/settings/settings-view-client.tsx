@@ -210,9 +210,9 @@ export function SettingsViewClient({
             <div className="p-2.5 bg-primary/10 text-primary rounded-xl">
               <Settings className="w-5 h-5" />
             </div>
-            <h1 className="text-xl font-black text-foreground tracking-tight">Gym & System Settings</h1>
+            <h1 className="text-xl sm:text-2xl font-black text-foreground tracking-tight">Gym & System Settings</h1>
           </div>
-          <p className="text-xs text-muted-foreground mt-1">
+          <p className="text-sm text-muted-foreground mt-1">
             Configure gym business details, membership pricing, themes, receipt templates, and subscription access
           </p>
         </div>
@@ -237,7 +237,7 @@ export function SettingsViewClient({
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all ${
+              className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold whitespace-nowrap transition-all ${
                 isActive
                   ? "bg-primary text-primary-foreground shadow-xs ring-1 ring-primary/25"
                   : "text-muted-foreground hover:bg-muted hover:text-foreground"
@@ -253,14 +253,14 @@ export function SettingsViewClient({
       {/* Tab 1: Gym Profile */}
       {activeTab === "profile" && (
         <div className="bg-card p-6 rounded-3xl border border-border shadow-xs max-w-2xl">
-          <h2 className="text-sm font-bold text-card-foreground mb-1">Gym Identity & Contact</h2>
-          <p className="text-xs text-muted-foreground mb-4">
+          <h2 className="text-base font-bold text-card-foreground mb-1">Gym Identity & Contact</h2>
+          <p className="text-sm text-muted-foreground mb-4">
             This name and contact number will appear on member receipts and digital passes.
           </p>
 
           {profileMsg && (
             <div
-              className={`mb-4 p-3.5 rounded-xl text-xs font-semibold flex items-center gap-2 ${
+              className={`mb-4 p-3.5 rounded-xl text-sm font-semibold flex items-center gap-2 ${
                 profileMsg.type === "success"
                   ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20"
                   : "bg-destructive/10 text-destructive border border-destructive/20"
@@ -273,7 +273,7 @@ export function SettingsViewClient({
 
           <form onSubmit={handleProfileSubmit} className="space-y-4">
             <div>
-              <label className="block text-xs font-semibold text-foreground mb-1.5">Gym Name *</label>
+              <label className="block text-sm font-semibold text-foreground mb-1.5">Gym Name *</label>
               <input
                 type="text"
                 required
@@ -284,7 +284,7 @@ export function SettingsViewClient({
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-foreground mb-1.5">Public Phone / WhatsApp *</label>
+              <label className="block text-sm font-semibold text-foreground mb-1.5">Public Phone / WhatsApp *</label>
               <input
                 type="tel"
                 inputMode="tel"
@@ -298,7 +298,7 @@ export function SettingsViewClient({
             <button
               type="submit"
               disabled={profileLoading}
-              className="h-11 inline-flex items-center gap-2 px-5 bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-bold rounded-xl shadow-xs transition-all disabled:opacity-50 active:scale-[0.98]"
+              className="h-11 inline-flex items-center gap-2 px-5 bg-primary hover:bg-primary/90 text-primary-foreground text-sm font-bold rounded-xl shadow-xs transition-all disabled:opacity-50 active:scale-[0.98]"
             >
               {profileLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
               Save Gym Profile
@@ -312,7 +312,7 @@ export function SettingsViewClient({
         <div className="bg-card p-6 rounded-3xl border border-border shadow-xs max-w-3xl space-y-5">
           <div>
             <h2 className="text-base font-bold text-card-foreground">Workspace Theme & Aesthetic</h2>
-            <p className="text-xs text-muted-foreground mt-1">
+            <p className="text-sm text-muted-foreground mt-1">
               Select one of the 4 tailored gym color themes. Changes apply instantly across the staff application and member views.
             </p>
           </div>
@@ -346,11 +346,11 @@ export function SettingsViewClient({
                       <div className="min-w-0">
                         <div className="font-bold text-xs sm:text-sm text-foreground flex items-center gap-1 sm:gap-2 truncate">
                           <span className="truncate">{cfg.label}</span>
-                          <span className="text-[9px] sm:text-[10px] font-mono text-muted-foreground uppercase shrink-0">
+                          <span className="text-[10px] sm:text-xs font-mono text-muted-foreground uppercase shrink-0">
                             ({themeKey})
                           </span>
                         </div>
-                        <p className="text-[10px] sm:text-xs text-muted-foreground mt-0.5 line-clamp-2">{cfg.description}</p>
+                        <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{cfg.description}</p>
                       </div>
                     </div>
 
@@ -383,14 +383,14 @@ export function SettingsViewClient({
         <div className="space-y-6">
           {/* Add Branch */}
           <div className="bg-card p-6 rounded-3xl border border-border shadow-xs max-w-2xl">
-            <h2 className="text-sm font-bold text-card-foreground mb-1">Add New Branch Location</h2>
-            <p className="text-xs text-muted-foreground mb-4">
+            <h2 className="text-base font-bold text-card-foreground mb-1">Add New Branch Location</h2>
+            <p className="text-sm text-muted-foreground mb-4">
               Add multiple fitness centers or studio locations under your GymApra account.
             </p>
 
             {branchMsg && (
               <div
-                className={`mb-4 p-3.5 rounded-xl text-xs font-semibold flex items-center gap-2 ${
+                className={`mb-4 p-3.5 rounded-xl text-sm font-semibold flex items-center gap-2 ${
                   branchMsg.type === "success"
                     ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20"
                     : "bg-destructive/10 text-destructive border border-destructive/20"
@@ -404,7 +404,7 @@ export function SettingsViewClient({
             <form onSubmit={handleAddBranch} className="space-y-4">
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-semibold text-foreground mb-1.5">Branch Name *</label>
+                  <label className="block text-sm font-semibold text-foreground mb-1.5">Branch Name *</label>
                   <input
                     type="text"
                     required
@@ -415,7 +415,7 @@ export function SettingsViewClient({
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-foreground mb-1.5">City</label>
+                  <label className="block text-sm font-semibold text-foreground mb-1.5">City</label>
                   <input
                     type="text"
                     placeholder="e.g. Bengaluru"
@@ -427,7 +427,7 @@ export function SettingsViewClient({
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-foreground mb-1.5">Street Address</label>
+                <label className="block text-sm font-semibold text-foreground mb-1.5">Street Address</label>
                 <input
                   type="text"
                   placeholder="e.g. 100ft Road, 2nd Stage"
@@ -440,7 +440,7 @@ export function SettingsViewClient({
               <button
                 type="submit"
                 disabled={branchLoading}
-                className="h-11 inline-flex items-center gap-2 px-5 bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-bold rounded-xl shadow-xs transition-all disabled:opacity-50 active:scale-[0.98]"
+                className="h-11 inline-flex items-center gap-2 px-5 bg-primary hover:bg-primary/90 text-primary-foreground text-sm font-bold rounded-xl shadow-xs transition-all disabled:opacity-50 active:scale-[0.98]"
               >
                 {branchLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Plus className="w-3.5 h-3.5" />}
                 Create Branch
@@ -450,15 +450,15 @@ export function SettingsViewClient({
 
           {/* Existing Branches List */}
           <div className="bg-card rounded-3xl border border-border shadow-xs overflow-hidden max-w-2xl">
-            <div className="p-4 border-b border-border font-bold text-sm text-card-foreground">
+            <div className="p-4 border-b border-border font-bold text-base text-card-foreground">
               Active Branches ({branches.length})
             </div>
             <div className="divide-y divide-border">
               {branches.map((b) => (
                 <div key={b.id} className="p-4 flex items-center justify-between hover:bg-muted/30 transition-colors">
                   <div>
-                    <div className="font-bold text-foreground text-sm">{b.name}</div>
-                    <div className="text-xs text-muted-foreground mt-0.5">
+                    <div className="font-bold text-foreground text-base">{b.name}</div>
+                    <div className="text-sm text-muted-foreground mt-0.5">
                       {b.address || b.city || "Primary Gym Location"}
                     </div>
                   </div>
@@ -477,14 +477,14 @@ export function SettingsViewClient({
         <div className="space-y-6">
           {/* Add Plan Form */}
           <div className="bg-card p-6 rounded-3xl border border-border shadow-xs max-w-2xl">
-            <h2 className="text-sm font-bold text-card-foreground mb-1">Create Membership Tier</h2>
-            <p className="text-xs text-muted-foreground mb-4">
+            <h2 className="text-base font-bold text-card-foreground mb-1">Create Membership Tier</h2>
+            <p className="text-sm text-muted-foreground mb-4">
               Define subscription plans that reception staff can assign and renew for members.
             </p>
 
             {planMsg && (
               <div
-                className={`mb-4 p-3.5 rounded-xl text-xs font-semibold flex items-center gap-2 ${
+                className={`mb-4 p-3.5 rounded-xl text-sm font-semibold flex items-center gap-2 ${
                   planMsg.type === "success"
                     ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20"
                     : "bg-destructive/10 text-destructive border border-destructive/20"
@@ -498,7 +498,7 @@ export function SettingsViewClient({
             <form onSubmit={handleAddPlan} className="space-y-4">
               <div className="grid grid-cols-3 gap-3">
                 <div className="col-span-1">
-                  <label className="block text-xs font-semibold text-foreground mb-1.5">Plan Name *</label>
+                  <label className="block text-sm font-semibold text-foreground mb-1.5">Plan Name *</label>
                   <input
                     type="text"
                     required
@@ -509,7 +509,7 @@ export function SettingsViewClient({
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-foreground mb-1.5">Duration (Days) *</label>
+                  <label className="block text-sm font-semibold text-foreground mb-1.5">Duration (Days) *</label>
                   <input
                     type="number"
                     required
@@ -520,7 +520,7 @@ export function SettingsViewClient({
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-foreground mb-1.5">Price (₹) *</label>
+                  <label className="block text-sm font-semibold text-foreground mb-1.5">Price (₹) *</label>
                   <input
                     type="number"
                     required
@@ -537,7 +537,7 @@ export function SettingsViewClient({
               <button
                 type="submit"
                 disabled={planLoading}
-                className="h-11 inline-flex items-center gap-2 px-5 bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-bold rounded-xl shadow-xs transition-all disabled:opacity-50 active:scale-[0.98]"
+                className="h-11 inline-flex items-center gap-2 px-5 bg-primary hover:bg-primary/90 text-primary-foreground text-sm font-bold rounded-xl shadow-xs transition-all disabled:opacity-50 active:scale-[0.98]"
               >
                 {planLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Plus className="w-3.5 h-3.5" />}
                 Add Plan Tier
@@ -547,18 +547,18 @@ export function SettingsViewClient({
 
           {/* Existing Plans */}
           <div className="bg-card rounded-3xl border border-border shadow-xs overflow-hidden max-w-2xl">
-            <div className="p-4 border-b border-border font-bold text-sm text-card-foreground">
+            <div className="p-4 border-b border-border font-bold text-base text-card-foreground">
               Configured Plans ({plans.length})
             </div>
             <div className="divide-y divide-border">
               {plans.map((p) => (
                 <div key={p.id} className="p-4 flex items-center justify-between hover:bg-muted/30 transition-colors">
                   <div>
-                    <div className="font-bold text-foreground text-sm flex items-center gap-2">
+                    <div className="font-bold text-foreground text-base flex items-center gap-2">
                       <span>{p.name}</span>
-                      <span className="text-xs text-muted-foreground font-normal">({p.duration_days} days)</span>
+                      <span className="text-sm text-muted-foreground font-normal">({p.duration_days} days)</span>
                     </div>
-                    <div className="text-xs font-bold text-primary mt-0.5">
+                    <div className="text-sm font-bold text-primary mt-0.5">
                       ₹{p.price.toLocaleString("en-IN")}
                     </div>
                   </div>
@@ -582,14 +582,14 @@ export function SettingsViewClient({
       {/* Tab 5: Receipt Settings */}
       {activeTab === "receipts" && (
         <div className="bg-card p-6 rounded-3xl border border-border shadow-xs max-w-2xl space-y-4">
-          <h2 className="text-sm font-bold text-card-foreground mb-1">Computer-Generated Receipt Configuration</h2>
-          <p className="text-xs text-muted-foreground">
+          <h2 className="text-base font-bold text-card-foreground mb-1">Computer-Generated Receipt Configuration</h2>
+          <p className="text-sm text-muted-foreground">
             Receipts in GymApra are generated automatically for manual payments (Cash, UPI, Card).
           </p>
 
-          <div className="p-4 rounded-2xl bg-muted/40 border border-border text-xs space-y-2">
+          <div className="p-4 rounded-2xl bg-muted/40 border border-border text-sm space-y-2">
             <div className="font-bold text-foreground">Print & WhatsApp Receipt Format Preview:</div>
-            <div className="p-3.5 bg-card rounded-xl border border-border font-mono text-[11px] text-foreground whitespace-pre">
+            <div className="p-3.5 bg-card rounded-xl border border-border font-mono text-xs text-foreground whitespace-pre">
               {`🧾 ${initialGymName} — Official Receipt\n` +
                 `Receipt No: #A1B2C3D4\n` +
                 `Item: Membership Fee\n` +
@@ -598,7 +598,7 @@ export function SettingsViewClient({
                 `Computer-generated gym receipt • Thank you for training with us! 💪`}
             </div>
           </div>
-          <p className="text-[11px] text-muted-foreground">
+          <p className="text-xs text-muted-foreground">
             * Note: Changing your gym name or contact number in Gym Profile will apply to all newly generated and reprinted receipts automatically.
           </p>
         </div>
@@ -608,19 +608,19 @@ export function SettingsViewClient({
       {activeTab === "pilot" && (
         <div className="bg-card p-6 rounded-3xl border border-border shadow-xs max-w-2xl space-y-5">
           <div>
-            <h2 className="text-sm font-bold text-card-foreground">Subscription & 60-Day Pilot Access</h2>
-            <p className="text-xs text-muted-foreground mt-0.5">
+            <h2 className="text-base font-bold text-card-foreground">Subscription & 60-Day Pilot Access</h2>
+            <p className="text-sm text-muted-foreground mt-0.5">
               Controlled pilot access enables Indian gyms to test all features risk-free.
             </p>
           </div>
 
-          <div className="p-4 rounded-2xl bg-primary/10 border border-primary/20 text-xs flex items-center justify-between">
+          <div className="p-4 rounded-2xl bg-primary/10 border border-primary/20 text-sm flex items-center justify-between">
             <div>
-              <div className="text-[10px] font-bold text-primary uppercase">Current Tier</div>
-              <div className="text-base font-black text-foreground uppercase mt-0.5">
+              <div className="text-xs font-bold text-primary uppercase">Current Tier</div>
+              <div className="text-lg font-black text-foreground uppercase mt-0.5">
                 {account.tier} TIER
               </div>
-              <div className="text-xs text-muted-foreground mt-1">
+              <div className="text-sm text-muted-foreground mt-1">
                 {account.daysRemaining > 0
                   ? `Access is active with ${account.daysRemaining} days remaining`
                   : "Trial or pilot has expired"}
@@ -633,14 +633,14 @@ export function SettingsViewClient({
 
           {/* Pilot Code Redemption Form */}
           <div className="pt-3 border-t border-border">
-            <h3 className="text-xs font-bold text-foreground mb-1">Redeem Gym Pilot Invite Code</h3>
-            <p className="text-[11px] text-muted-foreground mb-3">
+            <h3 className="text-sm font-bold text-foreground mb-1">Redeem Gym Pilot Invite Code</h3>
+            <p className="text-xs text-muted-foreground mb-3">
               Enter your official partner pilot invite code (e.g. <span className="font-mono font-bold text-primary">PILOT60</span>) to extend your gym&apos;s trial to 60 days of full Pro access.
             </p>
 
             {pilotMsg && (
               <div
-                className={`mb-3 p-3.5 rounded-xl text-xs font-semibold flex items-center gap-2 ${
+                className={`mb-3 p-3.5 rounded-xl text-sm font-semibold flex items-center gap-2 ${
                   pilotMsg.type === "success"
                     ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20"
                     : "bg-destructive/10 text-destructive border border-destructive/20"
@@ -658,12 +658,12 @@ export function SettingsViewClient({
                 placeholder="Enter PILOT60 or coupon code"
                 value={pilotCode}
                 onChange={(e) => setPilotCode(e.target.value)}
-                className="flex-1 h-11 px-3.5 bg-background border border-border rounded-xl text-xs uppercase font-mono font-bold text-foreground focus:outline-hidden focus:ring-2 focus:ring-primary/30 transition-all"
+                className="flex-1 h-11 px-3.5 bg-background border border-border rounded-xl text-sm uppercase font-mono font-bold text-foreground focus:outline-hidden focus:ring-2 focus:ring-primary/30 transition-all"
               />
               <button
                 type="submit"
                 disabled={pilotLoading}
-                className="h-11 px-5 bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-bold rounded-xl shadow-xs transition-all disabled:opacity-50 active:scale-[0.98]"
+                className="h-11 px-5 bg-primary hover:bg-primary/90 text-primary-foreground text-sm font-bold rounded-xl shadow-xs transition-all disabled:opacity-50 active:scale-[0.98]"
               >
                 {pilotLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : "Redeem Code"}
               </button>
@@ -675,14 +675,14 @@ export function SettingsViewClient({
       {/* Tab 7: My Account */}
       {activeTab === "account" && (
         <div className="bg-card p-6 rounded-3xl border border-border shadow-xs max-w-2xl space-y-4">
-          <h2 className="text-sm font-bold text-card-foreground mb-1">My Account & Credentials</h2>
-          <div className="space-y-3 text-xs">
+          <h2 className="text-base font-bold text-card-foreground mb-1">My Account & Credentials</h2>
+          <div className="space-y-3 text-sm">
             <div className="p-3.5 bg-muted/40 rounded-2xl border border-border flex items-center justify-between">
               <div>
                 <span className="text-muted-foreground block font-medium">Signed in Email</span>
                 <span className="font-bold text-foreground">{userEmail}</span>
               </div>
-              <span className="px-2.5 py-0.5 rounded-full bg-muted text-foreground font-bold text-[11px] capitalize border border-border">
+              <span className="px-2.5 py-0.5 rounded-full bg-muted text-foreground font-bold text-xs capitalize border border-border">
                 {userRole}
               </span>
             </div>

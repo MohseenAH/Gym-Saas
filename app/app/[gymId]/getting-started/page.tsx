@@ -164,7 +164,7 @@ export default async function GettingStartedPage({
                     : `Setup Progress: ${completionPercentage}% Completed`}
                 </h2>
                 <span
-                  className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
+                  className={`px-2 py-0.5 rounded-full text-xs font-bold uppercase tracking-wider ${
                     readyForOps
                       ? "bg-emerald-500/10 text-emerald-600 border border-emerald-500/20"
                       : "bg-amber-500/10 text-amber-600 border border-amber-500/20"
@@ -173,7 +173,7 @@ export default async function GettingStartedPage({
                   {readyForOps ? "Ready" : `${completedSteps}/4 Steps`}
                 </span>
               </div>
-              <p className="text-xs text-muted-foreground mt-0.5">
+              <p className="text-sm text-muted-foreground mt-0.5">
                 {readyForOps
                   ? "All 4 foundational operations are active. You can now enroll new members, record fees, and take attendance."
                   : "Follow the checklist below to configure your plans and member roster."}
@@ -231,17 +231,17 @@ export default async function GettingStartedPage({
                 )}
               </div>
               <div>
-                <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
                   Step 1
                 </span>
-                <h3 className="text-sm sm:text-base font-bold text-foreground">
+                <h3 className="text-base sm:text-lg font-bold text-foreground">
                   Configure Membership Plans
                 </h3>
               </div>
             </div>
 
             <span
-              className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider shrink-0 ${
+              className={`px-2 py-0.5 rounded-full text-xs font-bold uppercase tracking-wider shrink-0 ${
                 isStep1Done
                   ? "bg-emerald-500/10 text-emerald-600"
                   : "bg-amber-500/10 text-amber-600"
@@ -251,18 +251,18 @@ export default async function GettingStartedPage({
             </span>
           </div>
 
-          <p className="text-xs text-muted-foreground mt-3">
+          <p className="text-sm text-muted-foreground mt-3">
             Create standard pricing tiers (e.g. Monthly, Quarterly, Annual) with duration in days and fees.
           </p>
 
           <div className="mt-4 pt-3 border-t border-border flex items-center justify-between">
-            <span className="text-xs font-semibold text-foreground flex items-center gap-1.5">
+            <span className="text-sm font-semibold text-foreground flex items-center gap-1.5">
               <IdCard className="w-3.5 h-3.5 text-muted-foreground" />
               <span>{plansCount} active plan(s)</span>
             </span>
             <Link
               href={`/app/${gymId}/memberships?tab=plans`}
-              className="text-xs font-bold text-primary hover:underline flex items-center gap-1"
+              className="text-sm font-bold text-primary hover:underline flex items-center gap-1"
             >
               <span>{isStep1Done ? "Manage Plans" : "+ Create First Plan"}</span>
               <ArrowRight className="w-3.5 h-3.5" />
@@ -294,17 +294,17 @@ export default async function GettingStartedPage({
                 )}
               </div>
               <div>
-                <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
                   Step 2
                 </span>
-                <h3 className="text-sm sm:text-base font-bold text-foreground">
+                <h3 className="text-base sm:text-lg font-bold text-foreground">
                   Build Member Roster
                 </h3>
               </div>
             </div>
 
             <span
-              className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider shrink-0 ${
+              className={`px-2 py-0.5 rounded-full text-xs font-bold uppercase tracking-wider shrink-0 ${
                 isStep2Done
                   ? "bg-emerald-500/10 text-emerald-600"
                   : "bg-amber-500/10 text-amber-600"
@@ -314,18 +314,18 @@ export default async function GettingStartedPage({
             </span>
           </div>
 
-          <p className="text-xs text-muted-foreground mt-3">
+          <p className="text-sm text-muted-foreground mt-3">
             Quick-enroll members individually or upload existing member spreadsheets using our bulk importer.
           </p>
 
           <div className="mt-4 pt-3 border-t border-border flex items-center justify-between">
-            <span className="text-xs font-semibold text-foreground flex items-center gap-1.5">
+            <span className="text-sm font-semibold text-foreground flex items-center gap-1.5">
               <Users className="w-3.5 h-3.5 text-muted-foreground" />
               <span>{membersCount} registered member(s)</span>
             </span>
             <Link
               href={`/app/${gymId}/members`}
-              className="text-xs font-bold text-primary hover:underline flex items-center gap-1"
+              className="text-sm font-bold text-primary hover:underline flex items-center gap-1"
             >
               <span>{isStep2Done ? "View Members Roster" : "Enroll / Import Members"}</span>
               <ArrowRight className="w-3.5 h-3.5" />
@@ -357,17 +357,17 @@ export default async function GettingStartedPage({
                 )}
               </div>
               <div>
-                <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
                   Step 3
                 </span>
-                <h3 className="text-sm sm:text-base font-bold text-foreground">
+                <h3 className="text-base sm:text-lg font-bold text-foreground">
                   Assign Membership Plans
                 </h3>
               </div>
             </div>
 
             <span
-              className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider shrink-0 ${
+              className={`px-2 py-0.5 rounded-full text-xs font-bold uppercase tracking-wider shrink-0 ${
                 isStep3Done
                   ? "bg-emerald-500/10 text-emerald-600"
                   : "bg-amber-500/10 text-amber-600"
@@ -377,18 +377,18 @@ export default async function GettingStartedPage({
             </span>
           </div>
 
-          <p className="text-xs text-muted-foreground mt-3">
+          <p className="text-sm text-muted-foreground mt-3">
             Bulk-assign imported members to pricing plans to generate valid digital passes and track dues.
           </p>
 
           <div className="mt-4 pt-3 border-t border-border flex items-center justify-between">
-            <span className="text-xs font-semibold text-foreground flex items-center gap-1.5">
+            <span className="text-sm font-semibold text-foreground flex items-center gap-1.5">
               <IdCard className="w-3.5 h-3.5 text-muted-foreground" />
               <span>{membershipsCount} contract(s) issued</span>
             </span>
             <Link
               href={`/app/${gymId}/memberships?tab=unassigned`}
-              className="text-xs font-bold text-primary hover:underline flex items-center gap-1"
+              className="text-sm font-bold text-primary hover:underline flex items-center gap-1"
             >
               <span>{isStep3Done ? "Manage Assignments" : "Assign Plans in Bulk"}</span>
               <ArrowRight className="w-3.5 h-3.5" />
@@ -420,17 +420,17 @@ export default async function GettingStartedPage({
                 )}
               </div>
               <div>
-                <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
                   Step 4
                 </span>
-                <h3 className="text-sm sm:text-base font-bold text-foreground">
+                <h3 className="text-base sm:text-lg font-bold text-foreground">
                   Start Front Desk & Attendance
                 </h3>
               </div>
             </div>
 
             <span
-              className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider shrink-0 ${
+              className={`px-2 py-0.5 rounded-full text-xs font-bold uppercase tracking-wider shrink-0 ${
                 isStep4Done
                   ? "bg-emerald-500/10 text-emerald-600"
                   : "bg-muted text-muted-foreground"
@@ -440,18 +440,18 @@ export default async function GettingStartedPage({
             </span>
           </div>
 
-          <p className="text-xs text-muted-foreground mt-3">
+          <p className="text-sm text-muted-foreground mt-3">
             Launch the reception attendance kiosk to record and verify daily check-ins for active members.
           </p>
 
           <div className="mt-4 pt-3 border-t border-border flex items-center justify-between">
-            <span className="text-xs font-semibold text-foreground flex items-center gap-1.5">
+            <span className="text-sm font-semibold text-foreground flex items-center gap-1.5">
               <CalendarCheck className="w-3.5 h-3.5 text-muted-foreground" />
               <span>Front desk check-in system</span>
             </span>
             <Link
               href={`/app/${gymId}/attendance`}
-              className="text-xs font-bold text-primary hover:underline flex items-center gap-1"
+              className="text-sm font-bold text-primary hover:underline flex items-center gap-1"
             >
               <span>Launch Front Desk</span>
               <ArrowRight className="w-3.5 h-3.5" />
@@ -467,18 +467,18 @@ export default async function GettingStartedPage({
             <FileSpreadsheet className="w-5 h-5" />
           </div>
           <div>
-            <h3 className="text-sm sm:text-base font-bold text-foreground">
+            <h3 className="text-base sm:text-lg font-bold text-foreground">
               Bulk Member Import Format Specifications
             </h3>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-sm text-muted-foreground">
               Easily migrate from Excel, WhatsApp contacts, or previous gym software
             </p>
           </div>
         </div>
 
         <div className="overflow-x-auto mt-4">
-          <table className="w-full text-xs text-left">
-            <thead className="bg-muted/40 text-muted-foreground font-semibold border-b border-border">
+          <table className="w-full text-sm text-left">
+            <thead className="bg-muted/40 text-muted-foreground font-bold uppercase tracking-wider text-xs border-b border-border">
               <tr>
                 <th className="p-3 pl-4">Column Header</th>
                 <th className="p-3">Required?</th>

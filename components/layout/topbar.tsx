@@ -143,7 +143,7 @@ export function Topbar({
         {/* Branch Context Selector */}
         {branches.length === 1 ? (
           // Single-branch gym: Display clear static branch badge
-          <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-muted/60 border border-border text-xs font-semibold text-foreground">
+          <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-muted/60 border border-border text-sm font-semibold text-foreground">
             <Building2 className="w-3.5 h-3.5 text-primary" />
             <span className="truncate max-w-[140px] sm:max-w-none">
               {branches[0].name}
@@ -154,7 +154,7 @@ export function Topbar({
           <div className="relative" ref={branchMenuRef}>
             <button
               onClick={() => setBranchDropdownOpen(!branchDropdownOpen)}
-              className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-muted/60 hover:bg-muted border border-border text-xs font-semibold text-foreground transition-all focus:outline-hidden focus:ring-2 focus:ring-primary/20"
+              className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-muted/60 hover:bg-muted border border-border text-sm font-semibold text-foreground transition-all focus:outline-hidden focus:ring-2 focus:ring-primary/20"
               aria-expanded={branchDropdownOpen}
               aria-haspopup="listbox"
               aria-label="Select gym branch"
@@ -177,14 +177,14 @@ export function Topbar({
                 className="absolute left-0 mt-2 w-64 bg-card rounded-xl border border-border shadow-xl p-1.5 z-50 animate-in fade-in-50 zoom-in-95 duration-150 text-card-foreground"
                 role="listbox"
               >
-                <div className="px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                <div className="px-2.5 py-1.5 text-xs font-bold uppercase tracking-wider text-muted-foreground">
                   Select Operating Branch
                 </div>
 
                 {canSelectAll && (
                   <button
                     onClick={() => handleBranchChange(null)}
-                    className={`w-full flex items-center justify-between px-2.5 py-2 rounded-lg text-xs font-medium text-left transition-colors ${
+                    className={`w-full flex items-center justify-between px-2.5 py-2 rounded-lg text-sm font-medium text-left transition-colors ${
                       isAllSelected
                         ? "bg-primary/10 text-primary font-semibold"
                         : "text-foreground hover:bg-muted"
@@ -209,7 +209,7 @@ export function Topbar({
                       <button
                         key={b.id}
                         onClick={() => handleBranchChange(b.id)}
-                        className={`w-full flex items-center justify-between px-2.5 py-2 rounded-lg text-xs font-medium text-left transition-colors ${
+                        className={`w-full flex items-center justify-between px-2.5 py-2 rounded-lg text-sm font-medium text-left transition-colors ${
                           isSelected
                             ? "bg-primary/10 text-primary font-semibold"
                             : "text-foreground hover:bg-muted"
@@ -236,7 +236,7 @@ export function Topbar({
           prefetch={true}
           onMouseEnter={() => router.prefetch(`/app/${gymId}/members`)}
           onTouchStart={() => router.prefetch(`/app/${gymId}/members`)}
-          className="hidden sm:inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-primary hover:opacity-95 text-primary-foreground font-semibold text-xs shadow-xs transition-opacity"
+          className="hidden sm:inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-primary hover:opacity-95 text-primary-foreground font-semibold text-sm shadow-xs transition-opacity"
         >
           <Plus className="w-3.5 h-3.5" /> Quick Member Add
         </Link>
@@ -250,14 +250,14 @@ export function Topbar({
             aria-haspopup="menu"
             aria-label="User account menu"
           >
-            <div className="w-8 h-8 rounded-xl bg-primary/10 text-primary font-bold text-xs flex items-center justify-center border border-primary/20 shadow-2xs">
+            <div className="w-8 h-8 rounded-xl bg-primary/10 text-primary font-bold text-sm flex items-center justify-center border border-primary/20 shadow-2xs">
               {avatarLetter}
             </div>
             <div className="hidden md:block text-left">
-              <div className="text-xs font-semibold text-foreground leading-tight">
+              <div className="text-sm font-semibold text-foreground leading-tight">
                 {userName || "Staff Member"}
               </div>
-              <div className="text-[10px] text-muted-foreground truncate max-w-[130px]">
+              <div className="text-xs text-muted-foreground truncate max-w-[130px]">
                 {userEmail}
               </div>
             </div>
@@ -276,25 +276,25 @@ export function Topbar({
               {/* User Identity Header */}
               <div className="px-3 py-2.5 bg-muted/60 rounded-xl mb-1.5 border border-border">
                 <div className="flex items-center justify-between">
-                  <div className="text-xs font-bold text-foreground truncate">
+                  <div className="text-sm font-bold text-foreground truncate">
                     {userName || "Gym Staff"}
                   </div>
-                  <span className="px-1.5 py-0.5 rounded-md text-[10px] font-bold bg-primary/15 text-primary uppercase tracking-wider">
+                  <span className="px-1.5 py-0.5 rounded-md text-xs font-bold bg-primary/15 text-primary uppercase tracking-wider">
                     {roleLabel}
                   </span>
                 </div>
-                <div className="text-[11px] text-muted-foreground truncate mt-0.5">
+                <div className="text-xs text-muted-foreground truncate mt-0.5">
                   {userEmail}
                 </div>
-                <div className="mt-2 pt-2 border-t border-border flex items-center gap-1.5 text-[10px] text-foreground/80 font-medium">
-                  <Building2 className="w-3 h-3 text-primary shrink-0" />
+                <div className="mt-2 pt-2 border-t border-border flex items-center gap-1.5 text-xs text-foreground/80 font-medium">
+                  <Building2 className="w-3.5 h-3.5 text-primary shrink-0" />
                   <span className="truncate">{gymName}</span>
                 </div>
               </div>
 
               {/* Theme Switcher Widget */}
               <div className="px-2 py-1.5 mb-1 bg-muted/30 rounded-xl border border-border/60">
-                <div className="flex items-center justify-between text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-1.5 px-1">
+                <div className="flex items-center justify-between text-xs font-bold uppercase tracking-wider text-muted-foreground mb-1.5 px-1">
                   <div className="flex items-center gap-1">
                     <Palette className="w-3 h-3 text-primary" /> Gym Theme
                   </div>
@@ -310,7 +310,7 @@ export function Topbar({
                         type="button"
                         onClick={() => changeTheme(t)}
                         title={cfg.label}
-                        className={`py-1.5 px-1 rounded-lg text-[10px] font-semibold flex flex-col items-center gap-1 transition-all border ${
+                        className={`py-1.5 px-1 rounded-lg text-xs font-semibold flex flex-col items-center gap-1 transition-all border ${
                           isCurrent
                             ? "border-primary bg-primary/10 text-primary shadow-2xs"
                             : "border-border hover:bg-muted text-muted-foreground"
@@ -337,7 +337,7 @@ export function Topbar({
                   onMouseEnter={() => router.prefetch(`/app/${gymId}/settings`)}
                   onTouchStart={() => router.prefetch(`/app/${gymId}/settings`)}
                   onClick={() => setMenuOpen(false)}
-                  className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-medium text-foreground hover:bg-muted transition-colors"
+                  className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm font-medium text-foreground hover:bg-muted transition-colors"
                   role="menuitem"
                 >
                   <Settings className="w-4 h-4 text-muted-foreground" />
@@ -350,7 +350,7 @@ export function Topbar({
                   onMouseEnter={() => router.prefetch("/select-workspace")}
                   onTouchStart={() => router.prefetch("/select-workspace")}
                   onClick={() => setMenuOpen(false)}
-                  className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-medium text-foreground hover:bg-muted transition-colors"
+                  className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm font-medium text-foreground hover:bg-muted transition-colors"
                   role="menuitem"
                 >
                   <ArrowLeftRight className="w-4 h-4 text-muted-foreground" />
@@ -364,7 +364,7 @@ export function Topbar({
               <form action={logoutAction}>
                 <button
                   type="submit"
-                  className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-medium text-rose-600 hover:bg-rose-500/10 transition-colors"
+                  className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm font-medium text-rose-600 hover:bg-rose-500/10 transition-colors"
                   role="menuitem"
                 >
                   <LogOut className="w-4 h-4 text-rose-500" />

@@ -93,7 +93,29 @@ export async function recordPaymentAction(input: RecordPaymentInput) {
       }
     }
 
-    // 3. Database-enforced atomic insert with idempotency key
+    // 3. Duplicate click protection (within 10 seconds for same gym, member, amount, and payment_date)
+    const tenSecondsAgo = new Date(Date.now() - 10 * 1000).toISOString();
+    const { data: recentDuplicate } = await supabase
+      .from("payments")
+      .select("id")
+      .eq("gym_id", context.gymId)
+      .eq("member_id", validated.memberId)
+      .eq("amount", validated.amount)
+      .eq("payment_date", validated.paymentDate)
+      .gte("created_at", tenSecondsAgo)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (recentDuplicate) {
+      return {
+        success: true,
+        paymentId: recentDuplicate.id,
+        isDuplicate: true,
+      };
+    }
+
+    // 4. Atomic insert without non-existent schema columns
     const { data: payment, error } = await supabase
       .from("payments")
       .insert({
@@ -107,35 +129,11 @@ export async function recordPaymentAction(input: RecordPaymentInput) {
         payment_date: validated.paymentDate,
         notes: validated.notes || null,
         created_by: context.userId,
-        idempotency_key: validated.idempotencyKey || null,
       })
       .select("id")
       .single();
 
     if (error) {
-      // Handle unique constraint conflict on (gym_id, idempotency_key)
-      if (
-        (error.code === "23505" ||
-          error.message?.includes("idempotency") ||
-          error.message?.includes("duplicate key")) &&
-        validated.idempotencyKey
-      ) {
-        const { data: existingPayment } = await supabase
-          .from("payments")
-          .select("id")
-          .eq("gym_id", context.gymId)
-          .eq("idempotency_key", validated.idempotencyKey)
-          .maybeSingle();
-
-        if (existingPayment) {
-          return {
-            success: true,
-            paymentId: existingPayment.id,
-            isDuplicate: true,
-          };
-        }
-      }
-
       return { success: false, error: `Failed to record payment: ${error.message}` };
     }
 
