@@ -1,8 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import {
-  bulkAssignMembershipsSchema,
-  bulkAssignMembershipsAction,
-} from "@/lib/actions/memberships";
+import { bulkAssignMembershipsSchema } from "@/lib/validations/memberships";
+import { bulkAssignMembershipsAction } from "@/lib/actions/memberships";
 import { updateMemberAction } from "@/lib/actions/members";
 import { normalizeIndianPhone, calculateMembershipEndDate } from "@/lib/utils";
 

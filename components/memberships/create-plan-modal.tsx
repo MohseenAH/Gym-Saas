@@ -3,7 +3,6 @@
 import { useState, useRef, startTransition } from "react";
 import { useRouter } from "next/navigation";
 import { PlusCircle, X, Loader2, IndianRupee, Clock, Building2 } from "lucide-react";
-import { createPlanAction } from "@/lib/actions/plans";
 
 interface CreatePlanModalProps {
   gymId: string;
@@ -93,17 +92,24 @@ export function CreatePlanModal({
 
     setLoading(true);
 
-    let res;
+    const payload = {
+      gymId,
+      branchId,
+      name: name.trim(),
+      description: description.trim() || null,
+      durationDays,
+      price: numPrice,
+      isActive: Boolean(isActive),
+    };
+
+    let res: { success: boolean; planId?: string; error?: string };
     try {
-      res = await createPlanAction({
-        gymId,
-        branchId,
-        name: name.trim(),
-        description: description.trim() || undefined,
-        durationDays,
-        price: numPrice,
-        isActive,
+      const response = await fetch("/api/plans", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
       });
+      res = await response.json();
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Failed to create membership plan");
       setLoading(false);

@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { computeMembershipStatus } from "@/lib/actions/memberships";
-import { createPlanSchema, updatePlanSchema } from "@/lib/actions/plans";
-import { assignMembershipSchema } from "@/lib/actions/memberships";
+import { createPlanSchema, updatePlanSchema } from "@/lib/validations/plans";
+import { assignMembershipSchema } from "@/lib/validations/memberships";
 import { hasCapability } from "@/lib/auth/capabilities";
 import { getISTDateString, getTodayIST } from "@/lib/utils";
 

@@ -205,17 +205,19 @@ export async function quickEnrollMemberAction(input: QuickEnrollMemberInput) {
 
     const waShareUrl = `https://wa.me/${waPhone}?text=${encodeURIComponent(waMessage)}`;
 
-    return {
-      success: true,
-      memberId: member.id,
-      membershipId,
-      inviteUrl,
-      waShareUrl,
-      pendingDues,
-    };
+    return JSON.parse(
+      JSON.stringify({
+        success: true,
+        memberId: member.id,
+        membershipId: membershipId || null,
+        inviteUrl: inviteUrl || null,
+        waShareUrl: waShareUrl || null,
+        pendingDues: pendingDues !== undefined ? pendingDues : null,
+      })
+    );
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : "Failed to enroll member";
-    return { success: false, error: message };
+    const message = err instanceof Error ? err.message : String(err);
+    return JSON.parse(JSON.stringify({ success: false, error: message }));
   }
 }
 
@@ -282,10 +284,10 @@ export async function updateMemberAction(input: UpdateMemberInput) {
       return { success: false, error: error.message };
     }
 
-    return { success: true };
+    return JSON.parse(JSON.stringify({ success: true }));
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : "Failed to update member";
-    return { success: false, error: message };
+    const message = err instanceof Error ? err.message : String(err);
+    return JSON.parse(JSON.stringify({ success: false, error: message }));
   }
 }
 
@@ -433,18 +435,20 @@ export async function renewMembershipAction(input: RenewMembershipInput) {
       }
     }
 
-    return {
-      success: true,
-      membershipId: newMembership.id,
-      paymentId,
-      startDate: startDateStr,
-      endDate: endDateStr,
-      planName: plan.name,
-      stacked: Boolean(currentActiveMembership && currentActiveMembership.end_date >= todayIST),
-    };
+    return JSON.parse(
+      JSON.stringify({
+        success: true,
+        membershipId: newMembership.id,
+        paymentId: paymentId || null,
+        startDate: startDateStr,
+        endDate: endDateStr,
+        planName: plan.name,
+        stacked: Boolean(currentActiveMembership && currentActiveMembership.end_date >= todayIST),
+      })
+    );
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : "Failed to renew membership";
-    return { success: false, error: message };
+    const message = err instanceof Error ? err.message : String(err);
+    return JSON.parse(JSON.stringify({ success: false, error: message }));
   }
 }
 
@@ -840,20 +844,24 @@ export async function bulkImportMembersAction(
       }
     }
 
-    return {
-      success: true,
-      importedCount,
-      skippedCount,
-      failedCount,
-    };
+    return JSON.parse(
+      JSON.stringify({
+        success: true,
+        importedCount,
+        skippedCount,
+        failedCount,
+      })
+    );
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : "Failed to execute bulk member import";
-    return {
-      success: false,
-      importedCount: 0,
-      skippedCount: 0,
-      failedCount: rowsToImport.length,
-      error: message,
-    };
+    const message = err instanceof Error ? err.message : String(err);
+    return JSON.parse(
+      JSON.stringify({
+        success: false,
+        importedCount: 0,
+        skippedCount: 0,
+        failedCount: rowsToImport.length,
+        error: message,
+      })
+    );
   }
 }

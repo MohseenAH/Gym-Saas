@@ -58,10 +58,10 @@ export async function createExpenseAction(input: CreateExpenseInput) {
       return { success: false, error: `Failed to record expense: ${error.message}` };
     }
 
-    return { success: true, expenseId: expense.id };
+    return JSON.parse(JSON.stringify({ success: true, expenseId: expense.id }));
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : "An unexpected error occurred";
-    return { success: false, error: message };
+    const message = err instanceof Error ? err.message : String(err);
+    return JSON.parse(JSON.stringify({ success: false, error: message }));
   }
 }
 
@@ -89,9 +89,9 @@ export async function deleteExpenseAction(params: { gymId: string; expenseId: st
       return { success: false, error: error.message };
     }
 
-    return { success: true };
+    return JSON.parse(JSON.stringify({ success: true }));
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : "Failed to delete expense";
-    return { success: false, error: message };
+    const message = err instanceof Error ? err.message : String(err);
+    return JSON.parse(JSON.stringify({ success: false, error: message }));
   }
 }

@@ -19,7 +19,6 @@ import {
 } from "lucide-react";
 import { CreatePlanModal } from "./create-plan-modal";
 import { EditPlanModal, EditablePlan } from "./edit-plan-modal";
-import { togglePlanAction, deletePlanAction } from "@/lib/actions/plans";
 
 export interface PlanDetailItem {
   id: string;
@@ -126,11 +125,16 @@ export function PlansManagerClient({
 
     const nextState = !plan.isActive;
     try {
-      const res = await togglePlanAction({
-        gymId,
-        planId: plan.id,
-        isActive: nextState,
+      const response = await fetch("/api/plans", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          gymId,
+          planId: plan.id,
+          isActive: nextState,
+        }),
       });
+      const res = await response.json();
 
       if (!res.success) {
         showMessage("error", res.error || "Failed to update plan status");
@@ -170,10 +174,15 @@ export function PlansManagerClient({
 
     setActionLoadingId(plan.id);
     try {
-      const res = await deletePlanAction({
-        gymId,
-        planId: plan.id,
+      const response = await fetch("/api/plans", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          gymId,
+          planId: plan.id,
+        }),
       });
+      const res = await response.json();
 
       if (!res.success) {
         showMessage("error", res.error || "Failed to delete plan");

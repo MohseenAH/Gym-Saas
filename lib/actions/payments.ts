@@ -168,15 +168,17 @@ export async function recordPaymentAction(input: RecordPaymentInput) {
       receiptUrl = receiptRes.directUrl;
     }
 
-    return {
-      success: true,
-      paymentId: payment.id,
-      receiptUrl,
-      remainingDues,
-    };
+    return JSON.parse(
+      JSON.stringify({
+        success: true,
+        paymentId: payment.id,
+        receiptUrl: receiptUrl || null,
+        remainingDues: remainingDues !== undefined ? remainingDues : null,
+      })
+    );
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : "An unexpected error occurred";
-    return { success: false, error: message };
+    const message = err instanceof Error ? err.message : String(err);
+    return JSON.parse(JSON.stringify({ success: false, error: message }));
   }
 }
 
@@ -258,13 +260,15 @@ export async function submitMemberUpiPaymentAction(input: SubmitMemberUpiPayment
       return { success: false, error: `Failed to record payment claim: ${error.message}` };
     }
 
-    return {
-      success: true,
-      paymentId: payment.id,
-    };
+    return JSON.parse(
+      JSON.stringify({
+        success: true,
+        paymentId: payment.id,
+      })
+    );
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : "An unexpected error occurred";
-    return { success: false, error: message };
+    const message = err instanceof Error ? err.message : String(err);
+    return JSON.parse(JSON.stringify({ success: false, error: message }));
   }
 }
 
@@ -344,7 +348,7 @@ export async function verifyPaymentAction(input: VerifyPaymentInput) {
         }
       }
 
-      return { success: true, approved: true };
+      return JSON.parse(JSON.stringify({ success: true, approved: true }));
     }
 
     // Action === "reject"
@@ -371,10 +375,10 @@ export async function verifyPaymentAction(input: VerifyPaymentInput) {
       return { success: false, error: `Failed to reject payment claim: ${rejectErr.message}` };
     }
 
-    return { success: true, rejected: true };
+    return JSON.parse(JSON.stringify({ success: true, rejected: true }));
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : "An unexpected error occurred";
-    return { success: false, error: message };
+    const message = err instanceof Error ? err.message : String(err);
+    return JSON.parse(JSON.stringify({ success: false, error: message }));
   }
 }
 

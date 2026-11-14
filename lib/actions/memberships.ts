@@ -1,36 +1,19 @@
 "use server";
 
-import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { getAuthorizedActionContext } from "@/lib/auth/guard";
 import { getISTDateString, getTodayIST, calculateMembershipEndDate } from "@/lib/utils";
-export { calculateMembershipEndDate };
+import {
+  assignMembershipSchema,
+  bulkAssignMembershipsSchema,
+  type AssignMembershipInput,
+  type BulkAssignMembershipsInput,
+} from "@/lib/validations/memberships";
 
-// ============================================================================
-// 1. Validation Schemas & Types
-// ============================================================================
-
-export const assignMembershipSchema = z.object({
-  gymId: z.string().uuid("Invalid gym ID"),
-  branchId: z.string().uuid("Invalid branch ID"),
-  memberId: z.string().uuid("Invalid member ID"),
-  planId: z.string().uuid("Invalid plan ID"),
-  startDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Invalid start date format (YYYY-MM-DD)"),
-  amountPaid: z.number().min(0, "Amount paid cannot be negative").default(0),
-  paymentMethod: z.enum(["cash", "upi", "card", "bank_transfer", "cheque", "other"]).default("cash"),
-  notes: z.string().max(500, "Notes too long").optional().nullable(),
-});
-
-export const bulkAssignMembershipsSchema = z.object({
-  gymId: z.string().uuid("Invalid gym ID"),
-  branchId: z.string().uuid("Invalid branch ID"),
-  memberIds: z.array(z.string().uuid("Invalid member ID")).min(1, "Select at least 1 member"),
-  planId: z.string().uuid("Invalid plan ID"),
-  startDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Invalid start date format (YYYY-MM-DD)"),
-});
-
-export type AssignMembershipInput = z.infer<typeof assignMembershipSchema>;
-export type BulkAssignMembershipsInput = z.infer<typeof bulkAssignMembershipsSchema>;
+export type {
+  AssignMembershipInput,
+  BulkAssignMembershipsInput,
+};
 
 export interface SkippedBulkMember {
   memberId: string;
@@ -231,17 +214,19 @@ export async function assignMembershipAction(input: AssignMembershipInput) {
       }
     }
 
-    return {
-      success: true,
-      membershipId: newMembership.id,
-      paymentId,
-      startDate: startDateStr,
-      endDate: endDateStr,
-      planName: plan.name,
-    };
+    return JSON.parse(
+      JSON.stringify({
+        success: true,
+        membershipId: newMembership.id,
+        paymentId: paymentId || null,
+        startDate: startDateStr,
+        endDate: endDateStr,
+        planName: plan.name,
+      })
+    );
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : "Failed to assign membership";
-    return { success: false, error: message };
+    const message = err instanceof Error ? err.message : String(err);
+    return JSON.parse(JSON.stringify({ success: false, error: message }));
   }
 }
 
@@ -441,19 +426,23 @@ export async function bulkAssignMembershipsAction(
       assignedCount += chunk.length;
     }
 
-    return {
-      success: true,
-      assignedCount,
-      skippedMembers,
-    };
+    return JSON.parse(
+      JSON.stringify({
+        success: true,
+        assignedCount,
+        skippedMembers,
+      })
+    );
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : "Failed to bulk assign memberships";
-    return {
-      success: false,
-      assignedCount: 0,
-      skippedMembers: [],
-      error: message,
-    };
+    const message = err instanceof Error ? err.message : String(err);
+    return JSON.parse(
+      JSON.stringify({
+        success: false,
+        assignedCount: 0,
+        skippedMembers: [],
+        error: message,
+      })
+    );
   }
 }
 

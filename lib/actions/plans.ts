@@ -1,49 +1,24 @@
 "use server";
 
-import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { getAuthorizedActionContext } from "@/lib/auth/guard";
+import {
+  createPlanSchema,
+  updatePlanSchema,
+  togglePlanSchema,
+  deletePlanSchema,
+  type CreatePlanInput,
+  type UpdatePlanInput,
+  type TogglePlanInput,
+  type DeletePlanInput,
+} from "@/lib/validations/plans";
 
-// ============================================================================
-// 1. Validation Schemas
-// ============================================================================
-
-export const createPlanSchema = z.object({
-  gymId: z.string().uuid("Invalid gym ID"),
-  branchId: z.string().uuid("Invalid branch ID"),
-  name: z.string().trim().min(2, "Plan name must be at least 2 characters").max(100, "Plan name too long"),
-  description: z.string().trim().max(500, "Description too long").optional().nullable(),
-  durationDays: z.number().int("Duration must be an integer").min(1, "Duration must be at least 1 day").max(3650, "Duration cannot exceed 3,650 days (10 years)"),
-  price: z.number().min(0, "Price cannot be negative").max(10000000, "Price cannot exceed ₹1,00,00,000"),
-  isActive: z.boolean().optional(),
-});
-
-export const updatePlanSchema = z.object({
-  gymId: z.string().uuid("Invalid gym ID"),
-  planId: z.string().uuid("Invalid plan ID"),
-  branchId: z.string().uuid("Invalid branch ID"),
-  name: z.string().trim().min(2, "Plan name must be at least 2 characters").max(100, "Plan name too long"),
-  description: z.string().trim().max(500, "Description too long").optional().nullable(),
-  durationDays: z.number().int("Duration must be an integer").min(1, "Duration must be at least 1 day").max(3650, "Duration cannot exceed 3,650 days (10 years)"),
-  price: z.number().min(0, "Price cannot be negative").max(10000000, "Price cannot exceed ₹1,00,00,000"),
-  isActive: z.boolean().optional(),
-});
-
-export const togglePlanSchema = z.object({
-  gymId: z.string().uuid("Invalid gym ID"),
-  planId: z.string().uuid("Invalid plan ID"),
-  isActive: z.boolean(),
-});
-
-export const deletePlanSchema = z.object({
-  gymId: z.string().uuid("Invalid gym ID"),
-  planId: z.string().uuid("Invalid plan ID"),
-});
-
-export type CreatePlanInput = z.infer<typeof createPlanSchema>;
-export type UpdatePlanInput = z.infer<typeof updatePlanSchema>;
-export type TogglePlanInput = z.infer<typeof togglePlanSchema>;
-export type DeletePlanInput = z.infer<typeof deletePlanSchema>;
+export type {
+  CreatePlanInput,
+  UpdatePlanInput,
+  TogglePlanInput,
+  DeletePlanInput,
+};
 
 // ============================================================================
 // 2. Server Actions
@@ -94,14 +69,16 @@ export async function createPlanAction(input: CreatePlanInput) {
       return { success: false, error: error?.message || "Failed to create plan" };
     }
 
-    return {
-      success: true,
-      planId: newPlan.id,
-      plan: newPlan,
-    };
+    return JSON.parse(
+      JSON.stringify({
+        success: true,
+        planId: newPlan.id,
+        plan: newPlan,
+      })
+    );
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : "Failed to create membership plan";
-    return { success: false, error: message };
+    const message = err instanceof Error ? err.message : String(err);
+    return JSON.parse(JSON.stringify({ success: false, error: message }));
   }
 }
 
@@ -185,12 +162,14 @@ export async function updatePlanAction(input: UpdatePlanInput) {
         return { success: false, error: `Failed to create new plan version: ${insertErr?.message}` };
       }
 
-      return {
-        success: true,
-        planId: newVersion.id,
-        versioned: true,
-        message: "Plan updated with historical terms preserved for existing members.",
-      };
+      return JSON.parse(
+        JSON.stringify({
+          success: true,
+          planId: newVersion.id,
+          versioned: true,
+          message: "Plan updated with historical terms preserved for existing members.",
+        })
+      );
     }
 
     // 4. In-place update: either no memberships reference it yet, or terms (price/duration) did not change
@@ -211,10 +190,16 @@ export async function updatePlanAction(input: UpdatePlanInput) {
       return { success: false, error: updateErr.message };
     }
 
-    return { success: true, planId: validated.planId, versioned: false };
+    return JSON.parse(
+      JSON.stringify({
+        success: true,
+        planId: validated.planId,
+        versioned: false,
+      })
+    );
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : "Failed to update membership plan";
-    return { success: false, error: message };
+    const message = err instanceof Error ? err.message : String(err);
+    return JSON.parse(JSON.stringify({ success: false, error: message }));
   }
 }
 
@@ -260,10 +245,14 @@ export async function togglePlanAction(input: TogglePlanInput) {
       return { success: false, error: updateErr.message };
     }
 
-    return { success: true };
+    return JSON.parse(
+      JSON.stringify({
+        success: true,
+      })
+    );
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : "Failed to toggle plan status";
-    return { success: false, error: message };
+    const message = err instanceof Error ? err.message : String(err);
+    return JSON.parse(JSON.stringify({ success: false, error: message }));
   }
 }
 
@@ -325,13 +314,15 @@ export async function deletePlanAction(input: DeletePlanInput) {
       return { success: false, error: deleteErr.message };
     }
 
-    return {
-      success: true,
-      archived: false,
-      message: `Plan "${plan.name}" has been permanently deleted.`,
-    };
+    return JSON.parse(
+      JSON.stringify({
+        success: true,
+        archived: false,
+        message: `Plan "${plan.name}" has been permanently deleted.`,
+      })
+    );
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : "Failed to delete membership plan";
-    return { success: false, error: message };
+    const message = err instanceof Error ? err.message : String(err);
+    return JSON.parse(JSON.stringify({ success: false, error: message }));
   }
 }
