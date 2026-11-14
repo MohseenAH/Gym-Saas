@@ -67,26 +67,35 @@ export function InviteStaffModal({
     setLoading(true);
     setError(null);
 
+    let result;
     try {
-      const result = await createStaffInvitationAction({
+      result = await createStaffInvitationAction({
         gymId,
         email: email || undefined,
         phone: phone || undefined,
         role,
         branchIds: selectedBranches,
       });
-
-      if (!result.success || !result.links) {
-        throw new Error(result.error || "Failed to generate invitation");
-      }
-
-      setGeneratedLinks(result.links);
-      onSuccess?.();
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "An unexpected error occurred";
       setError(message);
-    } finally {
       setLoading(false);
+      return;
+    }
+
+    if (!result || !result.success || !result.links) {
+      setError(result?.error || "Failed to generate invitation");
+      setLoading(false);
+      return;
+    }
+
+    setLoading(false);
+    setGeneratedLinks(result.links);
+
+    try {
+      onSuccess?.();
+    } catch (err) {
+      console.error("Post-invite callback warning:", err);
     }
   };
 

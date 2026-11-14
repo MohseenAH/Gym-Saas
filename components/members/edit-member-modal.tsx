@@ -52,8 +52,9 @@ export function EditMemberModal({
     setError(null);
     setLoading(true);
 
+    let res;
     try {
-      const res = await updateMemberAction({
+      res = await updateMemberAction({
         gymId,
         memberId: member.id,
         fullName: fullName.trim(),
@@ -63,23 +64,32 @@ export function EditMemberModal({
         status,
         notes: notes.trim() || null,
       });
-
-      if (!res.success) {
-        setError(res.error || "Failed to update member");
-      } else {
-        onSuccess?.();
-        onClose();
-        setTimeout(() => {
-          startTransition(() => {
-            router.refresh();
-          });
-        }, 150);
-      }
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Failed to update member");
-    } finally {
       setLoading(false);
+      return;
     }
+
+    if (!res || !res.success) {
+      setError(res?.error || "Failed to update member");
+      setLoading(false);
+      return;
+    }
+
+    setLoading(false);
+    onClose();
+
+    try {
+      onSuccess?.();
+    } catch (e) {
+      console.error("Post-update callback warning:", e);
+    }
+
+    setTimeout(() => {
+      startTransition(() => {
+        router.refresh();
+      });
+    }, 200);
   }
 
   return (

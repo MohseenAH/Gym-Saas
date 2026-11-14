@@ -1,7 +1,6 @@
 "use server";
 
 import { z } from "zod";
-import { revalidatePath } from "next/cache";
 import { createClient, getCachedUser } from "@/lib/supabase/server";
 import { getAuthorizedActionContext } from "@/lib/auth/guard";
 import { WhatsAppLinkAdapter } from "@/lib/adapters/notification-adapter";
@@ -169,14 +168,6 @@ export async function recordPaymentAction(input: RecordPaymentInput) {
       receiptUrl = receiptRes.directUrl;
     }
 
-    revalidatePath(`/app/${context.gymId}`, "layout");
-    revalidatePath(`/app/${context.gymId}/revenue`);
-    revalidatePath(`/app/${context.gymId}/payments`);
-    revalidatePath(`/app/${context.gymId}/dashboard`);
-    revalidatePath(`/app/${context.gymId}/reports`);
-    revalidatePath(`/portal/${context.gymId}/payments`);
-    revalidatePath(`/portal/${context.gymId}/dashboard`);
-
     return {
       success: true,
       paymentId: payment.id,
@@ -267,12 +258,6 @@ export async function submitMemberUpiPaymentAction(input: SubmitMemberUpiPayment
       return { success: false, error: `Failed to record payment claim: ${error.message}` };
     }
 
-    revalidatePath(`/portal/${validated.gymId}/payments`);
-    revalidatePath(`/portal/${validated.gymId}/dashboard`);
-    revalidatePath(`/app/${validated.gymId}/payments`);
-    revalidatePath(`/app/${validated.gymId}/dashboard`);
-    revalidatePath(`/app/${validated.gymId}/reports`);
-
     return {
       success: true,
       paymentId: payment.id,
@@ -359,13 +344,6 @@ export async function verifyPaymentAction(input: VerifyPaymentInput) {
         }
       }
 
-      revalidatePath(`/app/${context.gymId}`, "layout");
-      revalidatePath(`/app/${context.gymId}/payments`);
-      revalidatePath(`/app/${context.gymId}/dashboard`);
-      revalidatePath(`/app/${context.gymId}/reports`);
-      revalidatePath(`/portal/${context.gymId}/payments`);
-      revalidatePath(`/portal/${context.gymId}/dashboard`);
-
       return { success: true, approved: true };
     }
 
@@ -392,13 +370,6 @@ export async function verifyPaymentAction(input: VerifyPaymentInput) {
     if (rejectErr) {
       return { success: false, error: `Failed to reject payment claim: ${rejectErr.message}` };
     }
-
-    revalidatePath(`/app/${context.gymId}`, "layout");
-    revalidatePath(`/app/${context.gymId}/payments`);
-    revalidatePath(`/app/${context.gymId}/dashboard`);
-    revalidatePath(`/app/${context.gymId}/reports`);
-    revalidatePath(`/portal/${context.gymId}/payments`);
-    revalidatePath(`/portal/${context.gymId}/dashboard`);
 
     return { success: true, rejected: true };
   } catch (err: unknown) {

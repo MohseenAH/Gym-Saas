@@ -1,7 +1,6 @@
 "use server";
 
 import { z } from "zod";
-import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { getAuthorizedActionContext } from "@/lib/auth/guard";
 
@@ -95,11 +94,6 @@ export async function createPlanAction(input: CreatePlanInput) {
       return { success: false, error: error?.message || "Failed to create plan" };
     }
 
-    revalidatePath(`/app/${context.gymId}`, "layout");
-    revalidatePath(`/app/${context.gymId}/memberships`);
-    revalidatePath(`/app/${context.gymId}/members`);
-    revalidatePath(`/app/${context.gymId}/settings`);
-
     return {
       success: true,
       planId: newPlan.id,
@@ -191,11 +185,6 @@ export async function updatePlanAction(input: UpdatePlanInput) {
         return { success: false, error: `Failed to create new plan version: ${insertErr?.message}` };
       }
 
-      revalidatePath(`/app/${context.gymId}`, "layout");
-      revalidatePath(`/app/${context.gymId}/memberships`);
-      revalidatePath(`/app/${context.gymId}/members`);
-      revalidatePath(`/app/${context.gymId}/settings`);
-
       return {
         success: true,
         planId: newVersion.id,
@@ -221,11 +210,6 @@ export async function updatePlanAction(input: UpdatePlanInput) {
     if (updateErr) {
       return { success: false, error: updateErr.message };
     }
-
-    revalidatePath(`/app/${context.gymId}`, "layout");
-    revalidatePath(`/app/${context.gymId}/memberships`);
-    revalidatePath(`/app/${context.gymId}/members`);
-    revalidatePath(`/app/${context.gymId}/settings`);
 
     return { success: true, planId: validated.planId, versioned: false };
   } catch (err: unknown) {
@@ -275,11 +259,6 @@ export async function togglePlanAction(input: TogglePlanInput) {
     if (updateErr) {
       return { success: false, error: updateErr.message };
     }
-
-    revalidatePath(`/app/${context.gymId}`, "layout");
-    revalidatePath(`/app/${context.gymId}/memberships`);
-    revalidatePath(`/app/${context.gymId}/members`);
-    revalidatePath(`/app/${context.gymId}/settings`);
 
     return { success: true };
   } catch (err: unknown) {
@@ -345,11 +324,6 @@ export async function deletePlanAction(input: DeletePlanInput) {
     if (deleteErr) {
       return { success: false, error: deleteErr.message };
     }
-
-    revalidatePath(`/app/${context.gymId}`, "layout");
-    revalidatePath(`/app/${context.gymId}/memberships`);
-    revalidatePath(`/app/${context.gymId}/members`);
-    revalidatePath(`/app/${context.gymId}/settings`);
 
     return {
       success: true,

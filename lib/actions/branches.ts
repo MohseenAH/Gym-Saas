@@ -1,7 +1,6 @@
 "use server";
 
 import { z } from "zod";
-import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { getAuthorizedActionContext } from "@/lib/auth/guard";
 
@@ -41,10 +40,6 @@ export async function createBranchAction(input: z.infer<typeof createBranchSchem
       return { success: false, error: error.message };
     }
 
-    revalidatePath(`/app/${context.gymId}`, "layout");
-    revalidatePath(`/app/${context.gymId}/branches`);
-    revalidatePath(`/app/${context.gymId}/settings`);
-    revalidatePath(`/app/${context.gymId}/dashboard`);
     return { success: true, branchId: branch.id };
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Failed to create branch";
@@ -90,9 +85,6 @@ export async function updateBranchAction(input: z.infer<typeof updateBranchSchem
       return { success: false, error: error.message };
     }
 
-    revalidatePath(`/app/${context.gymId}`, "layout");
-    revalidatePath(`/app/${context.gymId}/branches`);
-    revalidatePath(`/app/${context.gymId}/settings`);
     return { success: true };
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Failed to update branch";

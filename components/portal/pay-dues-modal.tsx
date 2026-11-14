@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { CreditCard, X, QrCode, Copy, Check, Loader2, CheckCircle2 } from "lucide-react";
 import { submitMemberUpiPaymentAction } from "@/lib/actions/payments";
 
@@ -23,6 +24,8 @@ export function PayDuesModal({
   planName,
   amount,
 }: PayDuesModalProps) {
+  const router = useRouter();
+  const [, startTransition] = useTransition();
   const [isOpen, setIsOpen] = useState(false);
   const [copied, setCopied] = useState(false);
   const [utrRef, setUtrRef] = useState("");
@@ -45,8 +48,9 @@ export function PayDuesModal({
     setError(null);
     setSubmitting(true);
 
+    let res;
     try {
-      const res = await submitMemberUpiPaymentAction({
+      res = await submitMemberUpiPaymentAction({
         gymId,
         branchId,
         memberId,
@@ -54,27 +58,36 @@ export function PayDuesModal({
         amount,
         utrRef: utrRef.trim() || undefined,
       });
-
-      if (!res.success) {
-        setError(res.error || "Failed to submit payment verification claim");
-        setSubmitting(false);
-        return;
-      }
-
-      setSubmitted(true);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Failed to submit payment claim";
       setError(msg);
-    } finally {
       setSubmitting(false);
+      return;
     }
+
+    if (!res || !res.success) {
+      setError(res?.error || "Failed to submit payment verification claim");
+      setSubmitting(false);
+      return;
+    }
+
+    setSubmitting(false);
+    setSubmitted(true);
   }
 
   function handleClose() {
+    const shouldRefresh = submitted;
     setIsOpen(false);
     setSubmitted(false);
     setUtrRef("");
     setError(null);
+    if (shouldRefresh) {
+      setTimeout(() => {
+        startTransition(() => {
+          router.refresh();
+        });
+      }, 200);
+    }
   }
 
   return (

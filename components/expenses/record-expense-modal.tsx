@@ -36,8 +36,9 @@ export function RecordExpenseModal({ gymId, branches }: RecordExpenseModalProps)
 
     setLoading(true);
 
+    let res;
     try {
-      const res = await createExpenseAction({
+      res = await createExpenseAction({
         gymId,
         branchId,
         category: category as CreateExpenseInput["category"],
@@ -46,24 +47,27 @@ export function RecordExpenseModal({ gymId, branches }: RecordExpenseModalProps)
         paymentMethod: paymentMethod as CreateExpenseInput["paymentMethod"],
         description: description || null,
       });
-
-      if (!res.success) {
-        setError(res.error || "Failed to record expense");
-      } else {
-        setIsOpen(false);
-        setAmount("");
-        setDescription("");
-        setTimeout(() => {
-          startTransition(() => {
-            router.refresh();
-          });
-        }, 150);
-      }
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Failed to record expense");
-    } finally {
       setLoading(false);
+      return;
     }
+
+    if (!res || !res.success) {
+      setError(res?.error || "Failed to record expense");
+      setLoading(false);
+      return;
+    }
+
+    setLoading(false);
+    setIsOpen(false);
+    setAmount("");
+    setDescription("");
+    setTimeout(() => {
+      startTransition(() => {
+        router.refresh();
+      });
+    }, 200);
   }
 
   return (

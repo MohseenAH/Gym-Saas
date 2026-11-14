@@ -1,7 +1,6 @@
 "use server";
 
 import { z } from "zod";
-import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { getAuthorizedActionContext } from "@/lib/auth/guard";
 
@@ -46,12 +45,6 @@ export async function createNoticeAction(input: CreateNoticeInput) {
       return { success: false, error: `Failed to post notice: ${error.message}` };
     }
 
-    revalidatePath(`/app/${context.gymId}`, "layout");
-    revalidatePath(`/app/${context.gymId}/notices`);
-    revalidatePath(`/app/${context.gymId}/dashboard`);
-    revalidatePath(`/portal/${context.gymId}/dashboard`);
-    revalidatePath(`/portal/${context.gymId}/notices`);
-
     return { success: true, noticeId: notice.id };
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Failed to post notice";
@@ -78,12 +71,6 @@ export async function toggleNoticeAction(params: { gymId: string; noticeId: stri
       return { success: false, error: error.message };
     }
 
-    revalidatePath(`/app/${context.gymId}`, "layout");
-    revalidatePath(`/app/${context.gymId}/notices`);
-    revalidatePath(`/app/${context.gymId}/dashboard`);
-    revalidatePath(`/portal/${context.gymId}/dashboard`);
-    revalidatePath(`/portal/${context.gymId}/notices`);
-
     return { success: true };
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Failed to update notice status";
@@ -109,12 +96,6 @@ export async function deleteNoticeAction(params: { gymId: string; noticeId: stri
     if (error) {
       return { success: false, error: error.message };
     }
-
-    revalidatePath(`/app/${context.gymId}`, "layout");
-    revalidatePath(`/app/${context.gymId}/notices`);
-    revalidatePath(`/app/${context.gymId}/dashboard`);
-    revalidatePath(`/portal/${context.gymId}/dashboard`);
-    revalidatePath(`/portal/${context.gymId}/notices`);
 
     return { success: true };
   } catch (err: unknown) {

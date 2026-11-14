@@ -83,8 +83,9 @@ export function RenewMembershipModal({
 
     setLoading(true);
 
+    let res;
     try {
-      const res = await renewMembershipAction({
+      res = await renewMembershipAction({
         gymId,
         branchId,
         memberId,
@@ -94,31 +95,40 @@ export function RenewMembershipModal({
         paymentMethod,
         notes: notes.trim() || undefined,
       });
-
-      if (!res.success) {
-        setError(res.error || "Failed to renew membership");
-      } else {
-        onSuccess?.({
-          membershipId: res.membershipId!,
-          paymentId: res.paymentId,
-          planName: res.planName!,
-          startDate: res.startDate!,
-          endDate: res.endDate!,
-          amountPaid: Number(amountPaid) || 0,
-          paymentMethod,
-        });
-        onClose();
-        setTimeout(() => {
-          startTransition(() => {
-            router.refresh();
-          });
-        }, 150);
-      }
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Failed to renew membership");
-    } finally {
       setLoading(false);
+      return;
     }
+
+    if (!res || !res.success) {
+      setError(res?.error || "Failed to renew membership");
+      setLoading(false);
+      return;
+    }
+
+    setLoading(false);
+    onClose();
+
+    try {
+      onSuccess?.({
+        membershipId: res.membershipId!,
+        paymentId: res.paymentId,
+        planName: res.planName!,
+        startDate: res.startDate!,
+        endDate: res.endDate!,
+        amountPaid: Number(amountPaid) || 0,
+        paymentMethod,
+      });
+    } catch (e) {
+      console.error("Post-renewal callback warning:", e);
+    }
+
+    setTimeout(() => {
+      startTransition(() => {
+        router.refresh();
+      });
+    }, 200);
   }
 
   return (

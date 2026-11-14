@@ -46,8 +46,9 @@ export function RecordPaymentModal({ gymId, branches, members }: RecordPaymentMo
 
     setLoading(true);
 
+    let res;
     try {
-      const res = await recordPaymentAction({
+      res = await recordPaymentAction({
         gymId,
         branchId,
         memberId,
@@ -57,27 +58,31 @@ export function RecordPaymentModal({ gymId, branches, members }: RecordPaymentMo
         notes: notes || null,
         paymentStatus: "paid",
       });
-
-      if (!res.success) {
-        setError(res.error || "Failed to record payment");
-      } else {
-        if (res.receiptUrl) {
-          setWaReceiptUrl(res.receiptUrl);
-        } else {
-          setIsOpen(false);
-          setAmount("");
-          setNotes("");
-          setTimeout(() => {
-            startTransition(() => {
-              router.refresh();
-            });
-          }, 150);
-        }
-      }
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Failed to record payment");
-    } finally {
       setLoading(false);
+      return;
+    }
+
+    if (!res || !res.success) {
+      setError(res?.error || "Failed to record payment");
+      setLoading(false);
+      return;
+    }
+
+    setLoading(false);
+
+    if (res.receiptUrl) {
+      setWaReceiptUrl(res.receiptUrl);
+    } else {
+      setIsOpen(false);
+      setAmount("");
+      setNotes("");
+      setTimeout(() => {
+        startTransition(() => {
+          router.refresh();
+        });
+      }, 200);
     }
   }
 
@@ -90,7 +95,7 @@ export function RecordPaymentModal({ gymId, branches, members }: RecordPaymentMo
       startTransition(() => {
         router.refresh();
       });
-    }, 150);
+    }, 200);
   }
 
   return (

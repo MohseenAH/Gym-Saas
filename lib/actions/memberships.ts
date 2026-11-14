@@ -1,7 +1,6 @@
 "use server";
 
 import { z } from "zod";
-import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { getAuthorizedActionContext } from "@/lib/auth/guard";
 import { getISTDateString, getTodayIST, calculateMembershipEndDate } from "@/lib/utils";
@@ -232,14 +231,6 @@ export async function assignMembershipAction(input: AssignMembershipInput) {
       }
     }
 
-    revalidatePath(`/app/${context.gymId}`, "layout");
-    revalidatePath(`/app/${context.gymId}/memberships`);
-    revalidatePath(`/app/${context.gymId}/members`);
-    revalidatePath(`/app/${context.gymId}/members/${validated.memberId}`);
-    revalidatePath(`/app/${context.gymId}/payments`);
-    revalidatePath(`/app/${context.gymId}/dashboard`);
-    revalidatePath(`/portal/${context.gymId}/dashboard`);
-
     return {
       success: true,
       membershipId: newMembership.id,
@@ -449,13 +440,6 @@ export async function bulkAssignMembershipsAction(
       }
       assignedCount += chunk.length;
     }
-
-    // 6. Invalidate Affected Paths
-    revalidatePath(`/app/${context.gymId}`, "layout");
-    revalidatePath(`/app/${context.gymId}/memberships`);
-    revalidatePath(`/app/${context.gymId}/members`);
-    revalidatePath(`/app/${context.gymId}/dashboard`);
-    revalidatePath(`/app/${context.gymId}/getting-started`);
 
     return {
       success: true,

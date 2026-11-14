@@ -114,8 +114,9 @@ function EditPlanForm({
 
     setLoading(true);
 
+    let res;
     try {
-      const res = await updatePlanAction({
+      res = await updatePlanAction({
         gymId,
         planId: plan.id,
         branchId: branchId || plan.branchId,
@@ -125,32 +126,41 @@ function EditPlanForm({
         price: numPrice,
         isActive,
       });
-
-      if (!res.success) {
-        setError(res.error || "Failed to update membership plan");
-      } else {
-        onSuccess?.({
-          planId: res.planId!,
-          versioned: res.versioned,
-          name: name.trim(),
-          price: numPrice,
-          durationDays,
-          isActive,
-        });
-
-        // Close modal immediately and refresh in background
-        onClose();
-        setTimeout(() => {
-          startTransition(() => {
-            router.refresh();
-          });
-        }, 150);
-      }
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Failed to update membership plan");
-    } finally {
       setLoading(false);
+      return;
     }
+
+    if (!res || !res.success) {
+      setError(res?.error || "Failed to update membership plan");
+      setLoading(false);
+      return;
+    }
+
+    // Success: stop loading and close modal first
+    setLoading(false);
+    onClose();
+
+    try {
+      onSuccess?.({
+        planId: res.planId!,
+        versioned: res.versioned,
+        name: name.trim(),
+        price: numPrice,
+        durationDays,
+        isActive,
+      });
+    } catch (e) {
+      console.error("Post-update UI update warning:", e);
+    }
+
+    // Background server refresh
+    setTimeout(() => {
+      startTransition(() => {
+        router.refresh();
+      });
+    }, 200);
   }
 
   return (

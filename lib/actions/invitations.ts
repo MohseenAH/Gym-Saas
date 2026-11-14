@@ -14,7 +14,6 @@ import {
   canAssignRole,
   canDemoteOrRemoveOwner,
 } from "@/lib/auth/roles";
-import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
 const staffInviteSchema = z.object({
@@ -117,9 +116,6 @@ export async function createStaffInvitationAction(data: z.infer<typeof staffInvi
     role,
     recipientPhone: phone || undefined,
   });
-
-  revalidatePath(`/app/${gymId}`, "layout");
-  revalidatePath(`/app/${gymId}/staff`);
 
   return {
     success: true,
@@ -230,8 +226,6 @@ export async function revokeInvitationAction(params: {
       return { success: false, error: error.message };
     }
 
-    revalidatePath(`/app/${context.gymId}`, "layout");
-    revalidatePath(`/app/${context.gymId}/staff`);
     return { success: true };
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Failed to revoke invitation";
@@ -292,8 +286,6 @@ export async function toggleStaffStatusAction(params: {
       return { success: false, error: error.message };
     }
 
-    revalidatePath(`/app/${context.gymId}`, "layout");
-    revalidatePath(`/app/${context.gymId}/staff`);
     return { success: true };
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Failed to update staff status";
@@ -362,8 +354,6 @@ export async function updateStaffRoleAction(params: {
       return { success: false, error: error.message };
     }
 
-    revalidatePath(`/app/${context.gymId}`, "layout");
-    revalidatePath(`/app/${context.gymId}/staff`);
     return { success: true };
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Failed to update staff role";
@@ -423,8 +413,6 @@ export async function deleteStaffMemberAction(params: {
       return { success: false, error: error.message };
     }
 
-    revalidatePath(`/app/${context.gymId}`, "layout");
-    revalidatePath(`/app/${context.gymId}/staff`);
     return { success: true };
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Failed to remove staff member";

@@ -1,7 +1,6 @@
 "use server";
 
 import { z } from "zod";
-import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { getAuthorizedActionContext } from "@/lib/auth/guard";
 
@@ -35,9 +34,6 @@ export async function updateGymProfileAction(input: z.infer<typeof updateGymProf
       return { success: false, error: error.message };
     }
 
-    revalidatePath(`/app/${context.gymId}`, "layout");
-    revalidatePath(`/app/${context.gymId}/settings`);
-    revalidatePath(`/app/${context.gymId}/dashboard`);
     return { success: true };
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Failed to update gym profile";
@@ -149,10 +145,6 @@ export async function redeemPilotCodeAction(params: {
     if (accErr) {
       return { success: false, error: accErr.message };
     }
-
-    revalidatePath(`/app/${context.gymId}`, "layout");
-    revalidatePath(`/app/${context.gymId}/settings`);
-    revalidatePath(`/app/${context.gymId}/dashboard`);
 
     return {
       success: true,

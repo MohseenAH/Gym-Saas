@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { Plus, X, Bell, Loader2 } from "lucide-react";
 import { createNoticeAction } from "@/lib/actions/notices";
 
@@ -10,6 +11,8 @@ interface CreateNoticeModalProps {
 }
 
 export function CreateNoticeModal({ gymId, branches }: CreateNoticeModalProps) {
+  const router = useRouter();
+  const [, startTransition] = useTransition();
   const [isOpen, setIsOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -30,25 +33,41 @@ export function CreateNoticeModal({ gymId, branches }: CreateNoticeModalProps) {
     }
 
     setLoading(true);
-    const res = await createNoticeAction({
-      gymId,
-      branchId: branchId || null,
-      title: title.trim(),
-      content: content.trim(),
-      priority,
-      expiresAt: expiresAt || null,
-    });
+
+    let res;
+    try {
+      res = await createNoticeAction({
+        gymId,
+        branchId: branchId || null,
+        title: title.trim(),
+        content: content.trim(),
+        priority,
+        expiresAt: expiresAt || null,
+      });
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Failed to publish notice");
+      setLoading(false);
+      return;
+    }
+
+    if (!res || !res.success) {
+      setError(res?.error || "Failed to publish notice");
+      setLoading(false);
+      return;
+    }
 
     setLoading(false);
-    if (!res.success) {
-      setError(res.error || "Failed to publish notice");
-    } else {
-      setIsOpen(false);
-      setTitle("");
-      setContent("");
-      setPriority("normal");
-      setExpiresAt("");
-    }
+    setIsOpen(false);
+    setTitle("");
+    setContent("");
+    setPriority("normal");
+    setExpiresAt("");
+
+    setTimeout(() => {
+      startTransition(() => {
+        router.refresh();
+      });
+    }, 200);
   }
 
   return (

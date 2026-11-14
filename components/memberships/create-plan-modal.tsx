@@ -93,8 +93,9 @@ export function CreatePlanModal({
 
     setLoading(true);
 
+    let res;
     try {
-      const res = await createPlanAction({
+      res = await createPlanAction({
         gymId,
         branchId,
         name: name.trim(),
@@ -103,40 +104,49 @@ export function CreatePlanModal({
         price: numPrice,
         isActive,
       });
-
-      if (!res.success) {
-        setError(res.error || "Failed to create membership plan");
-      } else {
-        onSuccess?.({
-          id: res.planId!,
-          name: name.trim(),
-          price: numPrice,
-          durationDays,
-          branchId,
-          isActive,
-        });
-
-        // Reset form
-        setName("");
-        setPrice("");
-        setDescription("");
-        setDurationDays(30);
-        setDurationSelection("30");
-        setIsActive(true);
-
-        // Close modal immediately and refresh in background without tick collision
-        onClose();
-        setTimeout(() => {
-          startTransition(() => {
-            router.refresh();
-          });
-        }, 150);
-      }
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Failed to create membership plan");
-    } finally {
       setLoading(false);
+      return;
     }
+
+    if (!res || !res.success) {
+      setError(res?.error || "Failed to create membership plan");
+      setLoading(false);
+      return;
+    }
+
+    // Success: stop loading and close modal first
+    setLoading(false);
+    onClose();
+
+    // Reset form fields
+    setName("");
+    setPrice("");
+    setDescription("");
+    setDurationDays(30);
+    setDurationSelection("30");
+    setIsActive(true);
+
+    try {
+      onSuccess?.({
+        id: res.planId!,
+        name: name.trim(),
+        price: numPrice,
+        durationDays,
+        branchId,
+        isActive,
+      });
+    } catch (e) {
+      console.error("Post-save UI update warning:", e);
+    }
+
+    // Background server refresh
+    setTimeout(() => {
+      startTransition(() => {
+        router.refresh();
+      });
+    }, 200);
   }
 
   return (

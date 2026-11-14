@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import {
   Upload,
   X,
@@ -35,6 +36,8 @@ export function BulkImportModal({
   branchId: initialBranchId,
   branches = [],
 }: BulkImportModalProps) {
+  const router = useRouter();
+  const [, startTransition] = useTransition();
   const [isOpen, setIsOpen] = useState(false);
   const [selectedBranchId, setSelectedBranchId] = useState(
     initialBranchId || branches[0]?.id || ""
@@ -73,8 +76,16 @@ export function BulkImportModal({
   }
 
   function handleClose() {
+    const shouldRefresh = Boolean(successMessage);
     setIsOpen(false);
     handleReset();
+    if (shouldRefresh) {
+      setTimeout(() => {
+        startTransition(() => {
+          router.refresh();
+        });
+      }, 200);
+    }
   }
 
   async function handleFileProcess(selectedFile: File) {
@@ -157,23 +168,28 @@ export function BulkImportModal({
     setIsImporting(true);
     setError(null);
 
+    let res;
     try {
-      const res = await bulkImportMembersAction(gymId, selectedBranchId, validRows);
-      if (!res.success) {
-        setError(res.error || "Bulk import failed");
-      } else {
-        setSuccessMessage(
-          `Successfully imported ${res.importedCount} member(s)!` +
-            (res.skippedCount > 0 ? ` (${res.skippedCount} duplicates skipped)` : "")
-        );
-        setPreviewResult(null);
-        setFile(null);
-      }
+      res = await bulkImportMembersAction(gymId, selectedBranchId, validRows);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Failed to execute import");
-    } finally {
       setIsImporting(false);
+      return;
     }
+
+    if (!res || !res.success) {
+      setError(res?.error || "Bulk import failed");
+      setIsImporting(false);
+      return;
+    }
+
+    setIsImporting(false);
+    setSuccessMessage(
+      `Successfully imported ${res.importedCount} member(s)!` +
+        (res.skippedCount > 0 ? ` (${res.skippedCount} duplicates skipped)` : "")
+    );
+    setPreviewResult(null);
+    setFile(null);
   }
 
   const displayedRows = (previewResult?.rows || []).filter((r) => {

@@ -59,9 +59,10 @@ export function QuickEnrollModal({ gymId, branchId, plans }: QuickEnrollModalPro
 
     setLoading(true);
 
+    let res;
     try {
       const parsedDiscount = parseFloat(discount) || 0;
-      const res = await quickEnrollMemberAction({
+      res = await quickEnrollMemberAction({
         gymId,
         branchId,
         fullName: fullName.trim(),
@@ -73,18 +74,21 @@ export function QuickEnrollModal({ gymId, branchId, plans }: QuickEnrollModalPro
         discount: parsedDiscount > 0 ? parsedDiscount : 0,
         paymentMethod: paymentMethod as "cash" | "upi" | "card" | "bank_transfer" | "cheque" | "other",
       });
-
-      if (!res.success) {
-        setError(res.error || "Failed to enroll member");
-      } else {
-        setCreatedInviteUrl(res.inviteUrl || null);
-        setCreatedWaUrl(res.waShareUrl || null);
-      }
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Failed to enroll member");
-    } finally {
       setLoading(false);
+      return;
     }
+
+    if (!res || !res.success) {
+      setError(res?.error || "Failed to enroll member");
+      setLoading(false);
+      return;
+    }
+
+    setLoading(false);
+    setCreatedInviteUrl(res.inviteUrl || null);
+    setCreatedWaUrl(res.waShareUrl || null);
   }
 
   function handleClose() {
@@ -100,7 +104,7 @@ export function QuickEnrollModal({ gymId, branchId, plans }: QuickEnrollModalPro
       startTransition(() => {
         router.refresh();
       });
-    }, 150);
+    }, 200);
   }
 
   function handleCopy() {

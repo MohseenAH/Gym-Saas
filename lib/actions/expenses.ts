@@ -1,7 +1,6 @@
 "use server";
 
 import { z } from "zod";
-import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { getAuthorizedActionContext } from "@/lib/auth/guard";
 
@@ -59,10 +58,6 @@ export async function createExpenseAction(input: CreateExpenseInput) {
       return { success: false, error: `Failed to record expense: ${error.message}` };
     }
 
-    revalidatePath(`/app/${context.gymId}`, "layout");
-    revalidatePath(`/app/${context.gymId}/expenses`);
-    revalidatePath(`/app/${context.gymId}/dashboard`);
-
     return { success: true, expenseId: expense.id };
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "An unexpected error occurred";
@@ -93,10 +88,6 @@ export async function deleteExpenseAction(params: { gymId: string; expenseId: st
     if (error) {
       return { success: false, error: error.message };
     }
-
-    revalidatePath(`/app/${context.gymId}`, "layout");
-    revalidatePath(`/app/${context.gymId}/expenses`);
-    revalidatePath(`/app/${context.gymId}/dashboard`);
 
     return { success: true };
   } catch (err: unknown) {

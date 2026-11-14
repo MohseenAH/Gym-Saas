@@ -116,28 +116,36 @@ export function BulkAssignModal({
     setError(null);
     setSkippedList([]);
 
+    let res;
     try {
-      const res = await bulkAssignMembershipsAction({
+      res = await bulkAssignMembershipsAction({
         gymId,
         branchId: firstBranchId,
         memberIds: selectedMembers.map((m) => m.id),
         planId: selectedPlanId,
         startDate,
       });
-
-      if (!res.success) {
-        setError(res.error || "Failed to assign membership contracts");
-      } else {
-        setAssignedCount(res.assignedCount);
-        setSkippedList(res.skippedMembers || []);
-        if (res.assignedCount > 0) {
-          onSuccess();
-        }
-      }
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Failed to assign membership contracts");
-    } finally {
       setLoading(false);
+      return;
+    }
+
+    if (!res || !res.success) {
+      setError(res?.error || "Failed to assign membership contracts");
+      setLoading(false);
+      return;
+    }
+
+    setLoading(false);
+    setAssignedCount(res.assignedCount);
+    setSkippedList(res.skippedMembers || []);
+    if (res.assignedCount > 0) {
+      try {
+        onSuccess();
+      } catch (e) {
+        console.error("Post-assignment callback warning:", e);
+      }
     }
   }
 

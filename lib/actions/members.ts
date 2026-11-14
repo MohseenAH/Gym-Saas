@@ -1,7 +1,6 @@
 "use server";
 
 import { z } from "zod";
-import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { getAuthorizedActionContext } from "@/lib/auth/guard";
 import { generateInvitationToken, buildInvitationLinks } from "@/lib/auth/invitations";
@@ -206,14 +205,6 @@ export async function quickEnrollMemberAction(input: QuickEnrollMemberInput) {
 
     const waShareUrl = `https://wa.me/${waPhone}?text=${encodeURIComponent(waMessage)}`;
 
-    revalidatePath(`/app/${context.gymId}`, "layout");
-    revalidatePath(`/app/${context.gymId}/members`);
-    revalidatePath(`/app/${context.gymId}/memberships`);
-    revalidatePath(`/app/${context.gymId}/dashboard`);
-    revalidatePath(`/app/${context.gymId}/payments`);
-    revalidatePath(`/app/${context.gymId}/attendance`);
-    revalidatePath(`/app/${context.gymId}/reports`);
-
     return {
       success: true,
       memberId: member.id,
@@ -290,11 +281,6 @@ export async function updateMemberAction(input: UpdateMemberInput) {
     if (error) {
       return { success: false, error: error.message };
     }
-
-    revalidatePath(`/app/${context.gymId}`, "layout");
-    revalidatePath(`/app/${context.gymId}/members`);
-    revalidatePath(`/app/${context.gymId}/members/${validated.memberId}`);
-    revalidatePath(`/app/${context.gymId}/dashboard`);
 
     return { success: true };
   } catch (err: unknown) {
@@ -446,14 +432,6 @@ export async function renewMembershipAction(input: RenewMembershipInput) {
         paymentId = payment.id;
       }
     }
-
-    revalidatePath(`/app/${context.gymId}`, "layout");
-    revalidatePath(`/app/${context.gymId}/members`);
-    revalidatePath(`/app/${context.gymId}/members/${validated.memberId}`);
-    revalidatePath(`/app/${context.gymId}/memberships`);
-    revalidatePath(`/app/${context.gymId}/payments`);
-    revalidatePath(`/app/${context.gymId}/dashboard`);
-    revalidatePath(`/portal/${context.gymId}/dashboard`);
 
     return {
       success: true,
@@ -861,12 +839,6 @@ export async function bulkImportMembersAction(
         importedCount += chunk.length;
       }
     }
-
-    // Invalidate affected paths
-    revalidatePath(`/app/${context.gymId}`, "layout");
-    revalidatePath(`/app/${context.gymId}/members`);
-    revalidatePath(`/app/${context.gymId}/dashboard`);
-    revalidatePath(`/app/${context.gymId}/getting-started`);
 
     return {
       success: true,

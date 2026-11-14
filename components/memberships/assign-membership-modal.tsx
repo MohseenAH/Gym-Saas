@@ -135,8 +135,9 @@ export function AssignMembershipModal({
 
     setLoading(true);
 
+    let res;
     try {
-      const res = await assignMembershipAction({
+      res = await assignMembershipAction({
         gymId,
         branchId: selectedMember.branchId,
         memberId: selectedMember.id,
@@ -146,29 +147,38 @@ export function AssignMembershipModal({
         paymentMethod,
         notes: notes.trim() || undefined,
       });
-
-      if (!res.success) {
-        setError(res.error || "Failed to assign membership");
-      } else {
-        onSuccess?.({
-          memberName: selectedMember.fullName,
-          planName: currentPlan.name,
-          amountPaid: numPaid,
-          startDate: res.startDate!,
-          endDate: res.endDate!,
-        });
-        onClose();
-        setTimeout(() => {
-          startTransition(() => {
-            router.refresh();
-          });
-        }, 150);
-      }
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Failed to assign membership");
-    } finally {
       setLoading(false);
+      return;
     }
+
+    if (!res || !res.success) {
+      setError(res?.error || "Failed to assign membership");
+      setLoading(false);
+      return;
+    }
+
+    setLoading(false);
+    onClose();
+
+    try {
+      onSuccess?.({
+        memberName: selectedMember.fullName,
+        planName: currentPlan.name,
+        amountPaid: numPaid,
+        startDate: res.startDate!,
+        endDate: res.endDate!,
+      });
+    } catch (e) {
+      console.error("Post-assign callback warning:", e);
+    }
+
+    setTimeout(() => {
+      startTransition(() => {
+        router.refresh();
+      });
+    }, 200);
   }
 
   const numPaid = parseFloat(amountPaid) || 0;
