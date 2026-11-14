@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import { useRouter } from "next/navigation";
 import {
   Plus,
   Search,
@@ -51,6 +52,7 @@ export function PlansManagerClient({
   canManagePlans,
   selectedBranchId,
 }: PlansManagerClientProps) {
+  const router = useRouter();
   const [plans, setPlans] = useState<PlanDetailItem[]>(initialPlans);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
@@ -123,24 +125,29 @@ export function PlansManagerClient({
     setActionLoadingId(plan.id);
 
     const nextState = !plan.isActive;
-    const res = await togglePlanAction({
-      gymId,
-      planId: plan.id,
-      isActive: nextState,
-    });
+    try {
+      const res = await togglePlanAction({
+        gymId,
+        planId: plan.id,
+        isActive: nextState,
+      });
 
-    setActionLoadingId(null);
-
-    if (!res.success) {
-      showMessage("error", res.error || "Failed to update plan status");
-    } else {
-      setPlans((prev) =>
-        prev.map((p) => (p.id === plan.id ? { ...p, isActive: nextState } : p))
-      );
-      showMessage(
-        "success",
-        `Plan "${plan.name}" is now ${nextState ? "Active" : "Archived/Inactive"}.`
-      );
+      if (!res.success) {
+        showMessage("error", res.error || "Failed to update plan status");
+      } else {
+        setPlans((prev) =>
+          prev.map((p) => (p.id === plan.id ? { ...p, isActive: nextState } : p))
+        );
+        showMessage(
+          "success",
+          `Plan "${plan.name}" is now ${nextState ? "Active" : "Archived/Inactive"}.`
+        );
+        router.refresh();
+      }
+    } catch (err: unknown) {
+      showMessage("error", err instanceof Error ? err.message : "Failed to update plan status");
+    } finally {
+      setActionLoadingId(null);
     }
   }
 
@@ -160,17 +167,23 @@ export function PlansManagerClient({
     }
 
     setActionLoadingId(plan.id);
-    const res = await deletePlanAction({
-      gymId,
-      planId: plan.id,
-    });
-    setActionLoadingId(null);
+    try {
+      const res = await deletePlanAction({
+        gymId,
+        planId: plan.id,
+      });
 
-    if (!res.success) {
-      showMessage("error", res.error || "Failed to delete plan");
-    } else {
-      setPlans((prev) => prev.filter((p) => p.id !== plan.id));
-      showMessage("success", `Plan "${plan.name}" permanently deleted.`);
+      if (!res.success) {
+        showMessage("error", res.error || "Failed to delete plan");
+      } else {
+        setPlans((prev) => prev.filter((p) => p.id !== plan.id));
+        showMessage("success", `Plan "${plan.name}" permanently deleted.`);
+        router.refresh();
+      }
+    } catch (err: unknown) {
+      showMessage("error", err instanceof Error ? err.message : "Failed to delete plan");
+    } finally {
+      setActionLoadingId(null);
     }
   }
 
@@ -211,6 +224,7 @@ export function PlansManagerClient({
     };
     setPlans([item, ...plans]);
     showMessage("success", `Plan "${newPlan.name}" created successfully!`);
+    router.refresh();
   }
 
   function handlePlanEdited(result: {
@@ -222,11 +236,28 @@ export function PlansManagerClient({
     isActive: boolean;
   }) {
     if (result.versioned) {
+      // Update plan in local state with new ID and terms
+      setPlans((prev) =>
+        prev.map((p) =>
+          p.id === selectedPlanToEdit?.id
+            ? {
+                ...p,
+                id: result.planId,
+                name: result.name,
+                price: result.price,
+                durationDays: result.durationDays,
+                isActive: result.isActive,
+                usageCount: 0,
+                activeSubscribersCount: 0,
+              }
+            : p
+        )
+      );
       showMessage(
         "success",
         `Plan updated with new terms! Historical contracts preserved.`
       );
-      window.location.reload();
+      router.refresh();
     } else {
       setPlans((prev) =>
         prev.map((p) =>
@@ -242,6 +273,7 @@ export function PlansManagerClient({
         )
       );
       showMessage("success", `Plan "${result.name}" updated successfully.`);
+      router.refresh();
     }
   }
 

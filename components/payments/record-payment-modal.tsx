@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { Plus, X, CreditCard, Loader2, MessageSquare, CheckCircle2 } from "lucide-react";
 import { recordPaymentAction } from "@/lib/actions/payments";
 import { getTodayIST } from "@/lib/utils";
@@ -12,6 +13,7 @@ interface RecordPaymentModalProps {
 }
 
 export function RecordPaymentModal({ gymId, branches, members }: RecordPaymentModalProps) {
+  const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -48,34 +50,41 @@ export function RecordPaymentModal({ gymId, branches, members }: RecordPaymentMo
     }
 
     setLoading(true);
-    const res = await recordPaymentAction({
-      gymId,
-      branchId,
-      memberId,
-      amount: numAmount,
-      paymentMethod: paymentMethod as "cash" | "upi" | "card" | "bank_transfer" | "cheque" | "other",
-      paymentDate,
-      notes: notes || null,
-      paymentStatus: "paid",
-      idempotencyKey,
-    });
 
-    setLoading(false);
-    if (!res.success) {
-      setError(res.error || "Failed to record payment");
-    } else {
-      if (res.receiptUrl) {
-        setWaReceiptUrl(res.receiptUrl);
+    try {
+      const res = await recordPaymentAction({
+        gymId,
+        branchId,
+        memberId,
+        amount: numAmount,
+        paymentMethod: paymentMethod as "cash" | "upi" | "card" | "bank_transfer" | "cheque" | "other",
+        paymentDate,
+        notes: notes || null,
+        paymentStatus: "paid",
+        idempotencyKey,
+      });
+
+      if (!res.success) {
+        setError(res.error || "Failed to record payment");
       } else {
-        setIsOpen(false);
-        setAmount("");
-        setNotes("");
-        setIdempotencyKey(
-          typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
-            ? crypto.randomUUID()
-            : `pay_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`
-        );
+        router.refresh();
+        if (res.receiptUrl) {
+          setWaReceiptUrl(res.receiptUrl);
+        } else {
+          setIsOpen(false);
+          setAmount("");
+          setNotes("");
+          setIdempotencyKey(
+            typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
+              ? crypto.randomUUID()
+              : `pay_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`
+          );
+        }
       }
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Failed to record payment");
+    } finally {
+      setLoading(false);
     }
   }
 
@@ -89,6 +98,7 @@ export function RecordPaymentModal({ gymId, branches, members }: RecordPaymentMo
         ? crypto.randomUUID()
         : `pay_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`
     );
+    router.refresh();
   }
 
   return (

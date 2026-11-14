@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { UserPlus, X, Loader2, CheckCircle2, MessageSquare, Copy, Check, IndianRupee } from "lucide-react";
 import { quickEnrollMemberAction } from "@/lib/actions/members";
 
@@ -18,6 +19,7 @@ interface QuickEnrollModalProps {
 }
 
 export function QuickEnrollModal({ gymId, branchId, plans }: QuickEnrollModalProps) {
+  const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -56,26 +58,33 @@ export function QuickEnrollModal({ gymId, branchId, plans }: QuickEnrollModalPro
     }
 
     setLoading(true);
-    const parsedDiscount = parseFloat(discount) || 0;
-    const res = await quickEnrollMemberAction({
-      gymId,
-      branchId,
-      fullName: fullName.trim(),
-      phone: phone.trim(),
-      email: email.trim() || undefined,
-      notes: notes.trim() || null,
-      planId: selectedPlanId || null,
-      amountPaid: amountPaid !== "" && !isNaN(parseFloat(amountPaid)) ? parseFloat(amountPaid) : undefined,
-      discount: parsedDiscount > 0 ? parsedDiscount : 0,
-      paymentMethod: paymentMethod as "cash" | "upi" | "card" | "bank_transfer" | "cheque" | "other",
-    });
 
-    setLoading(false);
-    if (!res.success) {
-      setError(res.error || "Failed to enroll member");
-    } else {
-      setCreatedInviteUrl(res.inviteUrl || null);
-      setCreatedWaUrl(res.waShareUrl || null);
+    try {
+      const parsedDiscount = parseFloat(discount) || 0;
+      const res = await quickEnrollMemberAction({
+        gymId,
+        branchId,
+        fullName: fullName.trim(),
+        phone: phone.trim(),
+        email: email.trim() || undefined,
+        notes: notes.trim() || null,
+        planId: selectedPlanId || null,
+        amountPaid: amountPaid !== "" && !isNaN(parseFloat(amountPaid)) ? parseFloat(amountPaid) : undefined,
+        discount: parsedDiscount > 0 ? parsedDiscount : 0,
+        paymentMethod: paymentMethod as "cash" | "upi" | "card" | "bank_transfer" | "cheque" | "other",
+      });
+
+      if (!res.success) {
+        setError(res.error || "Failed to enroll member");
+      } else {
+        setCreatedInviteUrl(res.inviteUrl || null);
+        setCreatedWaUrl(res.waShareUrl || null);
+        router.refresh();
+      }
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Failed to enroll member");
+    } finally {
+      setLoading(false);
     }
   }
 
@@ -88,6 +97,7 @@ export function QuickEnrollModal({ gymId, branchId, plans }: QuickEnrollModalPro
     setEmail("");
     setNotes("");
     setDiscount("");
+    router.refresh();
   }
 
   function handleCopy() {

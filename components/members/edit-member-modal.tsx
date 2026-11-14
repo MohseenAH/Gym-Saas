@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { Edit2, X, Loader2, Save } from "lucide-react";
 import { updateMemberAction } from "@/lib/actions/members";
 
@@ -34,6 +35,7 @@ export function EditMemberModal({
   onClose,
   onSuccess,
 }: EditMemberModalProps) {
+  const router = useRouter();
   const [fullName, setFullName] = useState(member.fullName);
   const [phone, setPhone] = useState(member.phone);
   const [email, setEmail] = useState(member.email || "");
@@ -50,23 +52,29 @@ export function EditMemberModal({
     setError(null);
     setLoading(true);
 
-    const res = await updateMemberAction({
-      gymId,
-      memberId: member.id,
-      fullName: fullName.trim(),
-      phone: phone.trim(),
-      email: email.trim() || undefined,
-      branchId,
-      status,
-      notes: notes.trim() || null,
-    });
+    try {
+      const res = await updateMemberAction({
+        gymId,
+        memberId: member.id,
+        fullName: fullName.trim(),
+        phone: phone.trim(),
+        email: email.trim() || undefined,
+        branchId,
+        status,
+        notes: notes.trim() || null,
+      });
 
-    setLoading(false);
-    if (!res.success) {
-      setError(res.error || "Failed to update member");
-    } else {
-      onSuccess?.();
-      onClose();
+      if (!res.success) {
+        setError(res.error || "Failed to update member");
+      } else {
+        onSuccess?.();
+        onClose();
+        router.refresh();
+      }
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Failed to update member");
+    } finally {
+      setLoading(false);
     }
   }
 

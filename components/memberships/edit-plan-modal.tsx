@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef } from "react";
+import { useRouter } from "next/navigation";
 import { Edit2, X, Loader2, IndianRupee, Clock, Building2, ShieldCheck } from "lucide-react";
 import { updatePlanAction } from "@/lib/actions/plans";
 
@@ -40,12 +41,13 @@ interface EditPlanFormProps {
   onSuccess?: EditPlanModalProps["onSuccess"];
 }
 
-const DURATION_PRESETS = [
-  { label: "15 Days", days: 15 },
-  { label: "1 Month (30d)", days: 30 },
-  { label: "3 Months (90d)", days: 90 },
-  { label: "6 Months (180d)", days: 180 },
-  { label: "1 Year (365d)", days: 365 },
+const DURATION_OPTIONS = [
+  { label: "15 Days", value: "15", days: 15 },
+  { label: "1 Month (30 Days)", value: "30", days: 30 },
+  { label: "3 Months (90 Days)", value: "90", days: 90 },
+  { label: "6 Months (180 Days)", value: "180", days: 180 },
+  { label: "1 Year (365 Days)", value: "365", days: 365 },
+  { label: "Custom Duration...", value: "custom", days: null },
 ] as const;
 
 function EditPlanForm({
@@ -55,11 +57,16 @@ function EditPlanForm({
   onClose,
   onSuccess,
 }: EditPlanFormProps) {
+  const router = useRouter();
   const [name, setName] = useState(plan.name);
   const [branchId, setBranchId] = useState(plan.branchId);
   const [durationDays, setDurationDays] = useState(plan.durationDays);
-  const initialPreset = DURATION_PRESETS.find((p) => p.days === plan.durationDays)?.days ?? "custom";
-  const [selectedPreset, setSelectedPreset] = useState<number | "custom">(initialPreset);
+
+  const matchedOption = DURATION_OPTIONS.find((p) => p.days === plan.durationDays);
+  const [durationSelection, setDurationSelection] = useState<string>(
+    matchedOption ? matchedOption.value : "custom"
+  );
+
   const [price, setPrice] = useState(String(plan.price));
   const [description, setDescription] = useState(plan.description || "");
   const [isActive, setIsActive] = useState(plan.isActive);
@@ -72,17 +79,17 @@ function EditPlanForm({
   const termsModified =
     parseFloat(price) !== plan.price || durationDays !== plan.durationDays;
 
-  function handleSelectPreset(days: number) {
-    setDurationDays(days);
-    setSelectedPreset(days);
-  }
-
-  function handleSelectCustom() {
-    setSelectedPreset("custom");
-    setTimeout(() => {
-      durationInputRef.current?.focus();
-      durationInputRef.current?.select();
-    }, 50);
+  function handleDurationSelectChange(val: string) {
+    setDurationSelection(val);
+    if (val !== "custom") {
+      const d = parseInt(val, 10);
+      setDurationDays(d);
+    } else {
+      setTimeout(() => {
+        durationInputRef.current?.focus();
+        durationInputRef.current?.select();
+      }, 50);
+    }
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -107,31 +114,38 @@ function EditPlanForm({
 
     setLoading(true);
 
-    const res = await updatePlanAction({
-      gymId,
-      planId: plan.id,
-      branchId: branchId || plan.branchId,
-      name: name.trim(),
-      description: description.trim() || undefined,
-      durationDays,
-      price: numPrice,
-      isActive,
-    });
-
-    setLoading(false);
-
-    if (!res.success) {
-      setError(res.error || "Failed to update membership plan");
-    } else {
-      onSuccess?.({
-        planId: res.planId!,
-        versioned: res.versioned,
+    try {
+      const res = await updatePlanAction({
+        gymId,
+        planId: plan.id,
+        branchId: branchId || plan.branchId,
         name: name.trim(),
-        price: numPrice,
+        description: description.trim() || undefined,
         durationDays,
+        price: numPrice,
         isActive,
       });
-      onClose();
+
+      if (!res.success) {
+        setError(res.error || "Failed to update membership plan");
+      } else {
+        onSuccess?.({
+          planId: res.planId!,
+          versioned: res.versioned,
+          name: name.trim(),
+          price: numPrice,
+          durationDays,
+          isActive,
+        });
+
+        // Close modal immediately and refresh in background
+        onClose();
+        router.refresh();
+      }
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Failed to update membership plan");
+    } finally {
+      setLoading(false);
     }
   }
 
@@ -174,7 +188,7 @@ function EditPlanForm({
       <form onSubmit={handleSubmit} className="mt-4 sm:mt-5 space-y-3.5 sm:space-y-4">
         {/* Plan Name */}
         <div>
-          <label className="block text-[10px] sm:text-xs font-bold uppercase tracking-wider text-muted-foreground mb-1">
+          <label className="block text-xs font-bold uppercase tracking-wider text-muted-foreground mb-1">
             Plan Name *
           </label>
           <input
@@ -189,7 +203,7 @@ function EditPlanForm({
         {/* Branch Selection */}
         {branches.length > 1 && (
           <div>
-            <label className="block text-[10px] sm:text-xs font-bold uppercase tracking-wider text-muted-foreground mb-1">
+            <label className="block text-xs font-bold uppercase tracking-wider text-muted-foreground mb-1">
               Branch Location *
             </label>
             <div className="relative">
@@ -210,75 +224,63 @@ function EditPlanForm({
           </div>
         )}
 
-        {/* Duration Presets & Numeric Input */}
+        {/* Duration Dropdown & Custom Numeric Input */}
         <div>
           <div className="flex items-center justify-between mb-1.5">
-            <label className="block text-[10px] sm:text-xs font-bold uppercase tracking-wider text-muted-foreground">
+            <label className="block text-xs font-bold uppercase tracking-wider text-muted-foreground">
               Plan Duration *
             </label>
-            <span className="text-[11px] sm:text-xs font-bold text-primary">
+            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-primary/10 text-primary border border-primary/20">
+              <Clock className="w-3 h-3" />
               {durationDays} {durationDays === 1 ? "Day" : "Days"} Active
             </span>
           </div>
 
-          {/* Quick Presets Grid */}
-          <div className="grid grid-cols-3 gap-1.5 sm:gap-2 mb-2">
-            {DURATION_PRESETS.map((preset) => {
-              const isSelected = selectedPreset === preset.days && durationDays === preset.days;
-              return (
-                <button
-                  key={preset.days}
-                  type="button"
-                  onClick={() => handleSelectPreset(preset.days)}
-                  className={`h-8 sm:h-9 px-2 rounded-xl text-[11px] sm:text-xs font-bold border transition-all cursor-pointer truncate ${
-                    isSelected
-                      ? "bg-primary/10 border-primary text-primary shadow-2xs font-black"
-                      : "bg-muted/40 border-border text-muted-foreground hover:bg-muted hover:text-foreground"
-                  }`}
-                >
-                  {preset.label}
-                </button>
-              );
-            })}
-            <button
-              type="button"
-              onClick={handleSelectCustom}
-              className={`h-8 sm:h-9 px-2 rounded-xl text-[11px] sm:text-xs font-bold border transition-all cursor-pointer ${
-                selectedPreset === "custom"
-                  ? "bg-primary/10 border-primary text-primary shadow-2xs font-black"
-                  : "bg-muted/40 border-border text-muted-foreground hover:bg-muted hover:text-foreground"
-              }`}
+          {/* Clean Dropdown */}
+          <div className="relative">
+            <Clock className="w-4 h-4 absolute left-3.5 top-3.5 text-muted-foreground pointer-events-none" />
+            <select
+              value={durationSelection}
+              onChange={(e) => handleDurationSelectChange(e.target.value)}
+              className="w-full h-10 sm:h-11 pl-10 pr-4 bg-muted/40 border border-input rounded-xl text-xs sm:text-sm font-semibold text-foreground focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary/40 cursor-pointer"
             >
-              Custom
-            </button>
+              {DURATION_OPTIONS.map((opt) => (
+                <option key={opt.value} value={opt.value}>
+                  {opt.label}
+                </option>
+              ))}
+            </select>
           </div>
 
-          <div className="relative">
-            <Clock className="w-4 h-4 absolute left-3 top-3 sm:top-3.5 text-muted-foreground pointer-events-none" />
-            <input
-              ref={durationInputRef}
-              type="number"
-              inputMode="numeric"
-              min="1"
-              max="3650"
-              required
-              value={durationDays || ""}
-              onChange={(e) => {
-                const val = parseInt(e.target.value, 10);
-                const d = isNaN(val) ? 0 : val;
-                setDurationDays(d);
-                const match = DURATION_PRESETS.find((p) => p.days === d);
-                setSelectedPreset(match ? match.days : "custom");
-              }}
-              placeholder="Custom duration in days (1-3650)"
-              className="w-full h-10 sm:h-11 pl-9 pr-4 bg-muted/40 border border-input rounded-xl text-xs sm:text-sm font-semibold text-foreground focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary/40"
-            />
-          </div>
+          {/* Custom Days Input (Shown ONLY when Custom Duration is active) */}
+          {durationSelection === "custom" && (
+            <div className="mt-2 relative animate-in fade-in duration-150">
+              <Clock className="w-4 h-4 absolute left-3.5 top-3.5 text-muted-foreground pointer-events-none" />
+              <input
+                ref={durationInputRef}
+                type="number"
+                inputMode="numeric"
+                min="1"
+                max="3650"
+                required
+                value={durationDays || ""}
+                onChange={(e) => {
+                  const val = parseInt(e.target.value, 10);
+                  setDurationDays(isNaN(val) ? 0 : val);
+                }}
+                placeholder="Custom duration in days (1-3650)"
+                className="w-full h-10 sm:h-11 pl-10 pr-4 bg-muted/40 border border-input rounded-xl text-xs sm:text-sm font-semibold text-foreground focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary/40"
+              />
+              <p className="mt-1 text-[11px] text-muted-foreground">
+                Enter total duration between 1 and 3,650 days (up to 10 years)
+              </p>
+            </div>
+          )}
         </div>
 
         {/* Price Input */}
         <div>
-          <label className="block text-[10px] sm:text-xs font-bold uppercase tracking-wider text-muted-foreground mb-1">
+          <label className="block text-xs font-bold uppercase tracking-wider text-muted-foreground mb-1">
             Price (₹) *
           </label>
           <div className="relative">
@@ -300,7 +302,7 @@ function EditPlanForm({
         <div className="flex items-center justify-between p-3 sm:p-3.5 bg-muted/40 rounded-2xl border border-border">
           <div>
             <div className="text-xs font-bold text-foreground">Plan Status</div>
-            <div className="text-[10px] sm:text-[11px] text-muted-foreground">
+            <div className="text-[11px] text-muted-foreground">
               {isActive ? "Active (Available for member enrollment)" : "Archived (Hidden from new assignments)"}
             </div>
           </div>
@@ -322,14 +324,14 @@ function EditPlanForm({
 
         {/* Description */}
         <div>
-          <label className="block text-[10px] sm:text-xs font-bold uppercase tracking-wider text-muted-foreground mb-1">
+          <label className="block text-xs font-bold uppercase tracking-wider text-muted-foreground mb-1">
             Description (Optional)
           </label>
           <textarea
             rows={2}
             value={description}
             onChange={(e) => setDescription(e.target.value)}
-            className="w-full p-2.5 sm:p-3 bg-muted/40 border border-input rounded-xl text-xs text-foreground focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary/40"
+            className="w-full p-2.5 sm:p-3 bg-muted/40 border border-input rounded-xl text-xs sm:text-sm text-foreground focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary/40"
           />
         </div>
 
@@ -338,17 +340,17 @@ function EditPlanForm({
           <button
             type="button"
             onClick={onClose}
-            className="h-10 sm:h-11 px-3.5 sm:px-4 text-xs font-bold text-muted-foreground hover:bg-muted rounded-xl transition-colors cursor-pointer"
+            className="h-10 sm:h-11 px-3.5 sm:px-4 text-xs sm:text-sm font-bold text-muted-foreground hover:bg-muted rounded-xl transition-colors cursor-pointer"
           >
             Cancel
           </button>
           <button
             type="submit"
             disabled={loading}
-            className="flex items-center gap-1.5 sm:gap-2 h-10 sm:h-11 px-4 sm:px-5 bg-primary hover:opacity-95 text-primary-foreground text-xs font-bold rounded-xl shadow-md shadow-primary/25 transition-all disabled:opacity-50 cursor-pointer"
+            className="flex items-center gap-1.5 sm:gap-2 h-10 sm:h-11 px-4 sm:px-5 bg-primary hover:opacity-95 text-primary-foreground text-xs sm:text-sm font-bold rounded-xl shadow-md shadow-primary/25 transition-all disabled:opacity-50 cursor-pointer"
           >
-            {loading && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
-            Save Changes
+            {loading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : null}
+            <span>Save Changes</span>
           </button>
         </div>
       </form>

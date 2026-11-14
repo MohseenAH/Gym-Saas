@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import { useRouter } from "next/navigation";
 import { UserPlus, X, Loader2, IndianRupee, Calendar, CheckCircle2, AlertTriangle } from "lucide-react";
 import { assignMembershipAction } from "@/lib/actions/memberships";
 import { getTodayIST, getISTDateString } from "@/lib/utils";
@@ -47,6 +48,7 @@ export function AssignMembershipModal({
   onClose,
   onSuccess,
 }: AssignMembershipModalProps) {
+  const router = useRouter();
   const [selectedMemberId, setSelectedMemberId] = useState<string>(
     initialMemberId || members[0]?.id || ""
   );
@@ -133,30 +135,35 @@ export function AssignMembershipModal({
 
     setLoading(true);
 
-    const res = await assignMembershipAction({
-      gymId,
-      branchId: selectedMember.branchId,
-      memberId: selectedMember.id,
-      planId: currentPlan.id,
-      startDate,
-      amountPaid: numPaid,
-      paymentMethod,
-      notes: notes.trim() || undefined,
-    });
-
-    setLoading(false);
-
-    if (!res.success) {
-      setError(res.error || "Failed to assign membership");
-    } else {
-      onSuccess?.({
-        memberName: selectedMember.fullName,
-        planName: currentPlan.name,
+    try {
+      const res = await assignMembershipAction({
+        gymId,
+        branchId: selectedMember.branchId,
+        memberId: selectedMember.id,
+        planId: currentPlan.id,
+        startDate,
         amountPaid: numPaid,
-        startDate: res.startDate!,
-        endDate: res.endDate!,
+        paymentMethod,
+        notes: notes.trim() || undefined,
       });
-      onClose();
+
+      if (!res.success) {
+        setError(res.error || "Failed to assign membership");
+      } else {
+        onSuccess?.({
+          memberName: selectedMember.fullName,
+          planName: currentPlan.name,
+          amountPaid: numPaid,
+          startDate: res.startDate!,
+          endDate: res.endDate!,
+        });
+        onClose();
+        router.refresh();
+      }
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Failed to assign membership");
+    } finally {
+      setLoading(false);
     }
   }
 

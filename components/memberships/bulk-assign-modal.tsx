@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   Users,
   X,
@@ -51,6 +52,7 @@ export function BulkAssignModal({
   onClose,
   onSuccess,
 }: BulkAssignModalProps) {
+  const router = useRouter();
   const [startDate, setStartDate] = useState<string>(getTodayIST());
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
@@ -80,10 +82,14 @@ export function BulkAssignModal({
   const isHistoricalExpired = calculatedEndDate ? calculatedEndDate < todayIST : false;
 
   function handleClose() {
+    const shouldRefresh = assignedCount !== null && assignedCount > 0;
     setError(null);
     setSkippedList([]);
     setAssignedCount(null);
     onClose();
+    if (shouldRefresh) {
+      router.refresh();
+    }
   }
 
   async function handleAssign() {
@@ -106,24 +112,29 @@ export function BulkAssignModal({
     setError(null);
     setSkippedList([]);
 
-    const res = await bulkAssignMembershipsAction({
-      gymId,
-      branchId: firstBranchId,
-      memberIds: selectedMembers.map((m) => m.id),
-      planId: selectedPlanId,
-      startDate,
-    });
+    try {
+      const res = await bulkAssignMembershipsAction({
+        gymId,
+        branchId: firstBranchId,
+        memberIds: selectedMembers.map((m) => m.id),
+        planId: selectedPlanId,
+        startDate,
+      });
 
-    setLoading(false);
-
-    if (!res.success) {
-      setError(res.error || "Failed to assign membership contracts");
-    } else {
-      setAssignedCount(res.assignedCount);
-      setSkippedList(res.skippedMembers || []);
-      if (res.assignedCount > 0) {
-        onSuccess();
+      if (!res.success) {
+        setError(res.error || "Failed to assign membership contracts");
+      } else {
+        setAssignedCount(res.assignedCount);
+        setSkippedList(res.skippedMembers || []);
+        if (res.assignedCount > 0) {
+          onSuccess();
+          router.refresh();
+        }
       }
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Failed to assign membership contracts");
+    } finally {
+      setLoading(false);
     }
   }
 

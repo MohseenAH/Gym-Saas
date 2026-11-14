@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { RefreshCw, X, Loader2, CheckCircle2, IndianRupee } from "lucide-react";
 import { renewMembershipAction } from "@/lib/actions/members";
 import { getTodayIST } from "@/lib/utils";
@@ -43,6 +44,7 @@ export function RenewMembershipModal({
   onClose,
   onSuccess,
 }: RenewMembershipModalProps) {
+  const router = useRouter();
   const isPreviousPlanArchived = Boolean(currentPlanId && !plans.some((p) => p.id === currentPlanId));
   const initialPlanId = (currentPlanId && plans.some((p) => p.id === currentPlanId))
     ? currentPlanId
@@ -80,31 +82,38 @@ export function RenewMembershipModal({
     }
 
     setLoading(true);
-    const res = await renewMembershipAction({
-      gymId,
-      branchId,
-      memberId,
-      planId: selectedPlanId,
-      startDate,
-      amountPaid: Number(amountPaid) || 0,
-      paymentMethod,
-      notes: notes.trim() || undefined,
-    });
 
-    setLoading(false);
-    if (!res.success) {
-      setError(res.error || "Failed to renew membership");
-    } else {
-      onSuccess?.({
-        membershipId: res.membershipId!,
-        paymentId: res.paymentId,
-        planName: res.planName!,
-        startDate: res.startDate!,
-        endDate: res.endDate!,
+    try {
+      const res = await renewMembershipAction({
+        gymId,
+        branchId,
+        memberId,
+        planId: selectedPlanId,
+        startDate,
         amountPaid: Number(amountPaid) || 0,
         paymentMethod,
+        notes: notes.trim() || undefined,
       });
-      onClose();
+
+      if (!res.success) {
+        setError(res.error || "Failed to renew membership");
+      } else {
+        onSuccess?.({
+          membershipId: res.membershipId!,
+          paymentId: res.paymentId,
+          planName: res.planName!,
+          startDate: res.startDate!,
+          endDate: res.endDate!,
+          amountPaid: Number(amountPaid) || 0,
+          paymentMethod,
+        });
+        onClose();
+        router.refresh();
+      }
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Failed to renew membership");
+    } finally {
+      setLoading(false);
     }
   }
 

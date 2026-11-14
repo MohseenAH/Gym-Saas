@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { Plus, X, Receipt, Loader2 } from "lucide-react";
 import { createExpenseAction, type CreateExpenseInput } from "@/lib/actions/expenses";
 import { getTodayIST } from "@/lib/utils";
@@ -11,6 +12,7 @@ interface RecordExpenseModalProps {
 }
 
 export function RecordExpenseModal({ gymId, branches }: RecordExpenseModalProps) {
+  const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -33,23 +35,30 @@ export function RecordExpenseModal({ gymId, branches }: RecordExpenseModalProps)
     }
 
     setLoading(true);
-    const res = await createExpenseAction({
-      gymId,
-      branchId,
-      category: category as CreateExpenseInput["category"],
-      amount: numAmount,
-      expenseDate,
-      paymentMethod: paymentMethod as CreateExpenseInput["paymentMethod"],
-      description: description || null,
-    });
 
-    setLoading(false);
-    if (!res.success) {
-      setError(res.error || "Failed to record expense");
-    } else {
-      setIsOpen(false);
-      setAmount("");
-      setDescription("");
+    try {
+      const res = await createExpenseAction({
+        gymId,
+        branchId,
+        category: category as CreateExpenseInput["category"],
+        amount: numAmount,
+        expenseDate,
+        paymentMethod: paymentMethod as CreateExpenseInput["paymentMethod"],
+        description: description || null,
+      });
+
+      if (!res.success) {
+        setError(res.error || "Failed to record expense");
+      } else {
+        setIsOpen(false);
+        setAmount("");
+        setDescription("");
+        router.refresh();
+      }
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Failed to record expense");
+    } finally {
+      setLoading(false);
     }
   }
 
