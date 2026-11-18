@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { MessageSquare, ArrowRight } from "lucide-react";
+import { MessageSquare, ArrowRight, Clock, Sparkles } from "lucide-react";
 
 export interface ExpiringMember {
   memberId: string;
@@ -24,52 +24,56 @@ export function ExpiringSoonAlerts({
   gymId,
   gymName,
   expiringMembers,
-  isEmbedded = false,
 }: ExpiringSoonAlertsProps) {
   if (expiringMembers.length === 0) {
-    if (isEmbedded) {
-      return (
-        <div className="p-4 text-card-foreground">
-          <div className="flex items-center justify-between">
-            <h2 className="text-sm font-bold text-foreground">Expiring in 7 Days</h2>
-            <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-muted text-muted-foreground border border-border">
-              0 Due
-            </span>
+    return (
+      <div className="bg-card p-5 sm:p-6 rounded-2xl border border-border border-t-2 border-t-emerald-500 shadow-xs text-card-foreground">
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-2.5">
+            <div className="p-2 bg-emerald-500/10 text-emerald-600 rounded-xl">
+              <Sparkles className="w-4 h-4" />
+            </div>
+            <div>
+              <h2 className="text-base font-bold text-foreground">Expiring in 7 Days</h2>
+              <p className="text-xs text-muted-foreground">Renewal Radar</p>
+            </div>
+          </div>
+          <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20">
+            0 Due
+          </span>
+        </div>
+        <div className="py-4 text-center">
+          <div className="text-sm font-semibold text-emerald-600 dark:text-emerald-400">
+            All memberships healthy — 0 expiring this week
           </div>
           <p className="text-xs text-muted-foreground mt-1">
-            No subscriptions expiring this week.
+            Retention is steady. Great job keeping members engaged!
           </p>
-        </div>
-      );
-    }
-
-    return (
-      <div className="bg-card p-5 sm:p-6 rounded-2xl sm:rounded-3xl border border-border shadow-xs text-card-foreground">
-        <h2 className="text-base font-bold text-foreground">Expiring in 7 Days</h2>
-        <div className="mt-3">
-          <div className="text-2xl sm:text-3xl font-black text-foreground">0 Due</div>
-          <div className="text-xs sm:text-sm text-muted-foreground mt-1 font-medium">
-            Steady member retention 🌿
-          </div>
+          <Link
+            href={`/app/${gymId}/memberships?tab=active`}
+            className="inline-flex items-center gap-1.5 mt-3 text-xs font-bold text-primary hover:underline cursor-pointer"
+          >
+            <span>View All Active Memberships</span>
+            <ArrowRight className="w-3.5 h-3.5" />
+          </Link>
         </div>
       </div>
     );
   }
 
   return (
-    <div
-      className={
-        isEmbedded
-          ? "p-4 text-card-foreground"
-          : "bg-card p-5 sm:p-6 rounded-2xl sm:rounded-3xl border border-border shadow-xs text-card-foreground"
-      }
-    >
+    <div className="bg-card p-5 sm:p-6 rounded-2xl border border-border border-t-2 border-t-amber-500 shadow-xs text-card-foreground">
       <div className="flex items-center justify-between mb-4">
-        <div>
-          <h2 className="text-base font-bold text-foreground">Expiring in 7 Days</h2>
-          <p className="text-xs text-muted-foreground mt-0.5">
-            Send instant WhatsApp reminders before contracts lapse
-          </p>
+        <div className="flex items-center gap-2.5">
+          <div className="p-2 bg-amber-500/15 text-amber-600 rounded-xl">
+            <Clock className="w-4 h-4" />
+          </div>
+          <div>
+            <h2 className="text-base font-bold text-foreground">Expiring in 7 Days</h2>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              Send instant WhatsApp reminders before contracts lapse
+            </p>
+          </div>
         </div>
         <span className="px-2.5 py-0.5 rounded-full bg-amber-500/15 text-amber-700 dark:text-amber-400 text-xs font-bold border border-amber-500/30">
           {expiringMembers.length} Due
@@ -95,7 +99,7 @@ export function ExpiringSoonAlerts({
               className="py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-muted/40 rounded-xl px-2 transition-colors"
             >
               <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-full bg-primary/10 text-primary font-bold flex items-center justify-center text-sm border border-primary/20 shrink-0">
+                <div className="w-9 h-9 rounded-full bg-amber-500/10 text-amber-600 font-bold flex items-center justify-center text-sm border border-amber-500/20 shrink-0">
                   {m.fullName.charAt(0).toUpperCase()}
                 </div>
                 <div>

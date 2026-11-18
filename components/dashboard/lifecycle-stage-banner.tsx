@@ -63,89 +63,138 @@ export function LifecycleStageBanner({
       )}
 
       {/* STAGE 1: Compact Setup Checklist Strip */}
-      {stage === "STAGE_1_SETUP" && (
-        <div className="bg-emerald-500/5 dark:bg-emerald-950/20 rounded-2xl border border-emerald-500/20 shadow-2xs text-card-foreground">
-          {/* Desktop Stepper Banner (hidden md:flex) */}
-          <div className="hidden md:flex items-center justify-between px-5 py-3.5">
-            <div className="flex items-center gap-2.5">
-              <span className="font-bold text-foreground text-sm sm:text-base">
-                Setup Checklist
-              </span>
-              <span className="px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-800 dark:text-emerald-300 border border-emerald-500/20">
-                Setup Mode
-              </span>
+      {stage === "STAGE_1_SETUP" && (() => {
+        const completedSteps = (plansCount > 0 ? 1 : 0) + (membersCount > 0 ? 1 : 0);
+        const progressPct = Math.round((completedSteps / 2) * 100);
+
+        return (
+          <div className="bg-gradient-to-r from-emerald-500/10 via-teal-500/10 to-emerald-500/5 rounded-2xl border border-emerald-500/25 shadow-xs p-4 sm:px-5 sm:py-3.5 text-card-foreground">
+            {/* Desktop Stepper Banner (hidden md:flex) */}
+            <div className="hidden md:flex items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-xl bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 shrink-0">
+                  <Sparkles className="w-4 h-4" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="font-black text-foreground text-sm sm:text-base">
+                      Gym Launch Checklist
+                    </span>
+                    <span className="px-2 py-0.5 rounded-full text-[11px] font-bold uppercase tracking-wider bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30">
+                      Setup Mode
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2 mt-1">
+                    <div className="w-28 h-1.5 rounded-full bg-emerald-500/20 overflow-hidden">
+                      <div
+                        className="h-full bg-emerald-600 transition-all duration-300"
+                        style={{ width: `${progressPct}%` }}
+                      />
+                    </div>
+                    <span className="text-xs font-semibold text-emerald-700 dark:text-emerald-300">
+                      {completedSteps} of 2 complete ({progressPct}%)
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-3">
+                <Link
+                  href={`/app/${gymId}/memberships?tab=plans`}
+                  className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                    plansCount > 0
+                      ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30"
+                      : "bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs"
+                  }`}
+                >
+                  {plansCount > 0 ? (
+                    <Check className="w-3.5 h-3.5 stroke-[3]" />
+                  ) : (
+                    <Circle className="w-3.5 h-3.5" />
+                  )}
+                  <span>1. Create Plans</span>
+                </Link>
+
+                <div className="w-8 h-px bg-emerald-500/30" />
+
+                <Link
+                  href={`/app/${gymId}/members`}
+                  className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                    membersCount > 0
+                      ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30"
+                      : "bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs"
+                  }`}
+                >
+                  {membersCount > 0 ? (
+                    <Check className="w-3.5 h-3.5 stroke-[3]" />
+                  ) : (
+                    <Circle className="w-3.5 h-3.5" />
+                  )}
+                  <span>2. Add Members</span>
+                </Link>
+              </div>
             </div>
 
-            <div className="flex items-center gap-3">
-              <Link
-                href={`/app/${gymId}/memberships?tab=plans`}
-                className="flex items-center gap-2 text-sm font-semibold text-foreground hover:text-primary transition-colors cursor-pointer"
-              >
-                {plansCount > 0 ? (
-                  <div className="w-4 h-4 rounded-full bg-emerald-600 text-white flex items-center justify-center shrink-0">
-                    <Check className="w-2.5 h-2.5 stroke-[3]" />
+            {/* Mobile Stacked Checklist Container (visible on mobile, md:hidden) */}
+            <div className="md:hidden space-y-2.5">
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="font-bold text-foreground text-sm">
+                    Gym Launch Checklist
                   </div>
-                ) : (
-                  <div className="w-4 h-4 rounded-full border border-muted-foreground/60 shrink-0" />
-                )}
-                <span>1. Create Plans</span>
-              </Link>
-
-              <div className="w-16 sm:w-20 h-px bg-border" />
-
-              <Link
-                href={`/app/${gymId}/members`}
-                className="flex items-center gap-2 text-sm font-semibold text-foreground hover:text-primary transition-colors cursor-pointer"
-              >
-                {membersCount > 0 ? (
-                  <div className="w-4 h-4 rounded-full bg-emerald-600 text-white flex items-center justify-center shrink-0">
-                    <Check className="w-2.5 h-2.5 stroke-[3]" />
+                  <div className="text-[11px] font-medium text-emerald-700 dark:text-emerald-300">
+                    {completedSteps} of 2 steps complete ({progressPct}%)
                   </div>
-                ) : (
-                  <div className="w-4 h-4 rounded-full border border-muted-foreground/60 shrink-0" />
-                )}
-                <span>2. Add Members</span>
-              </Link>
+                </div>
+                <span className="px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30">
+                  SETUP MODE
+                </span>
+              </div>
+
+              <div className="w-full h-1.5 rounded-full bg-emerald-500/20 overflow-hidden">
+                <div
+                  className="h-full bg-emerald-600 transition-all duration-300"
+                  style={{ width: `${progressPct}%` }}
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-2 pt-1">
+                <Link
+                  href={`/app/${gymId}/memberships?tab=plans`}
+                  className={`p-2.5 rounded-xl flex items-center justify-between text-xs font-bold border transition-colors ${
+                    plansCount > 0
+                      ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-500/30"
+                      : "bg-card text-foreground border-border"
+                  }`}
+                >
+                  <span>1. Create Plans</span>
+                  {plansCount > 0 ? (
+                    <Check className="w-3.5 h-3.5 text-emerald-600" />
+                  ) : (
+                    <ChevronRight className="w-3.5 h-3.5 text-muted-foreground" />
+                  )}
+                </Link>
+
+                <Link
+                  href={`/app/${gymId}/members`}
+                  className={`p-2.5 rounded-xl flex items-center justify-between text-xs font-bold border transition-colors ${
+                    membersCount > 0
+                      ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-500/30"
+                      : "bg-card text-foreground border-border"
+                  }`}
+                >
+                  <span>2. Add Members</span>
+                  {membersCount > 0 ? (
+                    <Check className="w-3.5 h-3.5 text-emerald-600" />
+                  ) : (
+                    <ChevronRight className="w-3.5 h-3.5 text-muted-foreground" />
+                  )}
+                </Link>
+              </div>
             </div>
           </div>
-
-          {/* Mobile Stacked Checklist Container (visible on mobile, md:hidden) */}
-          <div className="md:hidden divide-y divide-border">
-            <div className="p-3.5 flex items-center justify-between">
-              <span className="font-bold text-foreground text-sm">
-                15-Minute Gym Setup Checklist
-              </span>
-              <span className="px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider bg-muted text-muted-foreground border border-border">
-                SETUP MODE
-              </span>
-            </div>
-
-            <Link
-              href={`/app/${gymId}/memberships?tab=plans`}
-              className="p-3 flex items-center justify-between text-xs sm:text-sm font-semibold text-foreground hover:bg-muted/40 transition-colors"
-            >
-              <span>Step 1: Create Plans</span>
-              {plansCount > 0 ? (
-                <Check className="w-4 h-4 text-emerald-600" />
-              ) : (
-                <ChevronRight className="w-4 h-4 text-muted-foreground" />
-              )}
-            </Link>
-
-            <Link
-              href={`/app/${gymId}/members`}
-              className="p-3 flex items-center justify-between text-xs sm:text-sm font-semibold text-foreground hover:bg-muted/40 transition-colors"
-            >
-              <span>Step 2: Add Members</span>
-              {membersCount > 0 ? (
-                <Check className="w-4 h-4 text-emerald-600" />
-              ) : (
-                <ChevronRight className="w-4 h-4 text-muted-foreground" />
-              )}
-            </Link>
-          </div>
-        </div>
-      )}
+        );
+      })()}
 
       {/* STAGE 2: High-Visibility Unassigned Members Operational Alert */}
       {stage === "STAGE_2_UNASSIGNED" && (

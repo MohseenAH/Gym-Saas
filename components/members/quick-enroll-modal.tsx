@@ -17,9 +17,16 @@ interface QuickEnrollModalProps {
   branchId: string;
   plans: Plan[];
   triggerLabel?: string;
+  triggerClassName?: string;
 }
 
-export function QuickEnrollModal({ gymId, branchId, plans, triggerLabel = "+ Add Member" }: QuickEnrollModalProps) {
+export function QuickEnrollModal({
+  gymId,
+  branchId,
+  plans,
+  triggerLabel = "+ Add Member",
+  triggerClassName,
+}: QuickEnrollModalProps) {
   const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -120,7 +127,10 @@ export function QuickEnrollModal({ gymId, branchId, plans, triggerLabel = "+ Add
     <>
       <button
         onClick={() => setIsOpen(true)}
-        className="flex items-center justify-center gap-2 h-10 sm:h-11 px-4 py-2 bg-primary hover:opacity-95 text-primary-foreground rounded-xl text-xs sm:text-sm font-bold shadow-md shadow-primary/20 transition-all cursor-pointer w-full sm:w-auto"
+        className={
+          triggerClassName ||
+          "flex items-center justify-center gap-2 h-10 sm:h-11 px-4 py-2 bg-primary hover:opacity-95 text-primary-foreground rounded-xl text-xs sm:text-sm font-bold shadow-md shadow-primary/20 transition-all cursor-pointer w-full sm:w-auto"
+        }
       >
         <UserPlus className="w-4 h-4" />
         <span>{triggerLabel}</span>
