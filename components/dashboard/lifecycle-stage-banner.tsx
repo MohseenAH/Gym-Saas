@@ -14,6 +14,8 @@ import {
   Users,
   Compass,
   Zap,
+  Check,
+  ChevronRight,
 } from "lucide-react";
 import { GymLifecycleStage } from "@/lib/utils";
 
@@ -62,121 +64,85 @@ export function LifecycleStageBanner({
 
       {/* STAGE 1: Compact Setup Checklist Strip */}
       {stage === "STAGE_1_SETUP" && (
-        <div className="bg-card rounded-2xl border border-primary/20 shadow-xs p-3 sm:p-4 text-card-foreground">
-          {/* Desktop: Single slim horizontal banner */}
-          <div className="hidden md:flex items-center justify-between gap-4">
-            <div className="flex items-center gap-3">
-              <div className="h-8 w-8 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
-                <Sparkles className="w-4 h-4" />
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="font-black text-foreground text-sm tracking-tight">
-                  Setup Checklist
-                </span>
-                <span className="px-2 py-0.5 rounded-full text-[11px] font-bold uppercase tracking-wider bg-primary/10 text-primary border border-primary/20">
-                  Setup Mode
-                </span>
-              </div>
+        <div className="bg-emerald-500/5 dark:bg-emerald-950/20 rounded-2xl border border-emerald-500/20 shadow-2xs text-card-foreground">
+          {/* Desktop Stepper Banner (hidden md:flex) */}
+          <div className="hidden md:flex items-center justify-between px-5 py-3.5">
+            <div className="flex items-center gap-2.5">
+              <span className="font-bold text-foreground text-sm sm:text-base">
+                Setup Checklist
+              </span>
+              <span className="px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-800 dark:text-emerald-300 border border-emerald-500/20">
+                Setup Mode
+              </span>
             </div>
 
             <div className="flex items-center gap-3">
-              {/* Step 1: Create Plans */}
               <Link
                 href={`/app/${gymId}/memberships?tab=plans`}
-                className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-bold transition-all border ${
-                  plansCount > 0
-                    ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/20"
-                    : "bg-muted/60 text-foreground border-border hover:bg-muted"
-                }`}
+                className="flex items-center gap-2 text-sm font-semibold text-foreground hover:text-primary transition-colors cursor-pointer"
               >
                 {plansCount > 0 ? (
-                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                  <div className="w-4 h-4 rounded-full bg-emerald-600 text-white flex items-center justify-center shrink-0">
+                    <Check className="w-2.5 h-2.5 stroke-[3]" />
+                  </div>
                 ) : (
-                  <Circle className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+                  <div className="w-4 h-4 rounded-full border border-muted-foreground/60 shrink-0" />
                 )}
                 <span>1. Create Plans</span>
-                <span className="text-[10px] uppercase font-bold opacity-80">
-                  {plansCount > 0 ? `(${plansCount} Active)` : "Pending"}
-                </span>
               </Link>
 
-              {/* Step 2: Add Members */}
+              <div className="w-16 sm:w-20 h-px bg-border" />
+
               <Link
                 href={`/app/${gymId}/members`}
-                className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-bold transition-all border ${
-                  membersCount > 0
-                    ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/20"
-                    : "bg-muted/60 text-foreground border-border hover:bg-muted"
-                }`}
+                className="flex items-center gap-2 text-sm font-semibold text-foreground hover:text-primary transition-colors cursor-pointer"
               >
                 {membersCount > 0 ? (
-                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                  <div className="w-4 h-4 rounded-full bg-emerald-600 text-white flex items-center justify-center shrink-0">
+                    <Check className="w-2.5 h-2.5 stroke-[3]" />
+                  </div>
                 ) : (
-                  <Circle className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+                  <div className="w-4 h-4 rounded-full border border-muted-foreground/60 shrink-0" />
                 )}
                 <span>2. Add Members</span>
-                <span className="text-[10px] uppercase font-bold opacity-80">
-                  {membersCount > 0 ? `(${membersCount} Enrolled)` : "Pending"}
-                </span>
-              </Link>
-
-              <Link
-                href={`/app/${gymId}/getting-started`}
-                className="inline-flex items-center gap-1 text-xs font-bold text-primary hover:underline ml-1"
-              >
-                <span>Guide</span>
-                <ArrowRight className="w-3 h-3" />
               </Link>
             </div>
           </div>
 
-          {/* Mobile: Compact stacked list container */}
-          <div className="md:hidden space-y-2">
-            <div className="flex items-center justify-between pb-1.5 border-b border-border/60">
-              <div className="flex items-center gap-2">
-                <Sparkles className="w-3.5 h-3.5 text-primary" />
-                <span className="font-bold text-foreground text-xs">15-Minute Gym Setup Checklist</span>
-              </div>
-              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-primary/10 text-primary">
-                Setup
+          {/* Mobile Stacked Checklist Container (visible on mobile, md:hidden) */}
+          <div className="md:hidden divide-y divide-border">
+            <div className="p-3.5 flex items-center justify-between">
+              <span className="font-bold text-foreground text-sm">
+                15-Minute Gym Setup Checklist
+              </span>
+              <span className="px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider bg-muted text-muted-foreground border border-border">
+                SETUP MODE
               </span>
             </div>
 
-            <div className="space-y-1.5">
-              <Link
-                href={`/app/${gymId}/memberships?tab=plans`}
-                className="flex items-center justify-between p-2.5 rounded-xl bg-muted/40 hover:bg-muted border border-border/60 text-xs transition-colors"
-              >
-                <div className="flex items-center gap-2 font-bold text-foreground">
-                  {plansCount > 0 ? (
-                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                  ) : (
-                    <Circle className="w-4 h-4 text-muted-foreground shrink-0" />
-                  )}
-                  <span>Step 1: Create Plans</span>
-                </div>
-                <span className="text-xs font-bold text-muted-foreground">
-                  {plansCount > 0 ? "✓" : ">"}
-                </span>
-              </Link>
+            <Link
+              href={`/app/${gymId}/memberships?tab=plans`}
+              className="p-3 flex items-center justify-between text-xs sm:text-sm font-semibold text-foreground hover:bg-muted/40 transition-colors"
+            >
+              <span>Step 1: Create Plans</span>
+              {plansCount > 0 ? (
+                <Check className="w-4 h-4 text-emerald-600" />
+              ) : (
+                <ChevronRight className="w-4 h-4 text-muted-foreground" />
+              )}
+            </Link>
 
-              <Link
-                href={`/app/${gymId}/members`}
-                className="flex items-center justify-between p-2.5 rounded-xl bg-muted/40 hover:bg-muted border border-border/60 text-xs transition-colors"
-              >
-                <div className="flex items-center gap-2 font-bold text-foreground">
-                  {membersCount > 0 ? (
-                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                  ) : (
-                    <Circle className="w-4 h-4 text-muted-foreground shrink-0" />
-                  )}
-                  <span>Step 2: Add Members</span>
-                </div>
-                <span className="text-xs font-bold text-muted-foreground">
-                  {membersCount > 0 ? "✓" : ">"}
-                </span>
-              </Link>
-            </div>
+            <Link
+              href={`/app/${gymId}/members`}
+              className="p-3 flex items-center justify-between text-xs sm:text-sm font-semibold text-foreground hover:bg-muted/40 transition-colors"
+            >
+              <span>Step 2: Add Members</span>
+              {membersCount > 0 ? (
+                <Check className="w-4 h-4 text-emerald-600" />
+              ) : (
+                <ChevronRight className="w-4 h-4 text-muted-foreground" />
+              )}
+            </Link>
           </div>
         </div>
       )}

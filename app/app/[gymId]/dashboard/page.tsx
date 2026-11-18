@@ -4,14 +4,9 @@ import {
   CalendarCheck,
   CreditCard,
   Receipt,
-  TrendingUp,
   Bell,
-  UserPlus,
-  IndianRupee,
+  Plus,
   Sparkles,
-  Zap,
-  Building2,
-  Wallet,
 } from "lucide-react";
 import Link from "next/link";
 import { cookies } from "next/headers";
@@ -266,25 +261,34 @@ export default async function DashboardPage({ params, searchParams }: PageProps)
   totalOutstandingDues = Math.round(totalOutstandingDues * 100) / 100;
   expiringMembers.sort((a, b) => a.daysLeft - b.daysLeft);
 
+  const formattedNetCashFlow =
+    netCashFlow < 0
+      ? `-₹${Math.abs(netCashFlow).toLocaleString("en-IN", { minimumFractionDigits: 2 })}`
+      : `₹${netCashFlow.toLocaleString("en-IN", { minimumFractionDigits: 2 })}`;
+
+  const formatCompactRupees = (val: number) => {
+    const abs = Math.abs(val);
+    if (abs >= 1000) {
+      const formatted = (abs / 1000).toFixed(1).replace(/\.0$/, "");
+      return `${formatted}k`;
+    }
+    return abs.toLocaleString("en-IN");
+  };
+
   return (
     <div className="space-y-6 max-w-6xl mx-auto text-foreground">
       {/* 1. Header & Primary Actions Hierarchy */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 bg-card p-4 sm:p-6 rounded-2xl sm:rounded-3xl border border-border shadow-xs text-card-foreground">
-        <div>
-          <div className="flex items-center gap-2.5 flex-wrap">
-            <h1 className="text-2xl sm:text-3xl font-black text-foreground tracking-tight">
-              {gym?.name || "GymApra Command Center"}
-            </h1>
-            {pilotStatus.isPilot && (
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold bg-primary/10 text-primary border border-primary/20">
-                <Sparkles className="w-3.5 h-3.5 text-primary" />
-                {pilotStatus.badgeText}
-              </span>
-            )}
-          </div>
-          <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
-            Real-time daily collections, outstanding member dues, attendance, and gym operations
-          </p>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
+        <div className="flex items-center gap-2.5 flex-wrap">
+          <h1 className="text-2xl sm:text-3xl font-black text-foreground tracking-tight">
+            {gym?.name || "GymApra Command Center"}
+          </h1>
+          {pilotStatus.isPilot && (
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-800 dark:text-emerald-300 border border-emerald-500/20">
+              <Sparkles className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+              {pilotStatus.badgeText}
+            </span>
+          )}
         </div>
 
         {/* Primary Action Buttons: 2-column full width on mobile, aligned right on desktop */}
@@ -298,10 +302,10 @@ export default async function DashboardPage({ params, searchParams }: PageProps)
           </Link>
           <Link
             href={`/app/${gymId}/members`}
-            className="h-10 sm:h-11 inline-flex items-center justify-center gap-2 px-4 rounded-xl bg-muted hover:bg-muted/80 text-foreground text-sm font-bold border border-border shadow-xs transition-colors cursor-pointer"
+            className="h-10 sm:h-11 inline-flex items-center justify-center gap-2 px-4 rounded-xl bg-card hover:bg-muted text-foreground text-sm font-bold border border-border shadow-xs transition-colors cursor-pointer"
           >
-            <UserPlus className="w-4 h-4 shrink-0 text-primary" />
-            <span className="truncate">+ Enroll</span>
+            <Plus className="w-4 h-4 shrink-0 text-foreground" />
+            <span className="truncate">Enroll</span>
           </Link>
         </div>
       </div>
@@ -317,103 +321,76 @@ export default async function DashboardPage({ params, searchParams }: PageProps)
       />
 
       {/* 3. Unified Financial & Operational KPI Block */}
-      <div className="rounded-2xl sm:rounded-3xl border border-border bg-card text-card-foreground shadow-xs overflow-hidden">
+      <div className="rounded-2xl border border-border bg-card text-card-foreground shadow-xs overflow-hidden">
         {/* Desktop: 4-column horizontal grid with vertical dividers (grid-cols-4 divide-x)
             Mobile: 2x2 grid with horizontal and vertical dividers (grid-cols-2 divide-x divide-y) */}
         <div className="grid grid-cols-2 lg:grid-cols-4 divide-x divide-y lg:divide-y-0 divide-border">
           {/* Metric 1: Today's Collection */}
-          <div className="p-4 sm:p-5 flex flex-col justify-between">
-            <div className="flex items-center justify-between gap-1.5">
-              <span className="text-xs sm:text-sm font-bold uppercase tracking-wider text-muted-foreground truncate">
-                Today&apos;s Collection
-              </span>
-              <div className="h-8 w-8 rounded-xl bg-emerald-500/10 text-emerald-600 flex items-center justify-center shrink-0">
-                <Zap className="h-4 w-4" />
-              </div>
-            </div>
-            <div className="mt-2 text-xl sm:text-2xl lg:text-3xl font-black text-emerald-600 tracking-tight truncate">
+          <div className="p-4 sm:p-5 flex flex-col justify-center">
+            <span className="text-[11px] lg:text-sm font-semibold lg:font-medium uppercase lg:normal-case tracking-wider lg:tracking-normal text-muted-foreground truncate">
+              Today&apos;s Collection
+            </span>
+            <div className="mt-1.5 lg:mt-2 text-xl sm:text-2xl lg:text-3xl font-black text-foreground tracking-tight truncate">
               ₹{todayCollections.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
             </div>
-            <div className="mt-2 flex items-center gap-1.5 flex-wrap">
-              <span className="text-xs font-semibold px-2 py-0.5 rounded-md bg-muted text-foreground border border-border/60">
-                Cash: ₹{todayCash.toLocaleString("en-IN")}
-              </span>
-              <span className="text-xs font-semibold px-2 py-0.5 rounded-md bg-muted text-foreground border border-border/60">
-                UPI: ₹{todayUpi.toLocaleString("en-IN")}
-              </span>
+            <div className="lg:hidden mt-1 text-xs text-muted-foreground truncate">
+              Cash: ₹{Math.round(todayCash).toLocaleString("en-IN")} • UPI: ₹{Math.round(todayUpi).toLocaleString("en-IN")}
             </div>
           </div>
 
           {/* Metric 2: Pending Dues */}
-          <div className="p-4 sm:p-5 flex flex-col justify-between">
-            <div className="flex items-center justify-between gap-1.5">
-              <span className="text-xs sm:text-sm font-bold uppercase tracking-wider text-muted-foreground truncate">
-                Pending Dues
-              </span>
-              <div className="h-8 w-8 rounded-xl bg-amber-500/10 text-amber-600 flex items-center justify-center shrink-0">
-                <IndianRupee className="h-4 w-4" />
-              </div>
-            </div>
-            <div className="mt-2 text-xl sm:text-2xl lg:text-3xl font-black text-amber-600 tracking-tight truncate">
+          <div className="p-4 sm:p-5 flex flex-col justify-center">
+            <span className="text-[11px] lg:text-sm font-semibold lg:font-medium uppercase lg:normal-case tracking-wider lg:tracking-normal text-muted-foreground truncate">
+              Pending Dues
+            </span>
+            <div className="mt-1.5 lg:mt-2 text-xl sm:text-2xl lg:text-3xl font-black text-foreground tracking-tight truncate">
               ₹{totalOutstandingDues.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
             </div>
-            <div className="mt-2 text-xs sm:text-sm font-medium text-muted-foreground truncate">
+            <div className="lg:hidden mt-1 text-xs text-muted-foreground truncate">
               Uncollected balance
             </div>
           </div>
 
           {/* Metric 3: Net Cash Flow */}
-          <div className="p-4 sm:p-5 flex flex-col justify-between">
-            <div className="flex items-center justify-between gap-1.5">
-              <span className="text-xs sm:text-sm font-bold uppercase tracking-wider text-muted-foreground truncate">
-                Net Cash Flow
-              </span>
-              <div
-                className={`h-8 w-8 rounded-xl flex items-center justify-center shrink-0 ${
-                  isProfitable ? "bg-emerald-500/10 text-emerald-600" : "bg-rose-500/10 text-rose-600"
-                }`}
-              >
-                <TrendingUp className="h-4 w-4" />
-              </div>
-            </div>
+          <div className="p-4 sm:p-5 flex flex-col justify-center">
+            <span className="text-[11px] lg:text-sm font-semibold lg:font-medium uppercase lg:normal-case tracking-wider lg:tracking-normal text-muted-foreground truncate">
+              Net Cash Flow
+            </span>
             <div
-              className={`mt-2 text-xl sm:text-2xl lg:text-3xl font-black tracking-tight truncate ${
-                isProfitable ? "text-emerald-600" : "text-rose-600"
+              className={`mt-1.5 lg:mt-2 text-xl sm:text-2xl lg:text-3xl font-black tracking-tight truncate ${
+                netCashFlow < 0 ? "text-rose-600 dark:text-rose-400" : "text-foreground"
               }`}
             >
-              {isProfitable ? "+" : ""}₹{netCashFlow.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+              {formattedNetCashFlow}
             </div>
-            <div className="mt-2 text-xs sm:text-sm font-medium text-muted-foreground truncate">
-              Rev ₹{totalRevenue.toLocaleString("en-IN")} &minus; Exp ₹{totalExpenses.toLocaleString("en-IN")}
+            <div className="lg:hidden mt-1 text-xs text-muted-foreground truncate">
+              Rev: ₹{formatCompactRupees(totalRevenue)} • Exp: ₹{formatCompactRupees(totalExpenses)}
             </div>
           </div>
 
           {/* Metric 4: Total Revenue */}
-          <div className="p-4 sm:p-5 flex flex-col justify-between">
-            <div className="flex items-center justify-between gap-1.5">
-              <span className="text-xs sm:text-sm font-bold uppercase tracking-wider text-muted-foreground truncate">
-                Total Revenue
-              </span>
-              <div className="h-8 w-8 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
-                <Wallet className="h-4 w-4" />
-              </div>
-            </div>
-            <div className="mt-2 text-xl sm:text-2xl lg:text-3xl font-black text-foreground tracking-tight truncate">
+          <div className="p-4 sm:p-5 flex flex-col justify-center">
+            <span className="text-[11px] lg:text-sm font-semibold lg:font-medium uppercase lg:normal-case tracking-wider lg:tracking-normal text-muted-foreground truncate">
+              Total Revenue
+            </span>
+            <div className="mt-1.5 lg:mt-2 text-xl sm:text-2xl lg:text-3xl font-black text-foreground tracking-tight truncate">
               ₹{totalRevenue.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
             </div>
-            <div className="mt-2 text-xs sm:text-sm font-medium text-muted-foreground truncate">
-              {validPayments.length} recorded receipts
+            <div className="lg:hidden mt-1 text-xs text-muted-foreground truncate">
+              {validPayments.length} recorded {validPayments.length === 1 ? "receipt" : "receipts"}
             </div>
           </div>
         </div>
 
         {/* Attached single full-width footer strip showing operational pulse */}
-        <div className="border-t border-border px-4 py-2.5 bg-muted/30 text-center text-xs sm:text-sm font-semibold text-muted-foreground">
-          <span className="text-foreground font-bold">{membersCount || 0}</span> Active Members
-          <span className="mx-2 text-border">•</span>
-          <span className="text-foreground font-bold">{todayCheckIns || 0}</span> Check-Ins Today
-          <span className="mx-2 text-border">•</span>
-          <span className="text-foreground font-bold">{branchList.length}</span> {branchList.length === 1 ? "Branch" : "Branches"}
+        <div className="border-t border-border px-4 py-3 bg-muted/20 text-center text-xs sm:text-sm font-medium text-muted-foreground flex items-center justify-center gap-2 sm:gap-3 flex-wrap">
+          <span><strong className="font-bold text-foreground">{membersCount || 0}</strong> Active Members</span>
+          <span className="text-border sm:hidden">|</span>
+          <span className="text-border hidden sm:inline">•</span>
+          <span><strong className="font-bold text-foreground">{todayCheckIns || 0}</strong> Check-Ins Today</span>
+          <span className="text-border sm:hidden">|</span>
+          <span className="text-border hidden sm:inline">•</span>
+          <span><strong className="font-bold text-foreground">{branchList.length}</strong> {branchList.length === 1 ? "Branch" : "Branches"}</span>
         </div>
       </div>
 
@@ -430,19 +407,13 @@ export default async function DashboardPage({ params, searchParams }: PageProps)
           />
 
           {/* Today's Live Check-Ins Card */}
-          <div className="bg-card p-5 sm:p-6 rounded-2xl sm:rounded-3xl border border-border shadow-xs text-card-foreground">
+          <div className="bg-card p-5 sm:p-6 rounded-2xl border border-border shadow-xs text-card-foreground">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-base sm:text-lg font-bold text-foreground">Today&apos;s Live Check-Ins</h2>
-              <Link
-                href={`/app/${gymId}/attendance`}
-                className="text-xs sm:text-sm font-bold text-primary hover:underline cursor-pointer"
-              >
-                Full Roster →
-              </Link>
+              <h2 className="text-base font-bold text-foreground">Today&apos;s Live Check-Ins</h2>
             </div>
 
             {!recentCheckIns || recentCheckIns.length === 0 ? (
-              <div className="py-6 text-center text-sm text-muted-foreground font-medium">
+              <div className="py-8 text-center text-sm text-muted-foreground font-medium">
                 No members have checked in today yet.
               </div>
             ) : (
@@ -472,73 +443,73 @@ export default async function DashboardPage({ params, searchParams }: PageProps)
         </div>
 
         {/* Right 5 Columns: Quick Actions 2x2 Grid Card */}
-        <div className="lg:col-span-5 bg-card p-5 sm:p-6 rounded-2xl sm:rounded-3xl border border-border shadow-xs text-card-foreground">
-          <h2 className="text-base sm:text-lg font-bold text-foreground mb-4">Quick Actions</h2>
+        <div className="lg:col-span-5 bg-card p-5 sm:p-6 rounded-2xl border border-border shadow-xs text-card-foreground">
+          <h2 className="text-base font-bold text-foreground mb-4">Quick Actions</h2>
           <div className="grid grid-cols-2 gap-3">
             <Link
               href={`/app/${gymId}/payments`}
-              className="group p-3.5 rounded-2xl border border-border hover:border-emerald-500/40 hover:bg-emerald-500/5 transition-all flex flex-col justify-between cursor-pointer"
+              className="group p-3.5 rounded-xl border border-border hover:border-emerald-500/40 hover:bg-emerald-500/5 transition-all flex flex-col justify-between cursor-pointer"
             >
-              <div className="p-2.5 w-fit rounded-xl bg-emerald-500/10 text-emerald-600 mb-2.5 shadow-2xs">
-                <CreditCard className="w-5 h-5" />
+              <div className="p-2 w-fit rounded-lg bg-emerald-500/10 text-emerald-600 mb-2.5">
+                <CreditCard className="w-4 h-4" />
               </div>
               <div>
                 <div className="text-sm font-bold text-foreground group-hover:text-emerald-600 transition-colors truncate">
                   Record Payment
                 </div>
                 <div className="text-xs text-muted-foreground mt-0.5 truncate">
-                  Collect fees & dues
+                  Collect fees &amp; rec...
                 </div>
               </div>
             </Link>
 
             <Link
               href={`/app/${gymId}/expenses`}
-              className="group p-3.5 rounded-2xl border border-border hover:border-rose-500/40 hover:bg-rose-500/5 transition-all flex flex-col justify-between cursor-pointer"
+              className="group p-3.5 rounded-xl border border-border hover:border-rose-500/40 hover:bg-rose-500/5 transition-all flex flex-col justify-between cursor-pointer"
             >
-              <div className="p-2.5 w-fit rounded-xl bg-rose-500/10 text-rose-600 mb-2.5 shadow-2xs">
-                <Receipt className="w-5 h-5" />
+              <div className="p-2 w-fit rounded-lg bg-rose-500/10 text-rose-600 mb-2.5">
+                <Receipt className="w-4 h-4" />
               </div>
               <div>
                 <div className="text-sm font-bold text-foreground group-hover:text-rose-600 transition-colors truncate">
                   Track Expense
                 </div>
                 <div className="text-xs text-muted-foreground mt-0.5 truncate">
-                  Log bills & payroll
+                  Log bills &amp; payroll
                 </div>
               </div>
             </Link>
 
             <Link
               href={`/app/${gymId}/notices`}
-              className="group p-3.5 rounded-2xl border border-border hover:border-amber-500/40 hover:bg-amber-500/5 transition-all flex flex-col justify-between cursor-pointer"
+              className="group p-3.5 rounded-xl border border-border hover:border-amber-500/40 hover:bg-amber-500/5 transition-all flex flex-col justify-between cursor-pointer"
             >
-              <div className="p-2.5 w-fit rounded-xl bg-amber-500/10 text-amber-600 mb-2.5 shadow-2xs">
-                <Bell className="w-5 h-5" />
+              <div className="p-2 w-fit rounded-lg bg-amber-500/10 text-amber-600 mb-2.5">
+                <Bell className="w-4 h-4" />
               </div>
               <div>
                 <div className="text-sm font-bold text-foreground group-hover:text-amber-600 transition-colors truncate">
                   Post Notice
                 </div>
                 <div className="text-xs text-muted-foreground mt-0.5 truncate">
-                  Member broadcast
+                  Member alerts
                 </div>
               </div>
             </Link>
 
             <Link
               href={`/app/${gymId}/members`}
-              className="group p-3.5 rounded-2xl border border-border hover:border-primary/40 hover:bg-primary/5 transition-all flex flex-col justify-between cursor-pointer"
+              className="group p-3.5 rounded-xl border border-border hover:border-primary/40 hover:bg-primary/5 transition-all flex flex-col justify-between cursor-pointer"
             >
-              <div className="p-2.5 w-fit rounded-xl bg-primary/10 text-primary mb-2.5 shadow-2xs">
-                <Users className="w-5 h-5" />
+              <div className="p-2 w-fit rounded-lg bg-emerald-500/10 text-emerald-600 mb-2.5">
+                <Users className="w-4 h-4" />
               </div>
               <div>
                 <div className="text-sm font-bold text-foreground group-hover:text-primary transition-colors truncate">
                   Manage Members
                 </div>
                 <div className="text-xs text-muted-foreground mt-0.5 truncate">
-                  Roster & enrollment
+                  Roster &amp; WhatsApp
                 </div>
               </div>
             </Link>
@@ -571,8 +542,8 @@ export default async function DashboardPage({ params, searchParams }: PageProps)
             </div>
 
             {!recentCheckIns || recentCheckIns.length === 0 ? (
-              <div className="py-4 text-center text-xs text-muted-foreground font-medium">
-                No members have checked in today yet.
+              <div className="py-3 text-left text-xs text-muted-foreground font-medium">
+                No members checked in yet.
               </div>
             ) : (
               <div className="divide-y divide-border">
@@ -604,54 +575,34 @@ export default async function DashboardPage({ params, searchParams }: PageProps)
         <div className="grid grid-cols-2 gap-2">
           <Link
             href={`/app/${gymId}/payments`}
-            className="p-3 rounded-xl border border-border bg-card hover:bg-muted transition-colors flex items-center gap-2.5 cursor-pointer shadow-xs"
+            className="h-11 px-3 rounded-xl border border-border bg-card hover:bg-muted transition-colors flex items-center justify-center gap-2 cursor-pointer shadow-xs text-xs font-semibold text-foreground"
           >
-            <div className="p-2 rounded-lg bg-emerald-500/10 text-emerald-600 shrink-0">
-              <CreditCard className="w-4 h-4" />
-            </div>
-            <div className="min-w-0">
-              <div className="text-xs font-bold text-foreground truncate">Record Payment</div>
-              <div className="text-[10px] text-muted-foreground truncate">Collect dues</div>
-            </div>
+            <CreditCard className="w-4 h-4 text-foreground/80 shrink-0" />
+            <span className="truncate">Record Payment</span>
           </Link>
 
           <Link
             href={`/app/${gymId}/expenses`}
-            className="p-3 rounded-xl border border-border bg-card hover:bg-muted transition-colors flex items-center gap-2.5 cursor-pointer shadow-xs"
+            className="h-11 px-3 rounded-xl border border-border bg-card hover:bg-muted transition-colors flex items-center justify-center gap-2 cursor-pointer shadow-xs text-xs font-semibold text-foreground"
           >
-            <div className="p-2 rounded-lg bg-rose-500/10 text-rose-600 shrink-0">
-              <Receipt className="w-4 h-4" />
-            </div>
-            <div className="min-w-0">
-              <div className="text-xs font-bold text-foreground truncate">Track Expense</div>
-              <div className="text-[10px] text-muted-foreground truncate">Log bills</div>
-            </div>
+            <Receipt className="w-4 h-4 text-foreground/80 shrink-0" />
+            <span className="truncate">Track Expense</span>
           </Link>
 
           <Link
             href={`/app/${gymId}/notices`}
-            className="p-3 rounded-xl border border-border bg-card hover:bg-muted transition-colors flex items-center gap-2.5 cursor-pointer shadow-xs"
+            className="h-11 px-3 rounded-xl border border-border bg-card hover:bg-muted transition-colors flex items-center justify-center gap-2 cursor-pointer shadow-xs text-xs font-semibold text-foreground"
           >
-            <div className="p-2 rounded-lg bg-amber-500/10 text-amber-600 shrink-0">
-              <Bell className="w-4 h-4" />
-            </div>
-            <div className="min-w-0">
-              <div className="text-xs font-bold text-foreground truncate">Post Notice</div>
-              <div className="text-[10px] text-muted-foreground truncate">Broadcast</div>
-            </div>
+            <Bell className="w-4 h-4 text-foreground/80 shrink-0" />
+            <span className="truncate">Post Notice</span>
           </Link>
 
           <Link
             href={`/app/${gymId}/members`}
-            className="p-3 rounded-xl border border-border bg-card hover:bg-muted transition-colors flex items-center gap-2.5 cursor-pointer shadow-xs"
+            className="h-11 px-3 rounded-xl border border-border bg-card hover:bg-muted transition-colors flex items-center justify-center gap-2 cursor-pointer shadow-xs text-xs font-semibold text-foreground"
           >
-            <div className="p-2 rounded-lg bg-primary/10 text-primary shrink-0">
-              <Users className="w-4 h-4" />
-            </div>
-            <div className="min-w-0">
-              <div className="text-xs font-bold text-foreground truncate">Manage Members</div>
-              <div className="text-[10px] text-muted-foreground truncate">Roster</div>
-            </div>
+            <Users className="w-4 h-4 text-foreground/80 shrink-0" />
+            <span className="truncate">Manage Members</span>
           </Link>
         </div>
       </div>
