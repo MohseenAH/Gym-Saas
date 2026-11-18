@@ -21,6 +21,7 @@ import { resolveBranchContext } from "@/lib/auth/branch-context";
 import { ExpiringSoonAlerts, ExpiringMember } from "@/components/dashboard/expiring-soon-alerts";
 import { LifecycleStageBanner } from "@/components/dashboard/lifecycle-stage-banner";
 import { QuickEnrollModal } from "@/components/members/quick-enroll-modal";
+import { DashboardHeaderDate, CheckInTimeBadge } from "@/components/dashboard/dashboard-live-timestamp";
 import { getTodayIST, resolveGymLifecycleStage } from "@/lib/utils";
 
 interface PageProps {
@@ -322,6 +323,7 @@ export default async function DashboardPage({ params, searchParams }: PageProps)
     day: "numeric",
     month: "short",
     year: "numeric",
+    timeZone: "Asia/Kolkata",
   });
 
   const currentBranchName =
@@ -329,12 +331,12 @@ export default async function DashboardPage({ params, searchParams }: PageProps)
     (branchList.length === 1 ? branchList[0]?.name : "All Branches");
 
   return (
-    <div className="space-y-6 max-w-6xl mx-auto text-foreground">
+    <div className="space-y-3.5 sm:space-y-4 max-w-6xl mx-auto text-foreground">
       {/* 1. Hero Command Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-card p-4 sm:p-6 rounded-2xl border border-border shadow-xs">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-card px-4 py-3 sm:px-5 sm:py-3.5 rounded-2xl border border-border shadow-xs">
         <div>
           <div className="flex items-center gap-2.5 flex-wrap">
-            <h1 className="text-2xl sm:text-3xl font-black text-foreground tracking-tight">
+            <h1 className="text-lg sm:text-xl font-bold text-foreground tracking-tight">
               {gym?.name || "GymApra Command Center"}
             </h1>
             {pilotStatus.isPilot && (
@@ -344,8 +346,8 @@ export default async function DashboardPage({ params, searchParams }: PageProps)
               </span>
             )}
           </div>
-          <div className="flex items-center gap-2 text-xs sm:text-sm text-muted-foreground mt-1 flex-wrap">
-            <span className="font-medium text-foreground">{todayFormatted}</span>
+          <div className="flex items-center gap-2 text-xs text-muted-foreground mt-0.5 flex-wrap">
+            <DashboardHeaderDate dateStr={todayStr} fallback="Today" />
             <span>•</span>
             <span className="inline-flex items-center gap-1.5 font-medium">
               <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse inline-block" />
@@ -360,17 +362,17 @@ export default async function DashboardPage({ params, searchParams }: PageProps)
         <div className="grid grid-cols-2 gap-2 sm:flex sm:items-center sm:gap-2.5 w-full sm:w-auto shrink-0">
           <Link
             href={`/app/${gymId}/attendance`}
-            className="h-11 min-h-[44px] inline-flex items-center justify-center gap-2 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-[0.99] text-white text-sm font-bold shadow-sm hover:shadow-md transition-all cursor-pointer"
+            className="h-9 px-3.5 inline-flex items-center justify-center gap-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-[0.99] text-white text-xs sm:text-sm font-semibold shadow-xs transition-all cursor-pointer"
           >
             <CalendarCheck className="w-4 h-4 shrink-0" />
-            <span className="truncate">Check-In</span>
+            <span>Check-In</span>
           </Link>
           <QuickEnrollModal
             gymId={gymId}
             branchId={selectedBranchId || gymBranchIds[0] || ""}
             plans={modalPlans}
             triggerLabel="+ Enroll"
-            triggerClassName="h-11 min-h-[44px] inline-flex items-center justify-center gap-2 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-700 active:scale-[0.99] text-white text-sm font-bold shadow-sm hover:shadow-md transition-all cursor-pointer w-full sm:w-auto"
+            triggerClassName="h-9 px-3.5 inline-flex items-center justify-center gap-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 active:scale-[0.99] text-white text-xs sm:text-sm font-semibold shadow-xs transition-all cursor-pointer w-full sm:w-auto"
           />
         </div>
       </div>
@@ -385,26 +387,26 @@ export default async function DashboardPage({ params, searchParams }: PageProps)
         userRole={authContext.role}
       />
 
-      {/* 3. Four Vibrant Financial KPI Cards (Separated Elevated Cards) */}
-      <div className="grid grid-cols-2 xl:grid-cols-4 gap-3 sm:gap-4">
+      {/* 3. Four Vibrant Financial KPI Cards (Zero-Truncation Responsive Grid) */}
+      <div className="grid grid-cols-2 xl:grid-cols-4 gap-2.5 sm:gap-3.5">
         {/* Metric 1: Today's Collection (Emerald accent + Wallet badge) */}
-        <div className="bg-card p-4 sm:p-5 rounded-2xl border border-border border-t-2 border-t-emerald-500 shadow-xs hover:shadow-md transition-shadow flex flex-col justify-between">
+        <div className="bg-card p-3 sm:p-4 rounded-2xl border border-border border-t-2 border-t-emerald-500 shadow-xs hover:shadow-md transition-all flex flex-col justify-between">
           <div className="flex items-center justify-between gap-1.5">
-            <span className="text-[11px] sm:text-xs font-bold uppercase tracking-wider text-muted-foreground truncate">
+            <span className="text-[11px] sm:text-xs font-semibold uppercase tracking-normal leading-tight text-muted-foreground">
               Today&apos;s Collection
             </span>
-            <div className="h-8 w-8 sm:h-9 sm:w-9 rounded-xl bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
-              <Wallet className="h-4 w-4" />
+            <div className="h-6 w-6 sm:h-7 sm:w-7 rounded-lg bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
+              <Wallet className="h-3.5 w-3.5" />
             </div>
           </div>
-          <div className="mt-2 text-xl sm:text-2xl lg:text-3xl font-black text-emerald-600 dark:text-emerald-400 tracking-tight truncate tabular-nums">
+          <div className="mt-1.5 text-lg sm:text-xl lg:text-2xl font-bold text-emerald-600 dark:text-emerald-400 tracking-tight tabular-nums leading-snug">
             ₹{todayCollections.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
           </div>
-          <div className="mt-2 flex items-center gap-1.5 flex-wrap">
-            <span className="text-[10px] sm:text-[11px] font-semibold px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/20 tabular-nums">
+          <div className="mt-1.5 flex items-center gap-1 flex-wrap">
+            <span className="text-[10px] sm:text-[11px] font-semibold px-1.5 py-0.5 rounded-md bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/20 tabular-nums">
               Cash: ₹{todayCash.toLocaleString("en-IN")}
             </span>
-            <span className="text-[10px] sm:text-[11px] font-semibold px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/20 tabular-nums">
+            <span className="text-[10px] sm:text-[11px] font-semibold px-1.5 py-0.5 rounded-md bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/20 tabular-nums">
               UPI: ₹{todayUpi.toLocaleString("en-IN")}
             </span>
           </div>
@@ -413,21 +415,21 @@ export default async function DashboardPage({ params, searchParams }: PageProps)
         {/* Metric 2: Pending Dues (Amber accent + AlertCircle badge, links to /payments) */}
         <Link
           href={`/app/${gymId}/payments`}
-          className="bg-card p-4 sm:p-5 rounded-2xl border border-border border-t-2 border-t-amber-500 shadow-xs hover:shadow-md transition-all flex flex-col justify-between group cursor-pointer"
+          className="bg-card p-3 sm:p-4 rounded-2xl border border-border border-t-2 border-t-amber-500 shadow-xs hover:shadow-md transition-all flex flex-col justify-between group cursor-pointer"
         >
           <div className="flex items-center justify-between gap-1.5">
-            <span className="text-[11px] sm:text-xs font-bold uppercase tracking-wider text-muted-foreground truncate group-hover:text-amber-600 transition-colors">
+            <span className="text-[11px] sm:text-xs font-semibold uppercase tracking-normal leading-tight text-muted-foreground group-hover:text-amber-600 transition-colors">
               Pending Dues
             </span>
-            <div className="h-8 w-8 sm:h-9 sm:w-9 rounded-xl bg-amber-500/15 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
-              <AlertCircle className="h-4 w-4" />
+            <div className="h-6 w-6 sm:h-7 sm:w-7 rounded-lg bg-amber-500/15 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
+              <AlertCircle className="h-3.5 w-3.5" />
             </div>
           </div>
-          <div className="mt-2 text-xl sm:text-2xl lg:text-3xl font-black text-amber-600 dark:text-amber-400 tracking-tight truncate tabular-nums">
+          <div className="mt-1.5 text-lg sm:text-xl lg:text-2xl font-bold text-amber-600 dark:text-amber-400 tracking-tight tabular-nums leading-snug">
             ₹{totalOutstandingDues.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
           </div>
-          <div className="mt-2 text-xs sm:text-sm font-medium text-muted-foreground flex items-center justify-between gap-1 truncate">
-            <span className="truncate">
+          <div className="mt-1.5 text-[11px] sm:text-xs font-medium text-muted-foreground flex flex-wrap items-center justify-between gap-1">
+            <span>
               {membersWithDuesCount} member{membersWithDuesCount === 1 ? "" : "s"} with dues
             </span>
             <span className="text-amber-600 dark:text-amber-400 text-xs font-bold group-hover:translate-x-0.5 transition-transform shrink-0">
@@ -438,77 +440,77 @@ export default async function DashboardPage({ params, searchParams }: PageProps)
 
         {/* Metric 3: Net Cash Flow (Dynamic Emerald/Rose + TrendingUp/Down badge) */}
         <div
-          className={`bg-card p-4 sm:p-5 rounded-2xl border border-border shadow-xs hover:shadow-md transition-shadow flex flex-col justify-between ${
+          className={`bg-card p-3 sm:p-4 rounded-2xl border border-border shadow-xs hover:shadow-md transition-all flex flex-col justify-between ${
             isProfitable ? "border-t-2 border-t-emerald-500" : "border-t-2 border-t-rose-500"
           }`}
         >
           <div className="flex items-center justify-between gap-1.5">
-            <span className="text-[11px] sm:text-xs font-bold uppercase tracking-wider text-muted-foreground truncate">
+            <span className="text-[11px] sm:text-xs font-semibold uppercase tracking-normal leading-tight text-muted-foreground">
               Net Cash Flow
             </span>
             <div
-              className={`h-8 w-8 sm:h-9 sm:w-9 rounded-xl flex items-center justify-center shrink-0 ${
+              className={`h-6 w-6 sm:h-7 sm:w-7 rounded-lg flex items-center justify-center shrink-0 ${
                 isProfitable
                   ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400"
                   : "bg-rose-500/15 text-rose-600 dark:text-rose-400"
               }`}
             >
-              {isProfitable ? <TrendingUp className="h-4 w-4" /> : <TrendingDown className="h-4 w-4" />}
+              {isProfitable ? <TrendingUp className="h-3.5 w-3.5" /> : <TrendingDown className="h-3.5 w-3.5" />}
             </div>
           </div>
           <div
-            className={`mt-2 text-xl sm:text-2xl lg:text-3xl font-black tracking-tight truncate tabular-nums ${
+            className={`mt-1.5 text-lg sm:text-xl lg:text-2xl font-bold tracking-tight tabular-nums leading-snug ${
               isProfitable ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400"
             }`}
           >
             {formattedNetCashFlow}
           </div>
-          <div className="mt-2 text-xs sm:text-sm font-medium text-muted-foreground truncate tabular-nums">
+          <div className="mt-1.5 text-[11px] sm:text-xs font-medium text-muted-foreground tabular-nums">
             Rev ₹{formatCompactRupees(totalRevenue)} &minus; Exp ₹{formatCompactRupees(totalExpenses)}
           </div>
         </div>
 
         {/* Metric 4: Total Revenue (Indigo/Blue accent + Receipt badge) */}
-        <div className="bg-card p-4 sm:p-5 rounded-2xl border border-border border-t-2 border-t-indigo-500 shadow-xs hover:shadow-md transition-shadow flex flex-col justify-between">
+        <div className="bg-card p-3 sm:p-4 rounded-2xl border border-border border-t-2 border-t-indigo-500 shadow-xs hover:shadow-md transition-all flex flex-col justify-between">
           <div className="flex items-center justify-between gap-1.5">
-            <span className="text-[11px] sm:text-xs font-bold uppercase tracking-wider text-muted-foreground truncate">
+            <span className="text-[11px] sm:text-xs font-semibold uppercase tracking-normal leading-tight text-muted-foreground">
               Total Revenue
             </span>
-            <div className="h-8 w-8 sm:h-9 sm:w-9 rounded-xl bg-indigo-500/15 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shrink-0">
-              <Receipt className="h-4 w-4" />
+            <div className="h-6 w-6 sm:h-7 sm:w-7 rounded-lg bg-indigo-500/15 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shrink-0">
+              <Receipt className="h-3.5 w-3.5" />
             </div>
           </div>
-          <div className="mt-2 text-xl sm:text-2xl lg:text-3xl font-black text-foreground tracking-tight truncate tabular-nums">
+          <div className="mt-1.5 text-lg sm:text-xl lg:text-2xl font-bold text-foreground tracking-tight tabular-nums leading-snug">
             ₹{totalRevenue.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
           </div>
-          <div className="mt-2 text-xs sm:text-sm font-medium text-muted-foreground truncate tabular-nums">
+          <div className="mt-1.5 text-[11px] sm:text-xs font-medium text-muted-foreground tabular-nums">
             {validPayments.length} recorded receipt{validPayments.length === 1 ? "" : "s"}
           </div>
         </div>
       </div>
 
       {/* 4. Live Gym Pulse & Membership Health Strip */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-2.5 sm:gap-3.5">
         {/* Left 7 cols: Operational Pulse Tiles */}
-        <div className="lg:col-span-7 grid grid-cols-3 gap-2.5 sm:gap-3">
+        <div className="lg:col-span-7 grid grid-cols-3 gap-2 sm:gap-2.5">
           {/* Tile 1: Active Members */}
           <Link
             href={`/app/${gymId}/members`}
-            className="p-3.5 sm:p-4 rounded-2xl bg-card border border-border border-l-3 border-l-indigo-500 shadow-xs hover:shadow-md transition-all flex flex-col justify-between group cursor-pointer"
+            className="p-2.5 sm:p-3.5 rounded-2xl bg-card border border-border border-l-3 border-l-indigo-500 shadow-xs hover:shadow-md transition-all flex flex-col justify-between group cursor-pointer"
           >
-            <div className="flex items-center justify-between">
-              <span className="text-[11px] sm:text-xs font-bold text-muted-foreground truncate group-hover:text-indigo-600 transition-colors">
+            <div className="flex items-center justify-between gap-1">
+              <span className="text-[11px] sm:text-xs font-medium leading-tight text-muted-foreground group-hover:text-indigo-600 transition-colors">
                 Active Members
               </span>
-              <div className="p-1.5 rounded-lg bg-indigo-500/10 text-indigo-600 shrink-0">
-                <Users className="w-3.5 h-3.5" />
+              <div className="p-1 rounded-md bg-indigo-500/10 text-indigo-600 shrink-0">
+                <Users className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
               </div>
             </div>
-            <div className="mt-2">
-              <div className="text-xl sm:text-2xl font-black text-foreground tabular-nums">
+            <div className="mt-1.5">
+              <div className="text-base sm:text-xl font-bold text-foreground tabular-nums leading-tight">
                 {membersCount}
               </div>
-              <div className="text-[11px] text-muted-foreground mt-0.5 truncate">
+              <div className="text-[10px] sm:text-xs text-muted-foreground leading-tight mt-0.5">
                 Roster active
               </div>
             </div>
@@ -517,21 +519,21 @@ export default async function DashboardPage({ params, searchParams }: PageProps)
           {/* Tile 2: Check-Ins Today */}
           <Link
             href={`/app/${gymId}/attendance`}
-            className="p-3.5 sm:p-4 rounded-2xl bg-card border border-border border-l-3 border-l-emerald-500 shadow-xs hover:shadow-md transition-all flex flex-col justify-between group cursor-pointer"
+            className="p-2.5 sm:p-3.5 rounded-2xl bg-card border border-border border-l-3 border-l-emerald-500 shadow-xs hover:shadow-md transition-all flex flex-col justify-between group cursor-pointer"
           >
-            <div className="flex items-center justify-between">
-              <span className="text-[11px] sm:text-xs font-bold text-muted-foreground truncate group-hover:text-emerald-600 transition-colors">
+            <div className="flex items-center justify-between gap-1">
+              <span className="text-[11px] sm:text-xs font-medium leading-tight text-muted-foreground group-hover:text-emerald-600 transition-colors">
                 Today&apos;s Check-Ins
               </span>
-              <div className="p-1.5 rounded-lg bg-emerald-500/10 text-emerald-600 shrink-0">
-                <CalendarCheck className="w-3.5 h-3.5" />
+              <div className="p-1 rounded-md bg-emerald-500/10 text-emerald-600 shrink-0">
+                <CalendarCheck className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
               </div>
             </div>
-            <div className="mt-2">
-              <div className="text-xl sm:text-2xl font-black text-emerald-600 dark:text-emerald-400 tabular-nums">
+            <div className="mt-1.5">
+              <div className="text-base sm:text-xl font-bold text-emerald-600 dark:text-emerald-400 tabular-nums leading-tight">
                 {todayCheckIns}
               </div>
-              <div className="text-[11px] font-semibold text-emerald-700 dark:text-emerald-300 mt-0.5 truncate tabular-nums">
+              <div className="text-[10px] sm:text-xs font-semibold text-emerald-700 dark:text-emerald-300 leading-tight mt-0.5 tabular-nums">
                 {attendanceRate}% of active
               </div>
             </div>
@@ -540,21 +542,21 @@ export default async function DashboardPage({ params, searchParams }: PageProps)
           {/* Tile 3: Expiring in 7 Days */}
           <Link
             href={`/app/${gymId}/memberships?tab=active`}
-            className="p-3.5 sm:p-4 rounded-2xl bg-card border border-border border-l-3 border-l-amber-500 shadow-xs hover:shadow-md transition-all flex flex-col justify-between group cursor-pointer"
+            className="p-2.5 sm:p-3.5 rounded-2xl bg-card border border-border border-l-3 border-l-amber-500 shadow-xs hover:shadow-md transition-all flex flex-col justify-between group cursor-pointer"
           >
-            <div className="flex items-center justify-between">
-              <span className="text-[11px] sm:text-xs font-bold text-muted-foreground truncate group-hover:text-amber-600 transition-colors">
+            <div className="flex items-center justify-between gap-1">
+              <span className="text-[11px] sm:text-xs font-medium leading-tight text-muted-foreground group-hover:text-amber-600 transition-colors">
                 Expiring Soon
               </span>
-              <div className="p-1.5 rounded-lg bg-amber-500/10 text-amber-600 shrink-0">
-                <Clock className="w-3.5 h-3.5" />
+              <div className="p-1 rounded-md bg-amber-500/10 text-amber-600 shrink-0">
+                <Clock className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
               </div>
             </div>
-            <div className="mt-2">
-              <div className="text-xl sm:text-2xl font-black text-amber-600 dark:text-amber-400 tabular-nums">
+            <div className="mt-1.5">
+              <div className="text-base sm:text-xl font-bold text-amber-600 dark:text-amber-400 tabular-nums leading-tight">
                 {expiringMembers.length}
               </div>
-              <div className="text-[11px] font-semibold text-amber-700 dark:text-amber-300 mt-0.5 truncate">
+              <div className="text-[10px] sm:text-xs font-semibold text-amber-700 dark:text-amber-300 leading-tight mt-0.5">
                 {expiringMembers.length === 0 ? "Healthy retention" : "Renewals due"}
               </div>
             </div>
@@ -562,19 +564,19 @@ export default async function DashboardPage({ params, searchParams }: PageProps)
         </div>
 
         {/* Right 5 cols: Membership Health Snapshot card */}
-        <div className="lg:col-span-5 bg-card p-4 sm:p-5 rounded-2xl border border-border shadow-xs flex flex-col justify-between">
-          <div className="flex items-center justify-between mb-2">
-            <div className="flex items-center gap-2">
+        <div className="lg:col-span-5 bg-card p-2.5 sm:p-3.5 rounded-2xl border border-border shadow-xs flex flex-col justify-between">
+          <div className="flex items-center justify-between mb-1.5">
+            <div className="flex items-center gap-1.5">
               <span className="text-xs sm:text-sm font-bold text-foreground">Membership Health</span>
               <span className="text-[11px] font-semibold text-muted-foreground">Snapshot</span>
             </div>
-            <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-muted text-foreground border border-border tabular-nums">
+            <span className="px-2 py-0.5 rounded-full text-[11px] font-bold bg-muted text-foreground border border-border tabular-nums">
               {totalMembersCount} Total
             </span>
           </div>
 
-          <div className="my-2">
-            <div className="w-full h-2.5 rounded-full bg-muted overflow-hidden flex">
+          <div className="my-1.5">
+            <div className="w-full h-2 rounded-full bg-muted overflow-hidden flex">
               <div
                 style={{ width: `${healthyPct}%` }}
                 className="bg-emerald-500 h-full transition-all"
@@ -593,17 +595,17 @@ export default async function DashboardPage({ params, searchParams }: PageProps)
             </div>
           </div>
 
-          <div className="flex items-center justify-between text-[11px] text-muted-foreground font-semibold flex-wrap gap-1 mt-1">
-            <div className="flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-emerald-500" />
+          <div className="flex items-center justify-between text-[11px] text-muted-foreground font-semibold flex-wrap gap-1 mt-0.5">
+            <div className="flex items-center gap-1">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
               <span className="tabular-nums font-bold text-foreground">{healthyActiveCount}</span> Active
             </div>
-            <div className="flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-amber-500" />
+            <div className="flex items-center gap-1">
+              <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
               <span className="tabular-nums font-bold text-foreground">{expiringCount}</span> Expiring
             </div>
-            <div className="flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-rose-500/70" />
+            <div className="flex items-center gap-1">
+              <span className="w-1.5 h-1.5 rounded-full bg-rose-500/70" />
               <span className="tabular-nums font-bold text-foreground">{inactiveOrUnassignedCount}</span> Inactive
             </div>
           </div>
@@ -611,9 +613,9 @@ export default async function DashboardPage({ params, searchParams }: PageProps)
       </div>
 
       {/* 5. Actionable Workspace Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-3 sm:gap-4 items-start">
         {/* Left Column (7 cols): Expiring Radar & Today's Live Check-Ins */}
-        <div className="lg:col-span-7 space-y-5">
+        <div className="lg:col-span-7 space-y-3 sm:space-y-4">
           {/* Card 1: Expiring in 7 Days Radar */}
           <ExpiringSoonAlerts
             gymId={gymId}
@@ -622,14 +624,14 @@ export default async function DashboardPage({ params, searchParams }: PageProps)
           />
 
           {/* Card 2: Today's Live Check-Ins Feed Card */}
-          <div className="bg-card p-5 sm:p-6 rounded-2xl border border-border border-t-2 border-t-indigo-500 shadow-xs text-card-foreground">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-2.5">
-                <div className="p-2 bg-indigo-500/15 text-indigo-600 dark:text-indigo-400 rounded-xl">
+          <div className="bg-card p-3.5 sm:p-4 rounded-2xl border border-border border-t-2 border-t-indigo-500 shadow-xs text-card-foreground">
+            <div className="flex items-center justify-between mb-2.5">
+              <div className="flex items-center gap-2">
+                <div className="p-1.5 bg-indigo-500/15 text-indigo-600 dark:text-indigo-400 rounded-xl">
                   <CalendarCheck className="w-4 h-4" />
                 </div>
                 <div>
-                  <h2 className="text-base font-bold text-foreground">Today&apos;s Live Check-Ins</h2>
+                  <h2 className="text-sm sm:text-base font-semibold text-foreground">Today&apos;s Live Check-Ins</h2>
                   <p className="text-xs text-muted-foreground">Front desk entry log</p>
                 </div>
               </div>
@@ -643,19 +645,19 @@ export default async function DashboardPage({ params, searchParams }: PageProps)
             </div>
 
             {!recentCheckIns || recentCheckIns.length === 0 ? (
-              <div className="py-8 text-center space-y-3">
-                <div className="mx-auto w-10 h-10 rounded-full bg-muted flex items-center justify-center text-muted-foreground">
-                  <Zap className="w-5 h-5" />
+              <div className="py-4 sm:py-5 text-center space-y-2">
+                <div className="mx-auto w-8 h-8 rounded-full bg-muted flex items-center justify-center text-muted-foreground">
+                  <Zap className="w-4 h-4" />
                 </div>
                 <div>
-                  <p className="text-sm font-semibold text-foreground">No members checked in yet today</p>
-                  <p className="text-xs text-muted-foreground mt-0.5">
+                  <p className="text-xs sm:text-sm font-semibold text-foreground">No members checked in yet today</p>
+                  <p className="text-[11px] text-muted-foreground mt-0.5">
                     Launch the reception kiosk to mark member check-ins
                   </p>
                 </div>
                 <Link
                   href={`/app/${gymId}/attendance`}
-                  className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-primary hover:opacity-95 text-primary-foreground text-xs font-bold shadow-xs cursor-pointer"
+                  className="inline-flex items-center gap-1.5 h-8 px-3 rounded-xl bg-primary hover:opacity-95 text-primary-foreground text-xs font-bold shadow-xs cursor-pointer"
                 >
                   <Zap className="w-3.5 h-3.5" />
                   <span>Mark First Check-In</span>
@@ -667,25 +669,20 @@ export default async function DashboardPage({ params, searchParams }: PageProps)
                   const memberName =
                     (ci.members as unknown as { full_name?: string } | null)?.full_name || "Member";
                   return (
-                    <div key={ci.id} className="py-3 flex items-center justify-between hover:bg-muted/30 px-2 rounded-xl transition-colors">
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-full bg-indigo-500/10 text-indigo-600 font-bold flex items-center justify-center text-xs border border-indigo-500/20 shrink-0">
+                    <div key={ci.id} className="py-2 flex items-center justify-between hover:bg-muted/30 px-1.5 rounded-xl transition-colors">
+                      <div className="flex items-center gap-2.5">
+                        <div className="w-7 h-7 rounded-full bg-indigo-500/10 text-indigo-600 font-bold flex items-center justify-center text-xs border border-indigo-500/20 shrink-0">
                           {memberName.charAt(0).toUpperCase()}
                         </div>
                         <div>
-                          <div className="text-sm font-bold text-foreground">{memberName}</div>
-                          <div className="text-[11px] text-muted-foreground capitalize flex items-center gap-1.5 mt-0.5">
+                          <div className="text-xs sm:text-sm font-bold text-foreground">{memberName}</div>
+                          <div className="text-[10px] sm:text-[11px] text-muted-foreground capitalize flex items-center gap-1 mt-0.5">
                             <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block" />
                             <span>{ci.check_in_method.replace("_", " ")}</span>
                           </div>
                         </div>
                       </div>
-                      <span className="text-xs font-semibold text-muted-foreground tabular-nums">
-                        {new Date(ci.check_in_time).toLocaleTimeString([], {
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        })}
-                      </span>
+                      <CheckInTimeBadge isoTime={ci.check_in_time} fallback="--:--" />
                     </div>
                   );
                 })}
@@ -695,33 +692,33 @@ export default async function DashboardPage({ params, searchParams }: PageProps)
         </div>
 
         {/* Right Column (5 cols): Quick Actions Hub & Financial Split */}
-        <div className="lg:col-span-5 space-y-5">
+        <div className="lg:col-span-5 space-y-3 sm:space-y-4">
           {/* Card 1: Quick Actions Hub Card */}
-          <div className="bg-card p-5 sm:p-6 rounded-2xl border border-border shadow-xs text-card-foreground">
-            <div className="flex items-center justify-between mb-4">
+          <div className="bg-card p-3.5 sm:p-4 rounded-2xl border border-border shadow-xs text-card-foreground">
+            <div className="flex items-center justify-between mb-2.5">
               <div>
-                <h2 className="text-base font-bold text-foreground">Quick Actions</h2>
+                <h2 className="text-sm sm:text-base font-semibold text-foreground">Quick Actions</h2>
                 <p className="text-xs text-muted-foreground">Daily operations &amp; tools</p>
               </div>
-              <span className="px-2 py-0.5 rounded-full text-[11px] font-bold bg-muted text-muted-foreground border border-border">
+              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-muted text-muted-foreground border border-border">
                 Shortcuts
               </span>
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-2 gap-2 sm:gap-2.5">
               {/* Action 1: Record Payment (Emerald) */}
               <Link
                 href={`/app/${gymId}/payments`}
-                className="group p-3.5 rounded-2xl bg-emerald-500/5 hover:bg-emerald-500/10 border border-emerald-500/25 hover:border-emerald-500/40 transition-all flex flex-col justify-between cursor-pointer"
+                className="group p-2.5 sm:p-3 rounded-2xl bg-emerald-500/5 hover:bg-emerald-500/10 border border-emerald-500/25 hover:border-emerald-500/40 transition-all flex flex-col justify-between cursor-pointer"
               >
-                <div className="p-2 w-fit rounded-xl bg-emerald-500/15 text-emerald-600 mb-2.5 shadow-2xs group-hover:scale-105 transition-transform">
-                  <CreditCard className="w-4 h-4" />
+                <div className="p-1.5 w-fit rounded-xl bg-emerald-500/15 text-emerald-600 mb-1.5 shadow-2xs group-hover:scale-105 transition-transform">
+                  <CreditCard className="w-3.5 h-3.5" />
                 </div>
                 <div>
-                  <div className="text-sm font-bold text-foreground group-hover:text-emerald-600 transition-colors truncate">
+                  <div className="text-xs sm:text-sm font-bold text-foreground group-hover:text-emerald-600 transition-colors">
                     Record Payment
                   </div>
-                  <div className="text-xs text-muted-foreground mt-0.5 truncate">
+                  <div className="text-[11px] text-muted-foreground mt-0.5">
                     Collect fees &amp; dues
                   </div>
                 </div>
@@ -730,16 +727,16 @@ export default async function DashboardPage({ params, searchParams }: PageProps)
               {/* Action 2: Track Expense (Rose) */}
               <Link
                 href={`/app/${gymId}/expenses`}
-                className="group p-3.5 rounded-2xl bg-rose-500/5 hover:bg-rose-500/10 border border-rose-500/25 hover:border-rose-500/40 transition-all flex flex-col justify-between cursor-pointer"
+                className="group p-2.5 sm:p-3 rounded-2xl bg-rose-500/5 hover:bg-rose-500/10 border border-rose-500/25 hover:border-rose-500/40 transition-all flex flex-col justify-between cursor-pointer"
               >
-                <div className="p-2 w-fit rounded-xl bg-rose-500/15 text-rose-600 mb-2.5 shadow-2xs group-hover:scale-105 transition-transform">
-                  <Receipt className="w-4 h-4" />
+                <div className="p-1.5 w-fit rounded-xl bg-rose-500/15 text-rose-600 mb-1.5 shadow-2xs group-hover:scale-105 transition-transform">
+                  <Receipt className="w-3.5 h-3.5" />
                 </div>
                 <div>
-                  <div className="text-sm font-bold text-foreground group-hover:text-rose-600 transition-colors truncate">
+                  <div className="text-xs sm:text-sm font-bold text-foreground group-hover:text-rose-600 transition-colors">
                     Track Expense
                   </div>
-                  <div className="text-xs text-muted-foreground mt-0.5 truncate">
+                  <div className="text-[11px] text-muted-foreground mt-0.5">
                     Log bills &amp; payroll
                   </div>
                 </div>
@@ -748,16 +745,16 @@ export default async function DashboardPage({ params, searchParams }: PageProps)
               {/* Action 3: Post Notice (Amber) */}
               <Link
                 href={`/app/${gymId}/notices`}
-                className="group p-3.5 rounded-2xl bg-amber-500/5 hover:bg-amber-500/10 border border-amber-500/25 hover:border-amber-500/40 transition-all flex flex-col justify-between cursor-pointer"
+                className="group p-2.5 sm:p-3 rounded-2xl bg-amber-500/5 hover:bg-amber-500/10 border border-amber-500/25 hover:border-amber-500/40 transition-all flex flex-col justify-between cursor-pointer"
               >
-                <div className="p-2 w-fit rounded-xl bg-amber-500/15 text-amber-600 mb-2.5 shadow-2xs group-hover:scale-105 transition-transform">
-                  <Bell className="w-4 h-4" />
+                <div className="p-1.5 w-fit rounded-xl bg-amber-500/15 text-amber-600 mb-1.5 shadow-2xs group-hover:scale-105 transition-transform">
+                  <Bell className="w-3.5 h-3.5" />
                 </div>
                 <div>
-                  <div className="text-sm font-bold text-foreground group-hover:text-amber-600 transition-colors truncate">
+                  <div className="text-xs sm:text-sm font-bold text-foreground group-hover:text-amber-600 transition-colors">
                     Post Notice
                   </div>
-                  <div className="text-xs text-muted-foreground mt-0.5 truncate">
+                  <div className="text-[11px] text-muted-foreground mt-0.5">
                     Member alerts
                   </div>
                 </div>
@@ -766,16 +763,16 @@ export default async function DashboardPage({ params, searchParams }: PageProps)
               {/* Action 4: Manage Members (Indigo) */}
               <Link
                 href={`/app/${gymId}/members`}
-                className="group p-3.5 rounded-2xl bg-indigo-500/5 hover:bg-indigo-500/10 border border-indigo-500/25 hover:border-indigo-500/40 transition-all flex flex-col justify-between cursor-pointer"
+                className="group p-2.5 sm:p-3 rounded-2xl bg-indigo-500/5 hover:bg-indigo-500/10 border border-indigo-500/25 hover:border-indigo-500/40 transition-all flex flex-col justify-between cursor-pointer"
               >
-                <div className="p-2 w-fit rounded-xl bg-indigo-500/15 text-indigo-600 mb-2.5 shadow-2xs group-hover:scale-105 transition-transform">
-                  <Users className="w-4 h-4" />
+                <div className="p-1.5 w-fit rounded-xl bg-indigo-500/15 text-indigo-600 mb-1.5 shadow-2xs group-hover:scale-105 transition-transform">
+                  <Users className="w-3.5 h-3.5" />
                 </div>
                 <div>
-                  <div className="text-sm font-bold text-foreground group-hover:text-indigo-600 transition-colors truncate">
+                  <div className="text-xs sm:text-sm font-bold text-foreground group-hover:text-indigo-600 transition-colors">
                     Manage Members
                   </div>
-                  <div className="text-xs text-muted-foreground mt-0.5 truncate">
+                  <div className="text-[11px] text-muted-foreground mt-0.5">
                     Roster &amp; passes
                   </div>
                 </div>
@@ -784,10 +781,10 @@ export default async function DashboardPage({ params, searchParams }: PageProps)
           </div>
 
           {/* Card 2: Financial Split / Cash vs Expense Snapshot Card */}
-          <div className="bg-card p-5 sm:p-6 rounded-2xl border border-border shadow-xs text-card-foreground space-y-4">
+          <div className="bg-card p-3.5 sm:p-4 rounded-2xl border border-border shadow-xs text-card-foreground space-y-3">
             <div className="flex items-center justify-between">
               <div>
-                <h2 className="text-base font-bold text-foreground">Cash Flow Breakdown</h2>
+                <h2 className="text-sm sm:text-base font-semibold text-foreground">Cash Flow Breakdown</h2>
                 <p className="text-xs text-muted-foreground">Revenue vs. Expenses split</p>
               </div>
               <Link
@@ -800,7 +797,7 @@ export default async function DashboardPage({ params, searchParams }: PageProps)
             </div>
 
             {/* Split Bar 1: Total Revenue vs Total Expenses */}
-            <div className="space-y-1.5">
+            <div className="space-y-1">
               <div className="flex items-center justify-between text-xs font-bold">
                 <span className="text-emerald-600 dark:text-emerald-400">
                   Revenue: ₹{totalRevenue.toLocaleString("en-IN")}
@@ -809,7 +806,7 @@ export default async function DashboardPage({ params, searchParams }: PageProps)
                   Expenses: ₹{totalExpenses.toLocaleString("en-IN")}
                 </span>
               </div>
-              <div className="w-full h-2.5 rounded-full bg-muted overflow-hidden flex">
+              <div className="w-full h-2 rounded-full bg-muted overflow-hidden flex">
                 <div
                   style={{ width: `${revPct}%` }}
                   className="bg-emerald-500 h-full transition-all"
@@ -824,7 +821,7 @@ export default async function DashboardPage({ params, searchParams }: PageProps)
             </div>
 
             {/* Split Bar 2: Today's Collection Cash vs UPI */}
-            <div className="space-y-1.5 pt-2 border-t border-border">
+            <div className="space-y-1 pt-2 border-t border-border">
               <div className="flex items-center justify-between text-xs font-bold">
                 <span className="text-foreground">
                   Today Cash: ₹{todayCash.toLocaleString("en-IN")} ({todayCashPct}%)

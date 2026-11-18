@@ -571,7 +571,7 @@ export function FollowUpsClient({
                 </span>
               )}
             </div>
-            <div className="text-xs text-muted-foreground mt-1 truncate">
+            <div className="text-xs text-muted-foreground mt-1 truncate" suppressHydrationWarning>
               Follow-up: {getFollowUpStatusBadge(member.id)}
             </div>
           </div>
@@ -689,7 +689,7 @@ export function FollowUpsClient({
                   ? `Overdue ${member.daysOverdue}d (Due ${member.formattedDueDate})`
                   : `Due in ${member.daysUntilDue}d (${member.formattedDueDate})`}
               </span>
-              <span>
+              <span suppressHydrationWarning>
                 Follow-up: {getFollowUpStatusBadge(member.id)}
               </span>
             </div>

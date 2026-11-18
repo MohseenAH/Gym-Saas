@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import Script from "next/script";
 import "./globals.css";
 
 export const viewport: Viewport = {
@@ -27,10 +28,12 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" data-theme="light" className="transition-colors duration-200">
-      <body className="antialiased min-h-screen bg-background text-foreground selection:bg-primary/20 selection:text-primary">
+    <html lang="en" data-theme="light" className="transition-colors duration-200" suppressHydrationWarning>
+      <body className="antialiased min-h-screen bg-background text-foreground selection:bg-primary/20 selection:text-primary" suppressHydrationWarning>
         {children}
-        <script
+        <Script
+          id="sw-register"
+          strategy="afterInteractive"
           dangerouslySetInnerHTML={{
             __html: `
               if (typeof window !== 'undefined' && 'serviceWorker' in navigator && (window.location.protocol === 'https:' || window.location.hostname === 'localhost')) {
