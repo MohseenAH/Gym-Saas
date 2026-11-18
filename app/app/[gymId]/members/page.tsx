@@ -150,12 +150,12 @@ export default async function MembersPage({ params, searchParams }: MembersPageP
         <div>
           <div className="flex items-center gap-2.5">
             <h1 className="text-2xl sm:text-3xl font-black text-foreground tracking-tight">Members</h1>
-            <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-primary/10 text-primary border border-primary/20">
+            <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-indigo-500/10 text-indigo-700 dark:text-indigo-400 border border-indigo-500/20 tabular-nums">
               {allMembers.length} Total
             </span>
           </div>
           <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
-            Enroll new members, monitor expiring subscriptions, and access 360&deg; member records
+            Add individual members, import bulk rosters, and track plan health
           </p>
         </div>
         <div className="grid grid-cols-2 gap-2 sm:flex sm:items-center sm:gap-2.5 w-full sm:w-auto">
@@ -164,6 +164,7 @@ export default async function MembersPage({ params, searchParams }: MembersPageP
             branchId={branchId}
             branches={(branches || []).map((b) => ({ id: b.id, name: b.name }))}
             triggerLabel="Import CSV"
+            triggerClassName="h-11 min-h-[44px] px-4 inline-flex items-center justify-center gap-2 rounded-xl bg-card hover:bg-muted text-foreground text-sm font-bold border border-border shadow-xs hover:shadow-sm transition-all cursor-pointer w-full sm:w-auto"
           />
           <QuickEnrollModal
             gymId={gymId}
@@ -175,6 +176,7 @@ export default async function MembersPage({ params, searchParams }: MembersPageP
               durationDays: p.duration_days,
             }))}
             triggerLabel="+ Add Member"
+            triggerClassName="h-11 min-h-[44px] px-4 inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-[0.99] text-white text-sm font-bold shadow-sm hover:shadow-md transition-all cursor-pointer w-full sm:w-auto"
           />
         </div>
       </div>

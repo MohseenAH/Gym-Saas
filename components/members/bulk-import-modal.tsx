@@ -30,6 +30,7 @@ interface BulkImportModalProps {
   branchId: string;
   branches?: Array<{ id: string; name: string }>;
   triggerLabel?: string;
+  triggerClassName?: string;
 }
 
 export function BulkImportModal({
@@ -37,6 +38,7 @@ export function BulkImportModal({
   branchId: initialBranchId,
   branches = [],
   triggerLabel = "Import CSV",
+  triggerClassName,
 }: BulkImportModalProps) {
   const router = useRouter();
   const [, startTransition] = useTransition();
@@ -205,7 +207,10 @@ export function BulkImportModal({
     <>
       <button
         onClick={() => setIsOpen(true)}
-        className="flex items-center justify-center gap-2 h-10 sm:h-11 px-4 py-2 bg-card hover:bg-muted/80 text-foreground border border-border rounded-xl text-xs sm:text-sm font-bold shadow-xs transition-all cursor-pointer w-full sm:w-auto"
+        className={
+          triggerClassName ||
+          "flex items-center justify-center gap-2 h-10 sm:h-11 px-4 py-2 bg-card hover:bg-muted/80 text-foreground border border-border rounded-xl text-xs sm:text-sm font-bold shadow-xs transition-all cursor-pointer w-full sm:w-auto"
+        }
       >
         <Upload className="w-4 h-4 text-primary" />
         <span>{triggerLabel}</span>
