@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { computeMembershipStatus } from "@/lib/actions/memberships";
+import { computeMembershipStatus } from "@/lib/utils/membership-status";
 import { createPlanSchema, updatePlanSchema } from "@/lib/validations/plans";
 import { assignMembershipSchema } from "@/lib/validations/memberships";
 import { hasCapability } from "@/lib/auth/capabilities";

@@ -3,6 +3,7 @@
 import { useState, useRef, startTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Edit2, X, Loader2, IndianRupee, Clock, Building2, ShieldCheck } from "lucide-react";
+import { updatePlanAction } from "@/lib/actions/plans";
 
 export interface EditablePlan {
   id: string;
@@ -124,14 +125,9 @@ function EditPlanForm({
       isActive: Boolean(isActive),
     };
 
-    let res: { success: boolean; planId?: string; versioned?: boolean; error?: string };
+    let res;
     try {
-      const response = await fetch("/api/plans", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-      res = await response.json();
+      res = await updatePlanAction(payload);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Failed to update membership plan");
       setLoading(false);

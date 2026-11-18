@@ -17,16 +17,24 @@ interface ExpiringSoonAlertsProps {
   gymId: string;
   gymName: string;
   expiringMembers: ExpiringMember[];
+  isEmbedded?: boolean;
 }
 
 export function ExpiringSoonAlerts({
   gymId,
   gymName,
   expiringMembers,
+  isEmbedded = false,
 }: ExpiringSoonAlertsProps) {
   if (expiringMembers.length === 0) {
     return (
-      <div className="bg-card p-6 rounded-2xl border border-border shadow-xs text-card-foreground">
+      <div
+        className={
+          isEmbedded
+            ? "p-4 sm:p-5 text-card-foreground"
+            : "bg-card p-5 sm:p-6 rounded-2xl sm:rounded-3xl border border-border shadow-xs text-card-foreground"
+        }
+      >
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-2.5">
             <div className="p-2 rounded-xl bg-emerald-500/10 text-emerald-600">
@@ -46,7 +54,13 @@ export function ExpiringSoonAlerts({
   }
 
   return (
-    <div className="bg-card p-6 rounded-2xl border border-amber-500/30 shadow-xs text-card-foreground">
+    <div
+      className={
+        isEmbedded
+          ? "p-4 sm:p-5 text-card-foreground"
+          : "bg-card p-5 sm:p-6 rounded-2xl sm:rounded-3xl border border-amber-500/30 shadow-xs text-card-foreground"
+      }
+    >
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-3">
           <div className="p-2.5 bg-amber-500/10 text-amber-600 rounded-xl">

@@ -5,7 +5,6 @@ import { resolveBranchContext } from "@/lib/auth/branch-context";
 import { QuickEnrollModal } from "@/components/members/quick-enroll-modal";
 import { BulkImportModal } from "@/components/members/bulk-import-modal";
 import { MembersTableClient, MemberListItem } from "@/components/members/members-table-client";
-import { Users, UserCheck, ShieldCheck, Clock } from "lucide-react";
 
 interface MembersPageProps {
   params: Promise<{ gymId: string }>;
@@ -37,7 +36,7 @@ export default async function MembersPage({ params, searchParams }: MembersPageP
   // Prepare members query with branch filtering
   let membersQuery = supabase
     .from("members")
-    .select("id, full_name, phone, email, status, created_at, user_id, branches(name)")
+    .select("id, full_name, phone, email, status, created_at, user_id, branch_id, branches(name)")
     .order("created_at", { ascending: false });
 
   if (branchContext.selectedBranchId) {
@@ -137,21 +136,25 @@ export default async function MembersPage({ params, searchParams }: MembersPageP
       status: m.status as "active" | "inactive" | "suspended",
       createdAt: m.created_at,
       userId: m.user_id,
+      branchId: (m as unknown as { branch_id?: string }).branch_id || branchId,
       branchName: branch?.name || "Main Branch",
       activePlan,
       hasPendingInvite: inviteMap.has(m.id),
     };
   });
 
-  const activeMembersCount = allMembers.filter((m) => m.status === "active").length;
-
   return (
     <div className="space-y-6 max-w-7xl mx-auto text-foreground">
-      {/* Top Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      {/* 1. Top Header & Primary Actions */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
         <div>
-          <h1 className="text-2xl font-black text-foreground tracking-tight">Member Management</h1>
-          <p className="text-xs text-muted-foreground mt-1">
+          <div className="flex items-center gap-2.5">
+            <h1 className="text-2xl sm:text-3xl font-black text-foreground tracking-tight">Members</h1>
+            <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-primary/10 text-primary border border-primary/20">
+              {allMembers.length} Total
+            </span>
+          </div>
+          <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
             Enroll new members, monitor expiring subscriptions, and access 360&deg; member records
           </p>
         </div>
@@ -160,6 +163,7 @@ export default async function MembersPage({ params, searchParams }: MembersPageP
             gymId={gymId}
             branchId={branchId}
             branches={(branches || []).map((b) => ({ id: b.id, name: b.name }))}
+            triggerLabel="Import CSV"
           />
           <QuickEnrollModal
             gymId={gymId}
@@ -170,56 +174,12 @@ export default async function MembersPage({ params, searchParams }: MembersPageP
               price: Number(p.price),
               durationDays: p.duration_days,
             }))}
+            triggerLabel="+ Add Member"
           />
         </div>
       </div>
 
-      {/* KPI Stats */}
-      <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4">
-        <div className="bg-card p-3 sm:p-5 rounded-2xl sm:rounded-3xl border border-border shadow-xs flex items-center gap-3 sm:gap-4 text-card-foreground">
-          <div className="h-7 w-7 sm:h-9 sm:w-9 flex items-center justify-center shrink-0 bg-primary/10 text-primary rounded-xl sm:rounded-2xl shadow-2xs">
-            <Users className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-          </div>
-          <div className="min-w-0">
-            <div className="text-lg sm:text-2xl font-bold tracking-tight text-foreground truncate">{allMembers.length}</div>
-            <div className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-muted-foreground truncate">Total Members</div>
-          </div>
-        </div>
-
-        <div className="bg-card p-3 sm:p-5 rounded-2xl sm:rounded-3xl border border-border shadow-xs flex items-center gap-3 sm:gap-4 text-card-foreground">
-          <div className="h-7 w-7 sm:h-9 sm:w-9 flex items-center justify-center shrink-0 bg-emerald-500/10 text-emerald-600 rounded-xl sm:rounded-2xl shadow-2xs">
-            <UserCheck className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-          </div>
-          <div className="min-w-0">
-            <div className="text-lg sm:text-2xl font-bold tracking-tight text-foreground truncate">{activeMembersCount}</div>
-            <div className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-muted-foreground truncate">Active Plans</div>
-          </div>
-        </div>
-
-        <div className="bg-card p-3 sm:p-5 rounded-2xl sm:rounded-3xl border border-border shadow-xs flex items-center gap-3 sm:gap-4 text-card-foreground">
-          <div className="h-7 w-7 sm:h-9 sm:w-9 flex items-center justify-center shrink-0 bg-amber-500/10 text-amber-600 rounded-xl sm:rounded-2xl shadow-2xs">
-            <Clock className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-          </div>
-          <div className="min-w-0">
-            <div className="text-lg sm:text-2xl font-bold tracking-tight text-foreground truncate">{expiringSoonCount}</div>
-            <div className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-muted-foreground truncate">Expiring Soon</div>
-          </div>
-        </div>
-
-        <div className="bg-card p-3 sm:p-5 rounded-2xl sm:rounded-3xl border border-border shadow-xs flex items-center gap-3 sm:gap-4 text-card-foreground">
-          <div className="h-7 w-7 sm:h-9 sm:w-9 flex items-center justify-center shrink-0 bg-blue-500/10 text-blue-600 rounded-xl sm:rounded-2xl shadow-2xs">
-            <ShieldCheck className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-          </div>
-          <div className="min-w-0">
-            <div className="text-lg sm:text-2xl font-bold tracking-tight text-foreground truncate">
-              {allMembers.filter((m) => m.user_id).length}
-            </div>
-            <div className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-muted-foreground truncate">Portal Claimed</div>
-          </div>
-        </div>
-      </div>
-
-      {/* Interactive Filterable Members Table */}
+      {/* 2. Interactive Filterable Members Table with 5-Stat Strip */}
       <MembersTableClient
         gymId={gymId}
         members={tableMembers}

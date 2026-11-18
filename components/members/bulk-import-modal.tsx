@@ -29,12 +29,14 @@ interface BulkImportModalProps {
   gymId: string;
   branchId: string;
   branches?: Array<{ id: string; name: string }>;
+  triggerLabel?: string;
 }
 
 export function BulkImportModal({
   gymId,
   branchId: initialBranchId,
   branches = [],
+  triggerLabel = "Import CSV",
 }: BulkImportModalProps) {
   const router = useRouter();
   const [, startTransition] = useTransition();
@@ -206,7 +208,7 @@ export function BulkImportModal({
         className="flex items-center justify-center gap-2 h-10 sm:h-11 px-4 py-2 bg-card hover:bg-muted/80 text-foreground border border-border rounded-xl text-xs sm:text-sm font-bold shadow-xs transition-all cursor-pointer w-full sm:w-auto"
       >
         <Upload className="w-4 h-4 text-primary" />
-        <span>Import Members</span>
+        <span>{triggerLabel}</span>
       </button>
 
       {isOpen && (

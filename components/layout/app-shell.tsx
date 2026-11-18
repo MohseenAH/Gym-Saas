@@ -36,7 +36,7 @@ export function AppShell({
     <div className="flex h-screen overflow-hidden bg-background text-foreground">
       {/* Desktop Persistent Sidebar */}
       <div className="hidden md:flex shrink-0">
-        <Sidebar gymId={gymId} gymName={gymName} role={role} />
+        <Sidebar gymId={gymId} gymName={gymName} role={role} branches={branches} />
       </div>
 
       {/* Mobile Slide-Over Drawer */}
@@ -63,6 +63,7 @@ export function AppShell({
               gymId={gymId}
               gymName={gymName}
               role={role}
+              branches={branches}
               onNavigate={() => setMobileDrawerOpen(false)}
             />
           </div>
