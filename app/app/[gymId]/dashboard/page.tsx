@@ -103,12 +103,18 @@ export default async function DashboardPage({ params, searchParams }: PageProps)
     expensesQuery = expensesQuery.eq("branch_id", selectedBranchId);
   }
 
-  const membershipsQuery = supabase
+  let membershipsQuery = supabase
     .from("memberships")
     .select(
       "id, member_id, end_date, status, membership_plans(name, price), members(id, full_name, phone, branch_id, branches(name))"
     )
+    .eq("gym_id", gymId)
     .eq("status", "active");
+  if (isValidBranchFilter) {
+    membershipsQuery = membershipsQuery.eq("branch_id", selectedBranchId);
+  } else if (gymBranchIds.length > 0) {
+    membershipsQuery = membershipsQuery.in("branch_id", gymBranchIds);
+  }
 
   let noticesQuery = supabase
     .from("notices")

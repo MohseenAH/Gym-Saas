@@ -2,12 +2,19 @@ import Link from "next/link";
 import { getCachedUser } from "@/lib/supabase/server";
 import { resolvePostLoginRedirect } from "@/lib/auth/redirect";
 import { redirect } from "next/navigation";
+import { cookies } from "next/headers";
 import { Dumbbell, ArrowRight, Zap, Users, CreditCard } from "lucide-react";
 
 export default async function HomePage() {
   const user = await getCachedUser();
 
   if (user) {
+    const cookieStore = await cookies();
+    const lastGymId = cookieStore.get("gymapra_last_gym_id")?.value;
+    if (lastGymId) {
+      redirect(`/app/${lastGymId}/dashboard`);
+    }
+
     const destination = await resolvePostLoginRedirect();
     redirect(destination.path);
   }

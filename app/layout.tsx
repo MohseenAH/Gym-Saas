@@ -30,6 +30,17 @@ export default function RootLayout({
     <html lang="en" data-theme="light" className="transition-colors duration-200">
       <body className="antialiased min-h-screen bg-background text-foreground selection:bg-primary/20 selection:text-primary">
         {children}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              if (typeof window !== 'undefined' && 'serviceWorker' in navigator && (window.location.protocol === 'https:' || window.location.hostname === 'localhost')) {
+                window.addEventListener('load', function() {
+                  navigator.serviceWorker.register('/sw.js').catch(function() {});
+                });
+              }
+            `,
+          }}
+        />
       </body>
     </html>
   );

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Sidebar } from "./sidebar";
 import { Topbar } from "./topbar";
 import { StaffRole } from "@/lib/auth/roles";
@@ -31,6 +31,12 @@ export function AppShell({
   children,
 }: AppShellProps) {
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
+
+  useEffect(() => {
+    if (gymId && typeof document !== "undefined") {
+      document.cookie = `gymapra_last_gym_id=${gymId}; path=/; max-age=31536000; SameSite=Lax`;
+    }
+  }, [gymId]);
 
   return (
     <div className="flex h-screen overflow-hidden bg-background text-foreground">

@@ -7,7 +7,7 @@ import {
   MembershipsClient,
   MembershipItem,
 } from "@/components/memberships/memberships-client";
-import { MembershipPlanOption } from "@/components/members/renew-membership-modal";
+import { MembershipPlanOption } from "@/components/memberships/manage-membership-modal";
 import { PlanDetailItem } from "@/components/memberships/plans-manager-client";
 import { AssignableMember } from "@/components/memberships/assign-membership-modal";
 import { AssignableUnassignedMember } from "@/components/memberships/bulk-assign-modal";

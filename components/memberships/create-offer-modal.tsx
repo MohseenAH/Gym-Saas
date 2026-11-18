@@ -128,18 +128,18 @@ export function CreateOfferModal({
         if (e.target === e.currentTarget) onClose();
       }}
     >
-      <div className="bg-white rounded-2xl shadow-xl border border-slate-200/80 w-full max-w-lg overflow-hidden flex flex-col max-h-[90vh]">
+      <div className="bg-card text-card-foreground rounded-2xl shadow-xl border border-border w-full max-w-lg overflow-hidden flex flex-col max-h-[90vh]">
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50/70">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-border bg-muted/40">
           <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold">
+            <div className="w-9 h-9 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 flex items-center justify-center font-bold">
               <Tag className="w-5 h-5" />
             </div>
             <div>
-              <h2 id="create-offer-title" className="text-lg font-bold text-slate-900 leading-tight">
+              <h2 id="create-offer-title" className="text-lg font-bold text-foreground leading-tight">
                 Create Offer & Discount
               </h2>
-              <p className="text-xs text-slate-500">
+              <p className="text-xs text-muted-foreground">
                 Set up promotional vouchers and member discounts
               </p>
             </div>
@@ -147,7 +147,7 @@ export function CreateOfferModal({
           <button
             type="button"
             onClick={onClose}
-            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors"
+            className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer"
             aria-label="Close"
           >
             <X className="w-5 h-5" />
@@ -157,14 +157,14 @@ export function CreateOfferModal({
         {/* Form Body */}
         <form onSubmit={handleSubmit} className="p-6 overflow-y-auto space-y-4">
           {error && (
-            <div className="p-3 text-xs bg-rose-50 border border-rose-200 text-rose-700 rounded-xl">
+            <div className="p-3 text-xs bg-rose-500/10 border border-rose-500/30 text-rose-600 dark:text-rose-400 rounded-xl font-semibold">
               {error}
             </div>
           )}
 
           {/* Title */}
           <div>
-            <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">
+            <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">
               Offer Title <span className="text-rose-500">*</span>
             </label>
             <input
@@ -173,24 +173,24 @@ export function CreateOfferModal({
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="e.g. New Year Special, Referral Discount"
-              className="w-full px-3.5 py-2 text-sm bg-white border border-slate-200 rounded-xl focus:outline-hidden focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 text-slate-900 placeholder:text-slate-400"
+              className="w-full px-3.5 py-2 text-sm bg-muted/40 border border-input rounded-xl focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary/40 text-foreground placeholder:text-muted-foreground"
             />
           </div>
 
           {/* Discount Type and Value */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">
+              <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">
                 Discount Type
               </label>
-              <div className="grid grid-cols-2 gap-1 p-1 bg-slate-100 rounded-xl">
+              <div className="grid grid-cols-2 gap-1 p-1 bg-muted/60 border border-border/50 rounded-xl">
                 <button
                   type="button"
                   onClick={() => setDiscountType("percentage")}
-                  className={`flex items-center justify-center gap-1.5 py-1.5 text-xs font-semibold rounded-lg transition-all ${
+                  className={`flex items-center justify-center gap-1.5 py-1.5 text-xs font-semibold rounded-lg transition-all cursor-pointer ${
                     discountType === "percentage"
-                      ? "bg-white text-emerald-700 shadow-xs"
-                      : "text-slate-600 hover:text-slate-900"
+                      ? "bg-card text-emerald-600 dark:text-emerald-400 shadow-xs border border-border/40"
+                      : "text-muted-foreground hover:text-foreground"
                   }`}
                 >
                   <Percent className="w-3.5 h-3.5" />
@@ -199,10 +199,10 @@ export function CreateOfferModal({
                 <button
                   type="button"
                   onClick={() => setDiscountType("flat")}
-                  className={`flex items-center justify-center gap-1.5 py-1.5 text-xs font-semibold rounded-lg transition-all ${
+                  className={`flex items-center justify-center gap-1.5 py-1.5 text-xs font-semibold rounded-lg transition-all cursor-pointer ${
                     discountType === "flat"
-                      ? "bg-white text-emerald-700 shadow-xs"
-                      : "text-slate-600 hover:text-slate-900"
+                      ? "bg-card text-emerald-600 dark:text-emerald-400 shadow-xs border border-border/40"
+                      : "text-muted-foreground hover:text-foreground"
                   }`}
                 >
                   <IndianRupee className="w-3.5 h-3.5" />
@@ -212,7 +212,7 @@ export function CreateOfferModal({
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">
+              <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">
                 {discountType === "percentage" ? "Discount Percentage (%)" : "Flat Amount (₹)"}{" "}
                 <span className="text-rose-500">*</span>
               </label>
@@ -226,9 +226,9 @@ export function CreateOfferModal({
                   value={discountValue}
                   onChange={(e) => setDiscountValue(e.target.value)}
                   placeholder={discountType === "percentage" ? "e.g. 20" : "e.g. 200"}
-                  className="w-full px-3.5 py-2 text-sm bg-white border border-slate-200 rounded-xl focus:outline-hidden focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 text-slate-900 placeholder:text-slate-400 tabular-nums"
+                  className="w-full px-3.5 py-2 text-sm bg-muted/40 border border-input rounded-xl focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary/40 text-foreground placeholder:text-muted-foreground tabular-nums"
                 />
-                <span className="absolute right-3 top-2.5 text-xs font-bold text-slate-400">
+                <span className="absolute right-3 top-2.5 text-xs font-bold text-muted-foreground">
                   {discountType === "percentage" ? "%" : "₹"}
                 </span>
               </div>
@@ -238,7 +238,7 @@ export function CreateOfferModal({
           {/* Max Cap (only if percentage) */}
           {discountType === "percentage" && (
             <div>
-              <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">
+              <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">
                 Maximum Discount Cap (Optional)
               </label>
               <div className="relative">
@@ -249,13 +249,13 @@ export function CreateOfferModal({
                   value={maxDiscountAmount}
                   onChange={(e) => setMaxDiscountAmount(e.target.value)}
                   placeholder="e.g. 500 (limits max discount to ₹500)"
-                  className="w-full px-3.5 py-2 text-sm bg-white border border-slate-200 rounded-xl focus:outline-hidden focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 text-slate-900 placeholder:text-slate-400 tabular-nums"
+                  className="w-full px-3.5 py-2 text-sm bg-muted/40 border border-input rounded-xl focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary/40 text-foreground placeholder:text-muted-foreground tabular-nums"
                 />
-                <span className="absolute right-3 top-2.5 text-xs font-bold text-slate-400">
+                <span className="absolute right-3 top-2.5 text-xs font-bold text-muted-foreground">
                   ₹ Max
                 </span>
               </div>
-              <p className="text-[11px] text-slate-500 mt-1">
+              <p className="text-[11px] text-muted-foreground mt-1">
                 Leave empty for uncapped percentage savings.
               </p>
             </div>
@@ -263,11 +263,11 @@ export function CreateOfferModal({
 
           {/* Applicable Plans */}
           <div>
-            <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">
+            <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">
               Applicable Plans
             </label>
-            <div className="space-y-2 border border-slate-200 rounded-xl p-3 bg-slate-50/50">
-              <label className="flex items-center gap-2 cursor-pointer text-xs font-medium text-slate-800">
+            <div className="space-y-2 border border-border rounded-xl p-3 bg-muted/30">
+              <label className="flex items-center gap-2 cursor-pointer text-xs font-medium text-foreground">
                 <input
                   type="checkbox"
                   checked={applyToAllPlans}
@@ -275,31 +275,31 @@ export function CreateOfferModal({
                     setApplyToAllPlans(e.target.checked);
                     if (e.target.checked) setSelectedPlanIds([]);
                   }}
-                  className="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
+                  className="rounded border-input text-emerald-600 focus:ring-emerald-500"
                 />
                 Apply to All Membership Plans
               </label>
 
               {!applyToAllPlans && (
-                <div className="pt-2 border-t border-slate-200/80 space-y-1.5 max-h-36 overflow-y-auto">
+                <div className="pt-2 border-t border-border space-y-1.5 max-h-36 overflow-y-auto">
                   {availablePlans.length === 0 ? (
-                    <p className="text-xs text-slate-400">No active plans found.</p>
+                    <p className="text-xs text-muted-foreground">No active plans found.</p>
                   ) : (
                     availablePlans.map((plan) => (
                       <label
                         key={plan.id}
-                        className="flex items-center justify-between p-1.5 rounded-lg hover:bg-slate-100/70 cursor-pointer text-xs text-slate-700"
+                        className="flex items-center justify-between p-1.5 rounded-lg hover:bg-muted/60 cursor-pointer text-xs text-foreground"
                       >
                         <span className="font-medium">{plan.name}</span>
                         <div className="flex items-center gap-2">
-                          <span className="text-slate-400 tabular-nums">
+                          <span className="text-muted-foreground tabular-nums">
                             ₹{plan.price.toLocaleString("en-IN")}
                           </span>
                           <input
                             type="checkbox"
                             checked={selectedPlanIds.includes(plan.id)}
                             onChange={() => togglePlan(plan.id)}
-                            className="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
+                            className="rounded border-input text-emerald-600 focus:ring-emerald-500"
                           />
                         </div>
                       </label>
@@ -313,7 +313,7 @@ export function CreateOfferModal({
           {/* Target Audience & Limits */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">
+              <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">
                 Target Audience
               </label>
               <select
@@ -321,16 +321,16 @@ export function CreateOfferModal({
                 onChange={(e) =>
                   setTargetAudience(e.target.value as "all" | "new_members" | "renewals")
                 }
-                className="w-full px-3 py-2 text-sm bg-white border border-slate-200 rounded-xl focus:outline-hidden focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 text-slate-900"
+                className="w-full px-3 py-2 text-sm bg-muted/40 border border-input rounded-xl focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary/40 text-foreground cursor-pointer"
               >
-                <option value="all">All Members</option>
-                <option value="new_members">New Members Only</option>
-                <option value="renewals">Renewals Only</option>
+                <option value="all" className="bg-popover text-popover-foreground">All Members</option>
+                <option value="new_members" className="bg-popover text-popover-foreground">New Members Only</option>
+                <option value="renewals" className="bg-popover text-popover-foreground">Renewals Only</option>
               </select>
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">
+              <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">
                 Usage Limit (Optional)
               </label>
               <input
@@ -339,14 +339,14 @@ export function CreateOfferModal({
                 value={usageLimit}
                 onChange={(e) => setUsageLimit(e.target.value)}
                 placeholder="e.g. 50 redemptions"
-                className="w-full px-3.5 py-2 text-sm bg-white border border-slate-200 rounded-xl focus:outline-hidden focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 text-slate-900 placeholder:text-slate-400 tabular-nums"
+                className="w-full px-3.5 py-2 text-sm bg-muted/40 border border-input rounded-xl focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary/40 text-foreground placeholder:text-muted-foreground tabular-nums"
               />
             </div>
           </div>
 
           {/* Expiration Date */}
           <div>
-            <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">
+            <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">
               Valid Until (Optional)
             </label>
             <div className="relative">
@@ -354,26 +354,26 @@ export function CreateOfferModal({
                 type="date"
                 value={validUntil}
                 onChange={(e) => setValidUntil(e.target.value)}
-                className="w-full px-3.5 py-2 text-sm bg-white border border-slate-200 rounded-xl focus:outline-hidden focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 text-slate-900"
+                className="w-full px-3.5 py-2 text-sm bg-muted/40 border border-input rounded-xl focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary/40 text-foreground cursor-pointer"
               />
             </div>
-            <p className="text-[11px] text-slate-500 mt-1">
+            <p className="text-[11px] text-muted-foreground mt-1">
               Leave empty for an ongoing promotional offer.
             </p>
           </div>
 
           {/* Modal Actions */}
-          <div className="flex items-center justify-end gap-2.5 pt-4 border-t border-slate-100">
+          <div className="flex items-center justify-end gap-2.5 pt-4 border-t border-border">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100 rounded-xl transition-colors"
+              className="px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted rounded-xl transition-colors cursor-pointer"
             >
               Cancel
             </button>
             <button
               type="submit"
-              className="px-5 py-2 text-sm font-semibold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl shadow-xs transition-colors flex items-center gap-1.5"
+              className="px-5 py-2 text-sm font-semibold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl shadow-xs transition-colors flex items-center gap-1.5 cursor-pointer"
             >
               Create Offer
             </button>

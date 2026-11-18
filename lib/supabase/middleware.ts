@@ -14,6 +14,33 @@ export async function updateSession(request: NextRequest) {
 
   const pathname = request.nextUrl.pathname;
 
+  // Fast path 0: Static assets, manifest, service worker, and prefetch requests skip remote claims verification
+  const isPrefetch =
+    request.headers.get("purpose") === "prefetch" ||
+    request.headers.get("x-purpose") === "prefetch" ||
+    request.headers.get("next-router-prefetch") === "1";
+
+  const isStaticOrPwaAsset =
+    pathname.startsWith("/_next") ||
+    pathname === "/sw.js" ||
+    pathname === "/manifest.webmanifest" ||
+    pathname === "/manifest.json" ||
+    pathname === "/favicon.ico" ||
+    pathname.endsWith(".png") ||
+    pathname.endsWith(".svg") ||
+    pathname.endsWith(".jpg") ||
+    pathname.endsWith(".jpeg") ||
+    pathname.endsWith(".webp") ||
+    pathname.endsWith(".js") ||
+    pathname.endsWith(".css") ||
+    pathname.endsWith(".woff2") ||
+    pathname.endsWith(".woff") ||
+    pathname.endsWith(".ttf");
+
+  if (isStaticOrPwaAsset || isPrefetch) {
+    return supabaseResponse;
+  }
+
   // Protected paths: /app/*, /portal/*, /select-workspace, /onboarding
   const isProtectedPath =
     pathname.startsWith("/app") ||
@@ -112,6 +139,16 @@ export async function updateSession(request: NextRequest) {
     const redirectUrl = request.nextUrl.clone();
     redirectUrl.pathname = "/select-workspace";
     return NextResponse.redirect(redirectUrl);
+  }
+
+  // Track last visited gym for instant zero-waterfall PWA opens
+  const appMatch = pathname.match(/^\/app\/([a-zA-Z0-9_-]+)/);
+  if (appMatch && appMatch[1] && appMatch[1] !== "loading" && appMatch[1] !== "dashboard") {
+    supabaseResponse.cookies.set("gymapra_last_gym_id", appMatch[1], {
+      path: "/",
+      maxAge: 60 * 60 * 24 * 365,
+      sameSite: "lax",
+    });
   }
 
   return supabaseResponse;

@@ -8,6 +8,7 @@ export type Capability =
   | "invitations:manage"
   | "plans:manage"
   | "members:manage"
+  | "memberships:manage"
   | "members:view"
   | "payments:record"
   | "payments:manage"
@@ -27,6 +28,7 @@ export const ROLE_CAPABILITIES: Record<StaffRole, Capability[]> = {
     "invitations:manage",
     "plans:manage",
     "members:manage",
+    "memberships:manage",
     "members:view",
     "payments:record",
     "payments:manage",
@@ -42,6 +44,7 @@ export const ROLE_CAPABILITIES: Record<StaffRole, Capability[]> = {
     "invitations:manage",
     "plans:manage",
     "members:manage",
+    "memberships:manage",
     "members:view",
     "payments:record",
     "payments:manage",
@@ -54,6 +57,7 @@ export const ROLE_CAPABILITIES: Record<StaffRole, Capability[]> = {
   ],
   manager: [
     "members:manage",
+    "memberships:manage",
     "members:view",
     "payments:record",
     "payments:manage",
@@ -65,6 +69,7 @@ export const ROLE_CAPABILITIES: Record<StaffRole, Capability[]> = {
   ],
   staff: [
     "members:manage",
+    "memberships:manage",
     "members:view",
     "payments:record",
     "attendance:record",

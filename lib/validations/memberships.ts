@@ -23,5 +23,22 @@ export const bulkAssignMembershipsSchema = z.object({
   startDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Invalid start date format (YYYY-MM-DD)"),
 });
 
+export const manageMembershipSchema = z.object({
+  gymId: z.string().uuid("Invalid gym ID"),
+  membershipId: z.string().uuid("Invalid membership ID"),
+  memberId: z.string().uuid("Invalid member ID"),
+  operation: z.enum(["adjust_dates", "change_plan", "cancel_membership"]),
+  // adjust_dates
+  startDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Invalid start date format (YYYY-MM-DD)").optional(),
+  endDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Invalid end date format (YYYY-MM-DD)").optional(),
+  extensionDays: z.number().int().optional(),
+  freezeDays: z.number().int().min(0).optional(),
+  // change_plan
+  newPlanId: z.string().uuid("Invalid plan ID").optional(),
+  // cancel_membership & notes
+  reason: z.string().max(500, "Reason too long").optional().nullable(),
+});
+
 export type AssignMembershipInput = z.infer<typeof assignMembershipSchema>;
 export type BulkAssignMembershipsInput = z.infer<typeof bulkAssignMembershipsSchema>;
+export type ManageMembershipInput = z.infer<typeof manageMembershipSchema>;

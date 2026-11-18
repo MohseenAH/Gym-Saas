@@ -297,15 +297,15 @@ export function PlansManagerClient({
   const showOffers = categoryFilter === "all" || categoryFilter === "offers";
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 text-foreground">
       {/* Toast Notification */}
       {notification && (
         <div
           role="status"
-          className={`p-3.5 rounded-xl border text-sm font-medium flex items-center justify-between shadow-sm animate-in fade-in duration-200 ${
+          className={`p-3.5 rounded-xl border text-sm font-medium flex items-center justify-between shadow-xs animate-in fade-in duration-200 ${
             notification.type === "success"
-              ? "bg-emerald-50 border-emerald-200 text-emerald-800"
-              : "bg-rose-50 border-rose-200 text-rose-800"
+              ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-600 dark:text-emerald-400"
+              : "bg-rose-500/10 border-rose-500/30 text-rose-600 dark:text-rose-400"
           }`}
         >
           <span>{notification.text}</span>
@@ -322,10 +322,10 @@ export function PlansManagerClient({
       {/* Main Header & Dual Action Buttons */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900">
+          <h1 className="text-2xl font-bold tracking-tight text-foreground">
             Plans & Offers
           </h1>
-          <p className="text-sm text-slate-500 mt-0.5">
+          <p className="text-sm text-muted-foreground mt-0.5">
             Create membership plans and manage promotional discounts for your gym
           </p>
         </div>
@@ -336,7 +336,7 @@ export function PlansManagerClient({
             <button
               type="button"
               onClick={() => setCreatePlanModalOpen(true)}
-              className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold shadow-xs transition-colors"
+              className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold shadow-xs transition-colors cursor-pointer"
             >
               <Plus className="w-4 h-4" />
               <span>Create Plan</span>
@@ -344,7 +344,7 @@ export function PlansManagerClient({
             <button
               type="button"
               onClick={() => setCreateOfferModalOpen(true)}
-              className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-lg border border-emerald-600 hover:bg-emerald-50 text-emerald-700 text-sm font-semibold transition-colors"
+              className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-lg border border-emerald-600 dark:border-emerald-500 hover:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-sm font-semibold transition-colors cursor-pointer"
             >
               <Plus className="w-4 h-4" />
               <span>Create Offer</span>
@@ -360,18 +360,18 @@ export function PlansManagerClient({
           <button
             type="button"
             onClick={() => setCategoryFilter("all")}
-            className={`px-3.5 py-1.5 text-xs font-semibold rounded-full transition-all whitespace-nowrap flex items-center gap-1.5 ${
+            className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition-all whitespace-nowrap cursor-pointer flex items-center gap-1.5 ${
               categoryFilter === "all"
-                ? "bg-emerald-700 text-white shadow-xs"
-                : "bg-white text-slate-600 hover:bg-slate-100 border border-slate-200"
+                ? "bg-emerald-700 dark:bg-emerald-600 text-white shadow-xs"
+                : "bg-muted/70 hover:bg-muted text-foreground border border-border"
             }`}
           >
             <span>All</span>
             <span
-              className={`text-[11px] px-1.5 py-0.2 rounded-full font-bold tabular-nums ${
+              className={`px-1.5 py-0.2 rounded-full text-[10px] font-black tabular-nums ${
                 categoryFilter === "all"
-                  ? "bg-emerald-800 text-white"
-                  : "bg-slate-100 text-slate-600"
+                  ? "bg-white/20 text-white"
+                  : "bg-card text-muted-foreground border border-border/60"
               }`}
             >
               {plans.length + offers.length}
@@ -381,18 +381,18 @@ export function PlansManagerClient({
           <button
             type="button"
             onClick={() => setCategoryFilter("plans")}
-            className={`px-3.5 py-1.5 text-xs font-semibold rounded-full transition-all whitespace-nowrap flex items-center gap-1.5 ${
+            className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition-all whitespace-nowrap cursor-pointer flex items-center gap-1.5 ${
               categoryFilter === "plans"
-                ? "bg-emerald-700 text-white shadow-xs"
-                : "bg-white text-slate-600 hover:bg-slate-100 border border-slate-200"
+                ? "bg-emerald-700 dark:bg-emerald-600 text-white shadow-xs"
+                : "bg-muted/70 hover:bg-muted text-foreground border border-border"
             }`}
           >
             <span>Plans</span>
             <span
-              className={`text-[11px] px-1.5 py-0.2 rounded-full font-bold tabular-nums ${
+              className={`px-1.5 py-0.2 rounded-full text-[10px] font-black tabular-nums ${
                 categoryFilter === "plans"
-                  ? "bg-emerald-800 text-white"
-                  : "bg-slate-100 text-slate-600"
+                  ? "bg-white/20 text-white"
+                  : "bg-card text-muted-foreground border border-border/60"
               }`}
             >
               {plans.length}
@@ -402,18 +402,18 @@ export function PlansManagerClient({
           <button
             type="button"
             onClick={() => setCategoryFilter("offers")}
-            className={`px-3.5 py-1.5 text-xs font-semibold rounded-full transition-all whitespace-nowrap flex items-center gap-1.5 ${
+            className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition-all whitespace-nowrap cursor-pointer flex items-center gap-1.5 ${
               categoryFilter === "offers"
-                ? "bg-emerald-700 text-white shadow-xs"
-                : "bg-white text-slate-600 hover:bg-slate-100 border border-slate-200"
+                ? "bg-emerald-700 dark:bg-emerald-600 text-white shadow-xs"
+                : "bg-muted/70 hover:bg-muted text-foreground border border-border"
             }`}
           >
             <span>Offers</span>
             <span
-              className={`text-[11px] px-1.5 py-0.2 rounded-full font-bold tabular-nums ${
+              className={`px-1.5 py-0.2 rounded-full text-[10px] font-black tabular-nums ${
                 categoryFilter === "offers"
-                  ? "bg-emerald-800 text-white"
-                  : "bg-slate-100 text-slate-600"
+                  ? "bg-white/20 text-white"
+                  : "bg-card text-muted-foreground border border-border/60"
               }`}
             >
               {offers.length}
@@ -423,13 +423,13 @@ export function PlansManagerClient({
 
         {/* Search input */}
         <div className="relative w-full sm:w-72">
-          <Search className="w-4 h-4 absolute left-3 top-2.5 text-slate-400" />
+          <Search className="w-4 h-4 absolute left-3 top-2.5 text-muted-foreground pointer-events-none" />
           <input
             type="text"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             placeholder="Search plans or offers..."
-            className="w-full pl-9 pr-3.5 py-1.5 text-xs bg-white border border-slate-200 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 text-slate-900 placeholder:text-slate-400 shadow-xs"
+            className="w-full pl-9 pr-3.5 py-1.5 text-xs bg-muted/50 border border-input rounded-xl focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:border-primary text-foreground placeholder:text-muted-foreground shadow-xs transition-all"
           />
         </div>
       </div>
@@ -438,16 +438,16 @@ export function PlansManagerClient({
       {showPlans && (
         <div className="space-y-3">
           <div className="flex items-center justify-between">
-            <h2 className="text-sm font-bold text-slate-800 tracking-tight flex items-center gap-1.5">
+            <h2 className="text-sm font-bold text-foreground tracking-tight flex items-center gap-1.5">
               <span>Membership Plans</span>
-              <span className="text-xs font-normal text-slate-500">
+              <span className="text-xs font-normal text-muted-foreground">
                 ({filteredPlans.length} total)
               </span>
             </h2>
           </div>
 
           {filteredPlans.length === 0 ? (
-            <div className="p-8 text-center bg-white rounded-xl border border-slate-200 text-slate-500 text-xs">
+            <div className="p-8 text-center bg-card rounded-2xl border border-border text-muted-foreground text-xs">
               No membership plans found matching your criteria.
             </div>
           ) : (
@@ -455,19 +455,19 @@ export function PlansManagerClient({
               {filteredPlans.map((plan) => (
                 <div
                   key={plan.id}
-                  className="flex flex-col justify-between h-full bg-white rounded-xl border border-slate-200/90 p-4 shadow-xs hover:shadow-md transition-all duration-150"
+                  className="flex flex-col justify-between h-full bg-card rounded-2xl border border-border p-4 shadow-xs hover:border-emerald-500/30 hover:bg-muted/30 transition-all duration-150 text-card-foreground"
                 >
                   {/* Top Row: Plan Name & Active Pill */}
                   <div>
                     <div className="flex items-center justify-between gap-2">
-                      <h3 className="font-semibold text-slate-900 text-sm leading-snug">
+                      <h3 className="font-semibold text-foreground text-sm leading-snug">
                         {plan.name}
                       </h3>
                       <span
                         className={`text-[11px] font-semibold px-2 py-0.5 rounded-full border ${
                           plan.isActive
-                            ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-                            : "bg-slate-100 text-slate-500 border-slate-200"
+                            ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/20"
+                            : "bg-muted text-muted-foreground border-border"
                         }`}
                       >
                         {plan.isActive ? "Active" : "Archived"}
@@ -476,23 +476,23 @@ export function PlansManagerClient({
 
                     {/* Price and Duration */}
                     <div className="flex items-baseline gap-2 mt-2">
-                      <span className="text-2xl font-bold text-slate-900 tabular-nums">
+                      <span className="text-2xl font-black text-foreground tabular-nums">
                         ₹{plan.price.toLocaleString("en-IN")}
                       </span>
-                      <span className="text-xs font-medium text-slate-500 bg-slate-100 px-2 py-0.5 rounded">
+                      <span className="text-xs font-semibold text-muted-foreground bg-muted px-2 py-0.5 rounded-md">
                         {plan.durationDays} Days
                       </span>
                     </div>
 
                     {/* Active Members Counter */}
-                    <div className="flex items-center gap-1.5 text-xs text-slate-500 font-medium mt-3">
-                      <Users className="w-3.5 h-3.5 text-slate-400" />
+                    <div className="flex items-center gap-1.5 text-xs text-muted-foreground font-medium mt-3">
+                      <Users className="w-3.5 h-3.5 text-muted-foreground" />
                       <span>{plan.activeSubscribersCount} active members</span>
                     </div>
                   </div>
 
                   {/* Bottom: Edit Action */}
-                  <div className="mt-4 pt-3 border-t border-slate-100 flex items-center gap-2">
+                  <div className="mt-4 pt-3 border-t border-border/60 flex items-center gap-2">
                     <button
                       type="button"
                       onClick={() => {
@@ -509,7 +509,7 @@ export function PlansManagerClient({
                         });
                         setEditPlanModalOpen(true);
                       }}
-                      className="w-full py-1.5 px-3 rounded-lg border border-slate-200 hover:border-slate-300 text-slate-700 hover:bg-slate-50 text-xs font-semibold transition-colors text-center shadow-xs"
+                      className="w-full py-1.5 px-3 rounded-xl border border-border hover:border-border/80 text-foreground hover:bg-muted/60 text-xs font-semibold transition-colors text-center shadow-xs cursor-pointer"
                     >
                       Edit Plan
                     </button>
@@ -520,7 +520,7 @@ export function PlansManagerClient({
                         title={plan.isActive ? "Deactivate plan" : "Activate plan"}
                         onClick={() => handleTogglePlanStatus(plan)}
                         disabled={actionLoadingId === plan.id}
-                        className="p-1.5 rounded-lg border border-slate-200 text-slate-400 hover:text-slate-700 hover:bg-slate-50 transition-colors"
+                        className="p-1.5 rounded-xl border border-border text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors cursor-pointer"
                       >
                         <Power className="w-3.5 h-3.5" />
                       </button>
@@ -537,16 +537,16 @@ export function PlansManagerClient({
       {showOffers && (
         <div className="space-y-3 pt-2">
           <div className="flex items-center justify-between">
-            <h2 className="text-sm font-bold text-slate-800 tracking-tight flex items-center gap-1.5">
+            <h2 className="text-sm font-bold text-foreground tracking-tight flex items-center gap-1.5">
               <span>Offers & Discounts</span>
-              <span className="text-xs font-normal text-slate-500">
+              <span className="text-xs font-normal text-muted-foreground">
                 ({filteredOffers.length} total)
               </span>
             </h2>
           </div>
 
           {filteredOffers.length === 0 ? (
-            <div className="p-8 text-center bg-white rounded-xl border border-slate-200 text-slate-500 text-xs">
+            <div className="p-8 text-center bg-card rounded-2xl border border-border text-muted-foreground text-xs">
               No promotional offers created yet. Click "+ Create Offer" to launch a campaign!
             </div>
           ) : (
@@ -572,19 +572,19 @@ export function PlansManagerClient({
                 return (
                   <div
                     key={offer.id}
-                    className="flex flex-col justify-between h-full bg-white rounded-xl border border-slate-200/90 p-5 shadow-xs hover:shadow-md transition-all duration-150"
+                    className="flex flex-col justify-between h-full bg-card rounded-2xl border border-border p-5 shadow-xs hover:border-emerald-500/30 hover:bg-muted/30 transition-all duration-150 text-card-foreground"
                   >
                     <div>
                       {/* Top Row: Title & Active Pill */}
                       <div className="flex items-center justify-between gap-2">
-                        <h3 className="font-semibold text-slate-900 text-sm leading-snug">
+                        <h3 className="font-semibold text-foreground text-sm leading-snug">
                           {offer.title}
                         </h3>
                         <span
                           className={`text-[11px] font-semibold px-2 py-0.5 rounded-full border ${
                             offer.isActive
-                              ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-                              : "bg-slate-100 text-slate-500 border-slate-200"
+                              ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/20"
+                              : "bg-muted text-muted-foreground border-border"
                           }`}
                         >
                           {offer.isActive ? "Active" : "Inactive"}
@@ -593,12 +593,12 @@ export function PlansManagerClient({
 
                       {/* Discount Value Headline */}
                       <div className="mt-2">
-                        <div className="text-xl font-bold text-emerald-800 tabular-nums">
+                        <div className="text-xl font-bold text-emerald-600 dark:text-emerald-400 tabular-nums">
                           {offer.discountType === "percentage" ? (
                             <>
                               {offer.discountValue}% OFF
                               {offer.maxDiscountAmount ? (
-                                <span className="text-xs font-medium text-slate-500 ml-1.5">
+                                <span className="text-xs font-medium text-muted-foreground ml-1.5">
                                   (Max ₹{offer.maxDiscountAmount.toLocaleString("en-IN")})
                                 </span>
                               ) : null}
@@ -610,25 +610,25 @@ export function PlansManagerClient({
                       </div>
 
                       {/* Applicable & Validity Details */}
-                      <div className="mt-3 space-y-1 text-xs text-slate-500">
-                        <p className="font-medium text-slate-600">
-                          Applicable: <span className="text-slate-800">{applicableStr}</span>
+                      <div className="mt-3 space-y-1 text-xs text-muted-foreground">
+                        <p className="font-medium text-muted-foreground">
+                          Applicable: <span className="text-foreground">{applicableStr}</span>
                         </p>
                         <p>
-                          {usageStr} · <span className="text-slate-600">{validityStr}</span>
+                          {usageStr} · <span className="text-foreground">{validityStr}</span>
                         </p>
                       </div>
                     </div>
 
                     {/* Bottom: Edit Action */}
-                    <div className="mt-4 pt-3 border-t border-slate-100">
+                    <div className="mt-4 pt-3 border-t border-border/60">
                       <button
                         type="button"
                         onClick={() => {
                           setSelectedOfferToEdit(offer);
                           setEditOfferModalOpen(true);
                         }}
-                        className="w-full py-1.5 px-3 rounded-lg border border-slate-200 hover:border-slate-300 text-slate-700 hover:bg-slate-50 text-xs font-semibold transition-colors text-center shadow-xs"
+                        className="w-full py-1.5 px-3 rounded-xl border border-border hover:border-border/80 text-foreground hover:bg-muted/60 text-xs font-semibold transition-colors text-center shadow-xs cursor-pointer"
                       >
                         Edit Offer
                       </button>

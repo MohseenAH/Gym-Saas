@@ -21,6 +21,7 @@ import {
   ArrowLeftRight,
   Compass,
   ChevronDown,
+  PhoneCall,
 } from "lucide-react";
 
 interface NavItem {
@@ -124,6 +125,12 @@ export function Sidebar({ gymId, gymName, role, branches = [], onNavigate }: Sid
           capability: "payments:record",
         },
         {
+          label: "Follow-Ups & Dues",
+          href: `/app/${gymId}/follow-ups`,
+          icon: PhoneCall,
+          capability: "payments:record",
+        },
+        {
           label: "Expenses",
           href: `/app/${gymId}/expenses`,
           icon: TrendingDown,
@@ -140,6 +147,12 @@ export function Sidebar({ gymId, gymName, role, branches = [], onNavigate }: Sid
     {
       title: "Gym Management",
       items: [
+        {
+          label: "Follow-Ups & Dues",
+          href: `/app/${gymId}/follow-ups`,
+          icon: PhoneCall,
+          capability: "members:view",
+        },
         {
           label: "Staff & Team",
           href: `/app/${gymId}/staff`,

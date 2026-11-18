@@ -5,7 +5,7 @@ export default function manifest(): MetadataRoute.Manifest {
     name: "GymApra — Gym Operating System",
     short_name: "GymApra",
     description: "Multi-branch gym management, attendance kiosk, and member portal.",
-    start_url: "/",
+    start_url: "/app",
     display: "standalone",
     orientation: "portrait",
     background_color: "#09090b",

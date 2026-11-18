@@ -6,13 +6,16 @@ import { getISTDateString, getTodayIST, calculateMembershipEndDate } from "@/lib
 import {
   assignMembershipSchema,
   bulkAssignMembershipsSchema,
+  manageMembershipSchema,
   type AssignMembershipInput,
   type BulkAssignMembershipsInput,
+  type ManageMembershipInput,
 } from "@/lib/validations/memberships";
 
 export type {
   AssignMembershipInput,
   BulkAssignMembershipsInput,
+  ManageMembershipInput,
 };
 
 export interface SkippedBulkMember {
@@ -373,6 +376,190 @@ export async function bulkAssignMembershipsAction(
         success: false,
         assignedCount: 0,
         skippedMembers: [],
+        error: message,
+      })
+    );
+  }
+}
+
+/**
+ * Safely manages membership lifecycle updates: adjust dates / freeze days,
+ * upgrade / change plan, or cancel membership without silent cash payments.
+ */
+export async function manageMembershipAction(input: ManageMembershipInput) {
+  try {
+    const validated = manageMembershipSchema.parse(input);
+
+    const context = await getAuthorizedActionContext({
+      gymId: validated.gymId,
+      capability: "memberships:manage",
+    });
+
+    const supabase = await createClient();
+
+    // 1. Fetch current membership with member and branch validation
+    const { data: membership, error: memErr } = await supabase
+      .from("memberships")
+      .select("id, member_id, plan_id, start_date, end_date, status, notes, members!inner(id, full_name, branch_id, branches!inner(gym_id)), membership_plans(id, name, duration_days, price)")
+      .eq("id", validated.membershipId)
+      .single();
+
+    if (memErr || !membership) {
+      return { success: false, error: "Membership contract not found" };
+    }
+
+    const memberGymId = ((membership.members as unknown as { branches?: { gym_id: string } })?.branches)?.gym_id;
+    if (memberGymId !== context.gymId) {
+      return { success: false, error: "Unauthorized access across gym boundary" };
+    }
+
+    if (membership.member_id !== validated.memberId) {
+      return { success: false, error: "Contract does not belong to specified member" };
+    }
+
+    const todayIST = getTodayIST();
+
+    if (validated.operation === "adjust_dates") {
+      const newStartDate = validated.startDate || membership.start_date;
+      let newEndDate = validated.endDate || membership.end_date;
+
+      if (validated.freezeDays || validated.extensionDays) {
+        const addedDays = (validated.freezeDays || 0) + (validated.extensionDays || 0);
+        const curEnd = new Date(newEndDate);
+        curEnd.setDate(curEnd.getDate() + addedDays);
+        newEndDate = getISTDateString(curEnd);
+      }
+
+      if (newEndDate < newStartDate) {
+        return { success: false, error: "End date cannot precede start date" };
+      }
+
+      const newStatus = newEndDate >= todayIST ? "active" : "expired";
+      const noteAppend = validated.reason
+        ? `Validity adjusted: ${validated.reason}`
+        : validated.freezeDays
+        ? `Freeze applied: +${validated.freezeDays} days`
+        : `Validity updated (${newStartDate} to ${newEndDate})`;
+
+      const updatedNotes = membership.notes
+        ? `${membership.notes}\n• ${noteAppend}`
+        : noteAppend;
+
+      const { error: updateErr } = await supabase
+        .from("memberships")
+        .update({
+          start_date: newStartDate,
+          end_date: newEndDate,
+          status: newStatus,
+          notes: updatedNotes,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", validated.membershipId);
+
+      if (updateErr) {
+        return { success: false, error: `Failed to adjust dates: ${updateErr.message}` };
+      }
+
+      return JSON.parse(
+        JSON.stringify({
+          success: true,
+          operation: "adjust_dates",
+          startDate: newStartDate,
+          endDate: newEndDate,
+          status: newStatus,
+        })
+      );
+    } else if (validated.operation === "change_plan") {
+      if (!validated.newPlanId) {
+        return { success: false, error: "Please select a new membership plan" };
+      }
+
+      const { data: newPlan, error: planErr } = await supabase
+        .from("membership_plans")
+        .select("id, name, duration_days, price, is_active")
+        .eq("id", validated.newPlanId)
+        .single();
+
+      if (planErr || !newPlan) {
+        return { success: false, error: "Selected plan not found" };
+      }
+
+      if (!newPlan.is_active) {
+        return { success: false, error: "Cannot switch to an inactive membership plan" };
+      }
+
+      // Compute new end date from current start_date with new plan's duration
+      const s = new Date(membership.start_date);
+      const e = new Date(s);
+      e.setDate(e.getDate() + newPlan.duration_days - 1);
+      const newEndDate = getISTDateString(e);
+      const newStatus = newEndDate >= todayIST ? "active" : "expired";
+
+      const noteAppend = `Plan changed to ${newPlan.name} (₹${newPlan.price}, ${newPlan.duration_days}d). Unpaid balance remains for ledger.`;
+      const updatedNotes = membership.notes
+        ? `${membership.notes}\n• ${noteAppend}`
+        : noteAppend;
+
+      const { error: updateErr } = await supabase
+        .from("memberships")
+        .update({
+          plan_id: newPlan.id,
+          end_date: newEndDate,
+          status: newStatus,
+          notes: updatedNotes,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", validated.membershipId);
+
+      if (updateErr) {
+        return { success: false, error: `Failed to change plan: ${updateErr.message}` };
+      }
+
+      return JSON.parse(
+        JSON.stringify({
+          success: true,
+          operation: "change_plan",
+          planId: newPlan.id,
+          planName: newPlan.name,
+          endDate: newEndDate,
+          status: newStatus,
+        })
+      );
+    } else if (validated.operation === "cancel_membership") {
+      const cancelReason = validated.reason || "Staff initiated cancellation";
+      const noteAppend = `Cancelled: ${cancelReason}`;
+      const updatedNotes = membership.notes
+        ? `${membership.notes}\n• ${noteAppend}`
+        : noteAppend;
+
+      const { error: updateErr } = await supabase
+        .from("memberships")
+        .update({
+          status: "cancelled",
+          notes: updatedNotes,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", validated.membershipId);
+
+      if (updateErr) {
+        return { success: false, error: `Failed to cancel membership: ${updateErr.message}` };
+      }
+
+      return JSON.parse(
+        JSON.stringify({
+          success: true,
+          operation: "cancel_membership",
+          status: "cancelled",
+        })
+      );
+    }
+
+    return { success: false, error: "Invalid lifecycle operation" };
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : String(err);
+    return JSON.parse(
+      JSON.stringify({
+        success: false,
         error: message,
       })
     );
