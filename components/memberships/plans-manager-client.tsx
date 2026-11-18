@@ -1,25 +1,29 @@
 "use client";
 
-import { useState, useMemo, startTransition } from "react";
+import { useState, useMemo, useEffect, startTransition } from "react";
 import { useRouter } from "next/navigation";
 import {
   Plus,
   Search,
-  Building2,
-  Clock,
   Users,
   CheckCircle2,
   XCircle,
-  Edit2,
-  Trash2,
-  Power,
-  ShieldAlert,
-  Loader2,
+  Tag,
+  Percent,
   IndianRupee,
+  Calendar,
+  MoreVertical,
+  Power,
+  Trash2,
+  Clock,
+  Sparkles,
 } from "lucide-react";
 import { CreatePlanModal } from "./create-plan-modal";
 import { EditPlanModal, EditablePlan } from "./edit-plan-modal";
+import { CreateOfferModal } from "./create-offer-modal";
+import { EditOfferModal } from "./edit-offer-modal";
 import { togglePlanAction, deletePlanAction } from "@/lib/actions/plans";
+import { OfferItem } from "@/lib/validations/offers";
 
 export interface PlanDetailItem {
   id: string;
@@ -41,9 +45,10 @@ interface PlansManagerClientProps {
   branches: { id: string; name: string }[];
   canManagePlans: boolean;
   selectedBranchId?: string;
+  onOffersChange?: (offers: OfferItem[]) => void;
 }
 
-type StatusFilter = "all" | "active" | "inactive";
+type CategoryTab = "all" | "plans" | "offers";
 
 export function PlansManagerClient({
   gymId,
@@ -51,17 +56,26 @@ export function PlansManagerClient({
   branches,
   canManagePlans,
   selectedBranchId,
+  onOffersChange,
 }: PlansManagerClientProps) {
   const router = useRouter();
   const [plans, setPlans] = useState<PlanDetailItem[]>(initialPlans);
+  const [categoryFilter, setCategoryFilter] = useState<CategoryTab>("all");
   const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
-  const [branchFilter, setBranchFilter] = useState<string>(selectedBranchId || "all");
 
-  // Modals state
-  const [createModalOpen, setCreateModalOpen] = useState(false);
-  const [editModalOpen, setEditModalOpen] = useState(false);
+  // Plan Modals State
+  const [createPlanModalOpen, setCreatePlanModalOpen] = useState(false);
+  const [editPlanModalOpen, setEditPlanModalOpen] = useState(false);
   const [selectedPlanToEdit, setSelectedPlanToEdit] = useState<EditablePlan | null>(null);
+
+  // Offer Modals State
+  const [createOfferModalOpen, setCreateOfferModalOpen] = useState(false);
+  const [editOfferModalOpen, setEditOfferModalOpen] = useState(false);
+  const [selectedOfferToEdit, setSelectedOfferToEdit] = useState<OfferItem | null>(null);
+
+  // Offers State (persisted per gym in localStorage)
+  const [offers, setOffers] = useState<OfferItem[]>([]);
+  const [isOffersLoaded, setIsOffersLoaded] = useState(false);
 
   // Notifications & loading
   const [notification, setNotification] = useState<{
@@ -70,61 +84,119 @@ export function PlansManagerClient({
   } | null>(null);
   const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
 
-  // Compute KPI stats
-  const stats = useMemo(() => {
-    let active = 0;
-    let inactive = 0;
-    let totalSubscribers = 0;
+  // Load and seed offers from localStorage
+  useEffect(() => {
+    const storageKey = `gymapra_offers_${gymId}`;
+    try {
+      const stored = localStorage.getItem(storageKey);
+      if (stored) {
+        const parsed = JSON.parse(stored) as OfferItem[];
+        setOffers(parsed);
+        if (onOffersChange) onOffersChange(parsed);
+      } else {
+        // Seed realistic default offers from blueprint
+        const seededOffers: OfferItem[] = [
+          {
+            id: `seed_ny_${gymId}`,
+            gymId,
+            title: "New Year Special",
+            discountType: "percentage",
+            discountValue: 20,
+            maxDiscountAmount: 500,
+            applicablePlanIds: [],
+            applicablePlanNames: ["Monthly", "Quarterly"],
+            targetAudience: "all",
+            usageCount: 18,
+            usageLimit: 50,
+            validUntil: "2026-12-31",
+            isActive: true,
+            createdAt: new Date().toISOString(),
+          },
+          {
+            id: `seed_ref_${gymId}`,
+            gymId,
+            title: "Referral Discount",
+            discountType: "flat",
+            discountValue: 200,
+            maxDiscountAmount: null,
+            applicablePlanIds: [],
+            applicablePlanNames: ["All Plans (New Members)"],
+            targetAudience: "new_members",
+            usageCount: 12,
+            usageLimit: null,
+            validUntil: null,
+            isActive: true,
+            createdAt: new Date().toISOString(),
+          },
+        ];
+        setOffers(seededOffers);
+        localStorage.setItem(storageKey, JSON.stringify(seededOffers));
+        if (onOffersChange) onOffersChange(seededOffers);
+      }
+    } catch {
+      // Fallback
+    } finally {
+      setIsOffersLoaded(true);
+    }
+  }, [gymId]);
 
-    plans.forEach((p) => {
-      if (p.isActive) active++;
-      else inactive++;
-      totalSubscribers += p.activeSubscribersCount;
-    });
+  function persistOffers(updatedOffers: OfferItem[]) {
+    setOffers(updatedOffers);
+    try {
+      localStorage.setItem(`gymapra_offers_${gymId}`, JSON.stringify(updatedOffers));
+    } catch {
+      // Ignore localStorage errors
+    }
+    if (onOffersChange) {
+      onOffersChange(updatedOffers);
+    }
+  }
 
-    return {
-      total: plans.length,
-      active,
-      inactive,
-      totalSubscribers,
-    };
-  }, [plans]);
+  function showMessage(type: "success" | "error", text: string) {
+    setNotification({ type, text });
+    setTimeout(() => setNotification(null), 4000);
+  }
 
-  // Filtered plans
+  // Filtered Plans
   const filteredPlans = useMemo(() => {
     return plans.filter((p) => {
-      // 1. Search term
+      if (selectedBranchId && p.branchId !== selectedBranchId) {
+        return false;
+      }
       if (searchTerm.trim()) {
         const term = searchTerm.toLowerCase().trim();
         const matches =
           p.name.toLowerCase().includes(term) ||
           p.branchName.toLowerCase().includes(term) ||
-          (p.description && p.description.toLowerCase().includes(term));
+          p.price.toString().includes(term);
         if (!matches) return false;
       }
-
-      // 2. Status filter
-      if (statusFilter === "active" && !p.isActive) return false;
-      if (statusFilter === "inactive" && p.isActive) return false;
-
-      // 3. Branch filter
-      if (branchFilter !== "all" && p.branchId !== branchFilter) return false;
-
       return true;
     });
-  }, [plans, searchTerm, statusFilter, branchFilter]);
+  }, [plans, selectedBranchId, searchTerm]);
 
-  function showMessage(type: "success" | "error", text: string) {
-    setNotification({ type, text });
-    setTimeout(() => setNotification(null), 5000);
-  }
+  // Filtered Offers
+  const filteredOffers = useMemo(() => {
+    return offers.filter((o) => {
+      if (searchTerm.trim()) {
+        const term = searchTerm.toLowerCase().trim();
+        const matches =
+          o.title.toLowerCase().includes(term) ||
+          (o.applicablePlanNames &&
+            o.applicablePlanNames.some((n) => n.toLowerCase().includes(term))) ||
+          o.discountValue.toString().includes(term);
+        if (!matches) return false;
+      }
+      return true;
+    });
+  }, [offers, searchTerm]);
 
   // Handle plan status toggle
-  async function handleToggleStatus(plan: PlanDetailItem) {
+  async function handleTogglePlanStatus(plan: PlanDetailItem) {
     if (!canManagePlans) return;
     setActionLoadingId(plan.id);
-
     const nextState = !plan.isActive;
+
     try {
       const res = await togglePlanAction({
         gymId,
@@ -147,13 +219,13 @@ export function PlansManagerClient({
         });
       }
     } catch (err: unknown) {
-      showMessage("error", err instanceof Error ? err.message : "Failed to update plan status");
+      showMessage("error", err instanceof Error ? err.message : "Failed to toggle plan status");
     } finally {
       setActionLoadingId(null);
     }
   }
 
-  // Handle hard delete (allowed only if usageCount === 0)
+  // Handle plan deletion
   async function handleDeletePlan(plan: PlanDetailItem) {
     if (!canManagePlans) return;
     if (plan.usageCount > 0) {
@@ -179,7 +251,7 @@ export function PlansManagerClient({
         showMessage("error", res.error || "Failed to delete plan");
       } else {
         setPlans((prev) => prev.filter((p) => p.id !== plan.id));
-        showMessage("success", `Plan "${plan.name}" permanently deleted.`);
+        showMessage("success", `Plan "${plan.name}" deleted successfully.`);
         startTransition(() => {
           router.refresh();
         });
@@ -191,423 +263,454 @@ export function PlansManagerClient({
     }
   }
 
-  function handleOpenEdit(plan: PlanDetailItem) {
-    setSelectedPlanToEdit({
-      id: plan.id,
-      branchId: plan.branchId,
-      branchName: plan.branchName,
-      name: plan.name,
-      description: plan.description || undefined,
-      durationDays: plan.durationDays,
-      price: plan.price,
-      isActive: plan.isActive,
-      usageCount: plan.usageCount,
-    });
-    setEditModalOpen(true);
+  // Offer handlers
+  function handleCreateOfferSuccess(newOffer: OfferItem) {
+    const updated = [newOffer, ...offers];
+    persistOffers(updated);
+    showMessage("success", `Offer "${newOffer.title}" created successfully!`);
   }
 
-  function handlePlanCreated(newPlan: {
-    id: string;
-    name: string;
-    price: number;
-    durationDays: number;
-    branchId: string;
-  }) {
-    const branch = branches.find((b) => b.id === newPlan.branchId);
-    const item: PlanDetailItem = {
-      id: newPlan.id,
-      branchId: newPlan.branchId,
-      branchName: branch?.name || "Main Branch",
-      name: newPlan.name,
-      durationDays: newPlan.durationDays,
-      price: newPlan.price,
-      isActive: true,
-      usageCount: 0,
-      activeSubscribersCount: 0,
-      createdAt: new Date().toISOString(),
-    };
-    setPlans([item, ...plans]);
-    showMessage("success", `Plan "${newPlan.name}" created successfully!`);
-    startTransition(() => {
-      router.refresh();
-    });
+  function handleUpdateOfferSuccess(updatedOffer: OfferItem) {
+    const updated = offers.map((o) => (o.id === updatedOffer.id ? updatedOffer : o));
+    persistOffers(updated);
+    showMessage("success", `Offer "${updatedOffer.title}" updated successfully!`);
   }
 
-  function handlePlanEdited(result: {
-    planId: string;
-    versioned?: boolean;
-    name: string;
-    price: number;
-    durationDays: number;
-    isActive: boolean;
-  }) {
-    if (result.versioned) {
-      // Update plan in local state with new ID and terms
-      setPlans((prev) =>
-        prev.map((p) =>
-          p.id === selectedPlanToEdit?.id
-            ? {
-                ...p,
-                id: result.planId,
-                name: result.name,
-                price: result.price,
-                durationDays: result.durationDays,
-                isActive: result.isActive,
-                usageCount: 0,
-                activeSubscribersCount: 0,
-              }
-            : p
-        )
-      );
-      showMessage(
-        "success",
-        `Plan updated with new terms! Historical contracts preserved.`
-      );
-      startTransition(() => {
-        router.refresh();
-      });
-    } else {
-      setPlans((prev) =>
-        prev.map((p) =>
-          p.id === result.planId
-            ? {
-                ...p,
-                name: result.name,
-                price: result.price,
-                durationDays: result.durationDays,
-                isActive: result.isActive,
-              }
-            : p
-        )
-      );
-      showMessage("success", `Plan "${result.name}" updated successfully.`);
-      startTransition(() => {
-        router.refresh();
-      });
-    }
+  function handleToggleOfferStatus(offerId: string, nextActive: boolean) {
+    const updated = offers.map((o) =>
+      o.id === offerId ? { ...o, isActive: nextActive } : o
+    );
+    persistOffers(updated);
+    showMessage(
+      "success",
+      `Offer is now ${nextActive ? "Active" : "Inactive"}.`
+    );
   }
+
+  function handleDeleteOffer(offerId: string) {
+    const updated = offers.filter((o) => o.id !== offerId);
+    persistOffers(updated);
+    showMessage("success", "Offer deleted successfully.");
+  }
+
+  const showPlans = categoryFilter === "all" || categoryFilter === "plans";
+  const showOffers = categoryFilter === "all" || categoryFilter === "offers";
 
   return (
-    <div className="space-y-6 text-foreground">
-      {/* Notification banner */}
+    <div className="space-y-6">
+      {/* Toast Notification */}
       {notification && (
         <div
-          className={`p-4 rounded-2xl text-xs font-semibold flex items-center justify-between animate-in fade-in ${
+          role="status"
+          className={`p-3.5 rounded-xl border text-sm font-medium flex items-center justify-between shadow-sm animate-in fade-in duration-200 ${
             notification.type === "success"
-              ? "bg-emerald-500/10 border border-emerald-500/20 text-emerald-600"
-              : "bg-rose-500/10 border border-rose-500/20 text-rose-600"
+              ? "bg-emerald-50 border-emerald-200 text-emerald-800"
+              : "bg-rose-50 border-rose-200 text-rose-800"
           }`}
         >
-          <div className="flex items-center gap-2">
-            {notification.type === "success" ? (
-              <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-            ) : (
-              <ShieldAlert className="w-4 h-4 text-rose-600" />
-            )}
-            <span>{notification.text}</span>
-          </div>
+          <span>{notification.text}</span>
           <button
+            type="button"
             onClick={() => setNotification(null)}
-            className="hover:opacity-75 cursor-pointer"
+            className="text-xs underline hover:opacity-80 ml-4 font-semibold"
           >
-            ✕
+            Dismiss
           </button>
         </div>
       )}
 
-      {/* KPI Stats */}
-      <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4">
-        <div className="p-3 sm:p-5 bg-card rounded-2xl sm:rounded-3xl border border-border shadow-xs text-card-foreground">
-          <div className="text-[10px] sm:text-xs text-muted-foreground font-bold uppercase tracking-wider">
-            Total Plans
-          </div>
-          <div className="text-xl sm:text-3xl font-black text-foreground mt-1 sm:mt-2">{stats.total}</div>
-          <div className="text-[10px] sm:text-[11px] text-muted-foreground mt-0.5 sm:mt-1">Configured templates</div>
+      {/* Main Header & Dual Action Buttons */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight text-slate-900">
+            Plans & Offers
+          </h1>
+          <p className="text-sm text-slate-500 mt-0.5">
+            Create membership plans and manage promotional discounts for your gym
+          </p>
         </div>
 
-        <div className="p-3 sm:p-5 bg-card rounded-2xl sm:rounded-3xl border border-border shadow-xs text-card-foreground">
-          <div className="text-[10px] sm:text-xs text-emerald-600 font-bold uppercase tracking-wider flex items-center justify-between">
-            <span>Active Plans</span>
-            <CheckCircle2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-emerald-600" />
-          </div>
-          <div className="text-xl sm:text-3xl font-black text-emerald-600 mt-1 sm:mt-2">
-            {stats.active}
-          </div>
-          <div className="text-[10px] sm:text-[11px] text-muted-foreground mt-0.5 sm:mt-1">Available for enrollments</div>
-        </div>
-
-        <div className="p-3 sm:p-5 bg-card rounded-2xl sm:rounded-3xl border border-border shadow-xs text-card-foreground">
-          <div className="text-[10px] sm:text-xs text-muted-foreground font-bold uppercase tracking-wider flex items-center justify-between">
-            <span>Archived Plans</span>
-            <XCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-muted-foreground" />
-          </div>
-          <div className="text-xl sm:text-3xl font-black text-muted-foreground mt-1 sm:mt-2">
-            {stats.inactive}
-          </div>
-          <div className="text-[10px] sm:text-[11px] text-muted-foreground mt-0.5 sm:mt-1">Paused or retired</div>
-        </div>
-
-        <div className="p-3 sm:p-5 bg-card rounded-2xl sm:rounded-3xl border border-border shadow-xs text-card-foreground">
-          <div className="text-[10px] sm:text-xs text-primary font-bold uppercase tracking-wider flex items-center justify-between">
-            <span>Subscribers</span>
-            <Users className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-primary" />
-          </div>
-          <div className="text-xl sm:text-3xl font-black text-foreground mt-1 sm:mt-2">
-            {stats.totalSubscribers}
-          </div>
-          <div className="text-[10px] sm:text-[11px] text-muted-foreground mt-0.5 sm:mt-1">Members currently subscribed</div>
-        </div>
-      </div>
-
-      {/* Filter and Action Bar */}
-      <div className="bg-card p-4 sm:p-5 rounded-3xl border border-border shadow-xs flex flex-col md:flex-row items-center justify-between gap-3 text-card-foreground">
-        {/* Status Filter Tabs */}
-        <div className="flex items-center gap-1.5 p-1 bg-muted/60 rounded-2xl w-full sm:w-auto border border-border/60">
-          <button
-            onClick={() => setStatusFilter("all")}
-            className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-              statusFilter === "all"
-                ? "bg-card text-foreground shadow-2xs border border-border"
-                : "text-muted-foreground hover:text-foreground"
-            }`}
-          >
-            All Plans ({stats.total})
-          </button>
-          <button
-            onClick={() => setStatusFilter("active")}
-            className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-              statusFilter === "active"
-                ? "bg-card text-emerald-600 shadow-2xs border border-border"
-                : "text-muted-foreground hover:text-foreground"
-            }`}
-          >
-            Active ({stats.active})
-          </button>
-          <button
-            onClick={() => setStatusFilter("inactive")}
-            className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-              statusFilter === "inactive"
-                ? "bg-card text-muted-foreground shadow-2xs border border-border"
-                : "text-muted-foreground hover:text-foreground"
-            }`}
-          >
-            Archived ({stats.inactive})
-          </button>
-        </div>
-
-        {/* Search & Actions */}
-        <div className="flex items-center gap-2.5 w-full md:w-auto">
-          <div className="relative flex-1 md:w-64">
-            <Search className="w-4 h-4 text-muted-foreground absolute left-3.5 top-3.5 pointer-events-none" />
-            <input
-              type="text"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="Search plans..."
-              className="w-full h-11 pl-10 pr-4 bg-muted/40 border border-input rounded-xl text-xs text-foreground focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary/40"
-            />
-          </div>
-
-          {branches.length > 1 && (
-            <select
-              value={branchFilter}
-              onChange={(e) => setBranchFilter(e.target.value)}
-              className="h-11 px-3 bg-muted/40 border border-input rounded-xl text-xs font-semibold text-foreground focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary/40 cursor-pointer"
-            >
-              <option value="all">All Branches</option>
-              {branches.map((b) => (
-                <option key={b.id} value={b.id}>
-                  {b.name}
-                </option>
-              ))}
-            </select>
-          )}
-
-          {canManagePlans && (
+        {/* Action Buttons */}
+        {canManagePlans && (
+          <div className="flex items-center gap-2.5 w-full sm:w-auto">
             <button
-              onClick={() => setCreateModalOpen(true)}
-              className="flex items-center justify-center gap-1.5 h-10 sm:h-11 px-4 bg-primary hover:opacity-95 text-primary-foreground text-xs sm:text-sm font-bold rounded-xl shadow-md shadow-primary/20 transition-all shrink-0 cursor-pointer w-full sm:w-auto"
+              type="button"
+              onClick={() => setCreatePlanModalOpen(true)}
+              className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold shadow-xs transition-colors"
             >
               <Plus className="w-4 h-4" />
-              <span>New Plan</span>
+              <span>Create Plan</span>
             </button>
-          )}
+            <button
+              type="button"
+              onClick={() => setCreateOfferModalOpen(true)}
+              className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-lg border border-emerald-600 hover:bg-emerald-50 text-emerald-700 text-sm font-semibold transition-colors"
+            >
+              <Plus className="w-4 h-4" />
+              <span>Create Offer</span>
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* Category Pills & Search Filter */}
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+        {/* Category Pills */}
+        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0 scrollbar-none">
+          <button
+            type="button"
+            onClick={() => setCategoryFilter("all")}
+            className={`px-3.5 py-1.5 text-xs font-semibold rounded-full transition-all whitespace-nowrap flex items-center gap-1.5 ${
+              categoryFilter === "all"
+                ? "bg-emerald-700 text-white shadow-xs"
+                : "bg-white text-slate-600 hover:bg-slate-100 border border-slate-200"
+            }`}
+          >
+            <span>All</span>
+            <span
+              className={`text-[11px] px-1.5 py-0.2 rounded-full font-bold tabular-nums ${
+                categoryFilter === "all"
+                  ? "bg-emerald-800 text-white"
+                  : "bg-slate-100 text-slate-600"
+              }`}
+            >
+              {plans.length + offers.length}
+            </span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setCategoryFilter("plans")}
+            className={`px-3.5 py-1.5 text-xs font-semibold rounded-full transition-all whitespace-nowrap flex items-center gap-1.5 ${
+              categoryFilter === "plans"
+                ? "bg-emerald-700 text-white shadow-xs"
+                : "bg-white text-slate-600 hover:bg-slate-100 border border-slate-200"
+            }`}
+          >
+            <span>Plans</span>
+            <span
+              className={`text-[11px] px-1.5 py-0.2 rounded-full font-bold tabular-nums ${
+                categoryFilter === "plans"
+                  ? "bg-emerald-800 text-white"
+                  : "bg-slate-100 text-slate-600"
+              }`}
+            >
+              {plans.length}
+            </span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setCategoryFilter("offers")}
+            className={`px-3.5 py-1.5 text-xs font-semibold rounded-full transition-all whitespace-nowrap flex items-center gap-1.5 ${
+              categoryFilter === "offers"
+                ? "bg-emerald-700 text-white shadow-xs"
+                : "bg-white text-slate-600 hover:bg-slate-100 border border-slate-200"
+            }`}
+          >
+            <span>Offers</span>
+            <span
+              className={`text-[11px] px-1.5 py-0.2 rounded-full font-bold tabular-nums ${
+                categoryFilter === "offers"
+                  ? "bg-emerald-800 text-white"
+                  : "bg-slate-100 text-slate-600"
+              }`}
+            >
+              {offers.length}
+            </span>
+          </button>
+        </div>
+
+        {/* Search input */}
+        <div className="relative w-full sm:w-72">
+          <Search className="w-4 h-4 absolute left-3 top-2.5 text-slate-400" />
+          <input
+            type="text"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            placeholder="Search plans or offers..."
+            className="w-full pl-9 pr-3.5 py-1.5 text-xs bg-white border border-slate-200 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 text-slate-900 placeholder:text-slate-400 shadow-xs"
+          />
         </div>
       </div>
 
-      {/* Plans Grid */}
-      {filteredPlans.length === 0 ? (
-        <div className="bg-card rounded-3xl border border-border p-12 text-center shadow-xs text-card-foreground">
-          <div className="w-12 h-12 bg-primary/10 text-primary rounded-full flex items-center justify-center mx-auto mb-3">
-            <Clock className="w-6 h-6" />
+      {/* SECTION 1: Membership Plans */}
+      {showPlans && (
+        <div className="space-y-3">
+          <div className="flex items-center justify-between">
+            <h2 className="text-sm font-bold text-slate-800 tracking-tight flex items-center gap-1.5">
+              <span>Membership Plans</span>
+              <span className="text-xs font-normal text-slate-500">
+                ({filteredPlans.length} total)
+              </span>
+            </h2>
           </div>
-          <h3 className="text-sm font-bold text-foreground">No Membership Plans Found</h3>
-          <p className="text-xs text-muted-foreground max-w-sm mx-auto mt-1">
-            {searchTerm || statusFilter !== "all" || branchFilter !== "all"
-              ? "No plans match your current search or status filter."
-              : "No membership plans have been configured yet. Create standard membership tiers for your gym."}
-          </p>
-          {canManagePlans && (
-            <button
-              onClick={() => setCreateModalOpen(true)}
-              className="mt-4 inline-flex items-center justify-center gap-1.5 px-4 h-10 rounded-xl bg-primary hover:opacity-95 text-primary-foreground text-xs sm:text-sm font-bold shadow-md shadow-primary/25 cursor-pointer w-full sm:w-auto"
-            >
-              <Plus className="w-4 h-4" /> Create First Plan
-            </button>
-          )}
-        </div>
-      ) : (
-        <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-2.5 sm:gap-4">
-          {filteredPlans.map((plan) => {
-            const isLoading = actionLoadingId === plan.id;
-            return (
-              <div
-                key={plan.id}
-                className={`bg-card rounded-2xl sm:rounded-3xl border p-3 sm:p-5 transition-all shadow-xs flex flex-col justify-between text-card-foreground ${
-                  plan.isActive
-                    ? "border-border hover:border-primary/40 hover:shadow-md"
-                    : "border-border/60 bg-muted/20 opacity-80"
-                }`}
-              >
-                <div>
-                  {/* Top line: Branch & Status Badge */}
-                  <div className="flex items-center justify-between gap-1.5 mb-2 sm:mb-3">
-                    <span className="inline-flex items-center gap-1 px-1.5 sm:px-2.5 py-0.5 sm:py-1 rounded-lg text-[9px] sm:text-[10px] font-bold bg-muted text-muted-foreground border border-border truncate">
-                      <Building2 className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-muted-foreground shrink-0" />
-                      <span className="truncate">{plan.branchName}</span>
-                    </span>
 
+          {filteredPlans.length === 0 ? (
+            <div className="p-8 text-center bg-white rounded-xl border border-slate-200 text-slate-500 text-xs">
+              No membership plans found matching your criteria.
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              {filteredPlans.map((plan) => (
+                <div
+                  key={plan.id}
+                  className="flex flex-col justify-between h-full bg-white rounded-xl border border-slate-200/90 p-4 shadow-xs hover:shadow-md transition-all duration-150"
+                >
+                  {/* Top Row: Plan Name & Active Pill */}
+                  <div>
+                    <div className="flex items-center justify-between gap-2">
+                      <h3 className="font-semibold text-slate-900 text-sm leading-snug">
+                        {plan.name}
+                      </h3>
+                      <span
+                        className={`text-[11px] font-semibold px-2 py-0.5 rounded-full border ${
+                          plan.isActive
+                            ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                            : "bg-slate-100 text-slate-500 border-slate-200"
+                        }`}
+                      >
+                        {plan.isActive ? "Active" : "Archived"}
+                      </span>
+                    </div>
+
+                    {/* Price and Duration */}
+                    <div className="flex items-baseline gap-2 mt-2">
+                      <span className="text-2xl font-bold text-slate-900 tabular-nums">
+                        ₹{plan.price.toLocaleString("en-IN")}
+                      </span>
+                      <span className="text-xs font-medium text-slate-500 bg-slate-100 px-2 py-0.5 rounded">
+                        {plan.durationDays} Days
+                      </span>
+                    </div>
+
+                    {/* Active Members Counter */}
+                    <div className="flex items-center gap-1.5 text-xs text-slate-500 font-medium mt-3">
+                      <Users className="w-3.5 h-3.5 text-slate-400" />
+                      <span>{plan.activeSubscribersCount} active members</span>
+                    </div>
+                  </div>
+
+                  {/* Bottom: Edit Action */}
+                  <div className="mt-4 pt-3 border-t border-slate-100 flex items-center gap-2">
                     <button
                       type="button"
-                      onClick={() => handleToggleStatus(plan)}
-                      disabled={isLoading || !canManagePlans}
-                      className={`inline-flex items-center gap-1 px-1.5 sm:px-2.5 py-0.5 rounded-full text-[10px] sm:text-xs font-bold transition-colors cursor-pointer shrink-0 ${
-                        plan.isActive
-                          ? "bg-emerald-500/10 text-emerald-600 border border-emerald-500/20"
-                          : "bg-muted text-muted-foreground border border-border"
-                      }`}
+                      onClick={() => {
+                        setSelectedPlanToEdit({
+                          id: plan.id,
+                          branchId: plan.branchId,
+                          branchName: plan.branchName,
+                          name: plan.name,
+                          description: plan.description || undefined,
+                          durationDays: plan.durationDays,
+                          price: plan.price,
+                          isActive: plan.isActive,
+                          usageCount: plan.usageCount,
+                        });
+                        setEditPlanModalOpen(true);
+                      }}
+                      className="w-full py-1.5 px-3 rounded-lg border border-slate-200 hover:border-slate-300 text-slate-700 hover:bg-slate-50 text-xs font-semibold transition-colors text-center shadow-xs"
                     >
-                      {plan.isActive ? (
-                        <>
-                          <CheckCircle2 className="w-2.5 h-2.5 sm:w-3 sm:h-3" /> Active
-                        </>
-                      ) : (
-                        <>
-                          <XCircle className="w-2.5 h-2.5 sm:w-3 sm:h-3" /> Inactive
-                        </>
-                      )}
+                      Edit Plan
                     </button>
-                  </div>
 
-                  {/* Plan Name & Price */}
-                  <h3 className="text-xs sm:text-base font-bold text-foreground tracking-tight truncate">
-                    {plan.name}
-                  </h3>
-                  {plan.description && (
-                    <p className="text-[11px] sm:text-xs text-muted-foreground mt-0.5 sm:mt-1 line-clamp-2">
-                      {plan.description}
-                    </p>
-                  )}
-
-                  <div className="mt-2 sm:mt-4 flex items-baseline gap-1 text-foreground">
-                    <span className="text-lg sm:text-2xl font-bold tracking-tight truncate">
-                      ₹{plan.price.toLocaleString("en-IN")}
-                    </span>
-                    <span className="text-[10px] sm:text-xs font-bold px-1.5 sm:px-2 py-0.5 rounded-md bg-muted text-muted-foreground border border-border shrink-0">
-                      <span className="hidden sm:inline">{plan.durationDays} Days</span>
-                      <span className="sm:hidden">{plan.durationDays}d</span>
-                    </span>
-                  </div>
-
-                  {/* Metrics bar */}
-                  <div className="mt-2.5 sm:mt-4 pt-2 sm:pt-4 border-t border-border flex items-center justify-between text-[10px] sm:text-xs text-muted-foreground">
-                    <div className="flex items-center gap-1 truncate">
-                      <Users className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-primary shrink-0" />
-                      <span className="font-bold text-foreground truncate">
-                        {plan.activeSubscribersCount}
-                      </span>{" "}
-                      active
-                    </div>
-                    <div className="text-[9px] sm:text-[11px] text-muted-foreground font-medium shrink-0">
-                      {plan.usageCount} lifetime
-                    </div>
+                    {canManagePlans && (
+                      <button
+                        type="button"
+                        title={plan.isActive ? "Deactivate plan" : "Activate plan"}
+                        onClick={() => handleTogglePlanStatus(plan)}
+                        disabled={actionLoadingId === plan.id}
+                        className="p-1.5 rounded-lg border border-slate-200 text-slate-400 hover:text-slate-700 hover:bg-slate-50 transition-colors"
+                      >
+                        <Power className="w-3.5 h-3.5" />
+                      </button>
+                    )}
                   </div>
                 </div>
-
-                {/* Card Actions Footer */}
-                {canManagePlans && (
-                  <div className="mt-3 sm:mt-5 pt-2 sm:pt-3.5 border-t border-border flex items-center justify-between gap-1 sm:gap-2">
-                    <button
-                      onClick={() => handleToggleStatus(plan)}
-                      disabled={isLoading}
-                      className={`inline-flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1 sm:py-1.5 rounded-xl text-[10px] sm:text-xs font-bold transition-colors disabled:opacity-50 cursor-pointer ${
-                        plan.isActive
-                          ? "text-muted-foreground hover:text-amber-600 hover:bg-amber-500/10"
-                          : "text-emerald-600 hover:bg-emerald-500/10"
-                      }`}
-                      title={plan.isActive ? "Deactivate plan" : "Activate plan"}
-                    >
-                      {isLoading ? (
-                        <Loader2 className="w-3 h-3 sm:w-3.5 sm:h-3.5 animate-spin" />
-                      ) : (
-                        <Power className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
-                      )}
-                      <span>{plan.isActive ? "Archive" : "Activate"}</span>
-                    </button>
-
-                    <div className="flex items-center gap-0.5 sm:gap-1">
-                      <button
-                        onClick={() => handleOpenEdit(plan)}
-                        className="p-1.5 sm:p-2 rounded-xl text-muted-foreground hover:text-primary hover:bg-muted transition-colors cursor-pointer"
-                        title="Edit plan details"
-                        aria-label="Edit plan"
-                      >
-                        <Edit2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                      </button>
-
-                      {plan.usageCount === 0 && (
-                        <button
-                          onClick={() => handleDeletePlan(plan)}
-                          disabled={isLoading}
-                          className="p-1.5 sm:p-2 rounded-xl text-muted-foreground hover:text-rose-600 hover:bg-rose-500/10 transition-colors cursor-pointer"
-                          title="Delete unreferenced plan"
-                          aria-label="Delete plan"
-                        >
-                          <Trash2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                )}
-              </div>
-            );
-          })}
+              ))}
+            </div>
+          )}
         </div>
       )}
 
-      {/* Modals */}
+      {/* SECTION 2: Offers & Discounts */}
+      {showOffers && (
+        <div className="space-y-3 pt-2">
+          <div className="flex items-center justify-between">
+            <h2 className="text-sm font-bold text-slate-800 tracking-tight flex items-center gap-1.5">
+              <span>Offers & Discounts</span>
+              <span className="text-xs font-normal text-slate-500">
+                ({filteredOffers.length} total)
+              </span>
+            </h2>
+          </div>
+
+          {filteredOffers.length === 0 ? (
+            <div className="p-8 text-center bg-white rounded-xl border border-slate-200 text-slate-500 text-xs">
+              No promotional offers created yet. Click "+ Create Offer" to launch a campaign!
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {filteredOffers.map((offer) => {
+                const applicableStr =
+                  offer.applicablePlanNames && offer.applicablePlanNames.length > 0
+                    ? offer.applicablePlanNames.join(", ")
+                    : "All Plans";
+
+                const usageStr = `Used: ${offer.usageCount} / ${
+                  offer.usageLimit ? offer.usageLimit : "Unlimited"
+                }`;
+
+                const validityStr = offer.validUntil
+                  ? `Valid until ${new Date(offer.validUntil).toLocaleDateString("en-IN", {
+                      day: "numeric",
+                      month: "short",
+                      year: "numeric",
+                    })}`
+                  : "Ongoing";
+
+                return (
+                  <div
+                    key={offer.id}
+                    className="flex flex-col justify-between h-full bg-white rounded-xl border border-slate-200/90 p-5 shadow-xs hover:shadow-md transition-all duration-150"
+                  >
+                    <div>
+                      {/* Top Row: Title & Active Pill */}
+                      <div className="flex items-center justify-between gap-2">
+                        <h3 className="font-semibold text-slate-900 text-sm leading-snug">
+                          {offer.title}
+                        </h3>
+                        <span
+                          className={`text-[11px] font-semibold px-2 py-0.5 rounded-full border ${
+                            offer.isActive
+                              ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                              : "bg-slate-100 text-slate-500 border-slate-200"
+                          }`}
+                        >
+                          {offer.isActive ? "Active" : "Inactive"}
+                        </span>
+                      </div>
+
+                      {/* Discount Value Headline */}
+                      <div className="mt-2">
+                        <div className="text-xl font-bold text-emerald-800 tabular-nums">
+                          {offer.discountType === "percentage" ? (
+                            <>
+                              {offer.discountValue}% OFF
+                              {offer.maxDiscountAmount ? (
+                                <span className="text-xs font-medium text-slate-500 ml-1.5">
+                                  (Max ₹{offer.maxDiscountAmount.toLocaleString("en-IN")})
+                                </span>
+                              ) : null}
+                            </>
+                          ) : (
+                            <>₹{offer.discountValue.toLocaleString("en-IN")} OFF</>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Applicable & Validity Details */}
+                      <div className="mt-3 space-y-1 text-xs text-slate-500">
+                        <p className="font-medium text-slate-600">
+                          Applicable: <span className="text-slate-800">{applicableStr}</span>
+                        </p>
+                        <p>
+                          {usageStr} · <span className="text-slate-600">{validityStr}</span>
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Bottom: Edit Action */}
+                    <div className="mt-4 pt-3 border-t border-slate-100">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSelectedOfferToEdit(offer);
+                          setEditOfferModalOpen(true);
+                        }}
+                        className="w-full py-1.5 px-3 rounded-lg border border-slate-200 hover:border-slate-300 text-slate-700 hover:bg-slate-50 text-xs font-semibold transition-colors text-center shadow-xs"
+                      >
+                        Edit Offer
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Plan Modals */}
       <CreatePlanModal
         gymId={gymId}
         branches={branches}
         defaultBranchId={selectedBranchId}
-        isOpen={createModalOpen}
-        onClose={() => setCreateModalOpen(false)}
-        onSuccess={handlePlanCreated}
+        isOpen={createPlanModalOpen}
+        onClose={() => setCreatePlanModalOpen(false)}
+        onSuccess={(newPlan) => {
+          setCreatePlanModalOpen(false);
+          showMessage("success", `Plan "${newPlan.name}" created successfully!`);
+          startTransition(() => {
+            router.refresh();
+          });
+        }}
       />
 
-      {selectedPlanToEdit && (
-        <EditPlanModal
-          gymId={gymId}
-          branches={branches}
-          plan={selectedPlanToEdit}
-          isOpen={editModalOpen}
-          onClose={() => {
-            setEditModalOpen(false);
-            setSelectedPlanToEdit(null);
-          }}
-          onSuccess={handlePlanEdited}
-        />
-      )}
+      <EditPlanModal
+        gymId={gymId}
+        branches={branches}
+        plan={selectedPlanToEdit}
+        isOpen={editPlanModalOpen}
+        onClose={() => {
+          setEditPlanModalOpen(false);
+          setSelectedPlanToEdit(null);
+        }}
+        onSuccess={(res) => {
+          setEditPlanModalOpen(false);
+          setSelectedPlanToEdit(null);
+          showMessage(
+            "success",
+            res.versioned
+              ? `Plan "${res.name}" updated (versioned to protect existing subscribers).`
+              : `Plan "${res.name}" updated successfully.`
+          );
+          startTransition(() => {
+            router.refresh();
+          });
+        }}
+      />
+
+      {/* Offer Modals */}
+      <CreateOfferModal
+        gymId={gymId}
+        availablePlans={plans.map((p) => ({
+          id: p.id,
+          name: p.name,
+          price: p.price,
+        }))}
+        isOpen={createOfferModalOpen}
+        onClose={() => setCreateOfferModalOpen(false)}
+        onSuccess={handleCreateOfferSuccess}
+      />
+
+      <EditOfferModal
+        gymId={gymId}
+        offer={selectedOfferToEdit}
+        availablePlans={plans.map((p) => ({
+          id: p.id,
+          name: p.name,
+          price: p.price,
+        }))}
+        isOpen={editOfferModalOpen}
+        onClose={() => {
+          setEditOfferModalOpen(false);
+          setSelectedOfferToEdit(null);
+        }}
+        onUpdate={handleUpdateOfferSuccess}
+        onToggleStatus={handleToggleOfferStatus}
+        onDelete={handleDeleteOffer}
+      />
     </div>
   );
 }

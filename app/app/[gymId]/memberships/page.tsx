@@ -15,7 +15,7 @@ import { resolveInitialMembershipsTab } from "@/lib/utils";
 
 interface MembershipsPageProps {
   params: Promise<{ gymId: string }>;
-  searchParams?: Promise<{ branchId?: string; tab?: string }>;
+  searchParams?: Promise<{ branchId?: string; tab?: string; view?: string }>;
 }
 
 export default async function MembershipsPage({
@@ -189,6 +189,10 @@ export default async function MembershipsPage({
     const isExpiringSoon =
       m.status === "active" && daysRemaining >= 0 && daysRemaining <= 7;
 
+    const memberCode = `#${member.phone ? member.phone.slice(-4) : "1001"}`;
+    const isTrial =
+      planPrice === 0 || (plan?.name || "").toLowerCase().includes("trial");
+
     formattedMemberships.push({
       id: m.id,
       memberId: m.member_id,
@@ -209,6 +213,8 @@ export default async function MembershipsPage({
       totalPaid: Math.round(paidAmount * 100) / 100,
       totalDue: Math.round(dueAmount * 100) / 100,
       notes: m.notes,
+      memberCode,
+      isTrial,
     });
   });
 
