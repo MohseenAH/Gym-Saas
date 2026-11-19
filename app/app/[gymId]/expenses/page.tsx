@@ -82,7 +82,7 @@ export default async function ExpensesPage({ params, searchParams }: ExpensesPag
 
       {/* KPI Cards */}
       <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4">
-        <div className="bg-card p-3.5 sm:p-5 rounded-2xl sm:rounded-3xl border border-border shadow-xs flex items-center gap-3 sm:gap-4 text-card-foreground">
+        <div className="bg-card/85 backdrop-blur-md p-3.5 sm:p-5 rounded-2xl sm:rounded-3xl border border-border shadow-xs flex items-center gap-3 sm:gap-4 text-card-foreground">
           <div className="h-8 w-8 sm:h-10 sm:w-10 flex items-center justify-center shrink-0 bg-rose-500/10 text-rose-600 rounded-xl sm:rounded-2xl shadow-2xs">
             <TrendingDown className="w-4 h-4 sm:w-5 sm:h-5" />
           </div>
@@ -94,7 +94,7 @@ export default async function ExpensesPage({ params, searchParams }: ExpensesPag
           </div>
         </div>
 
-        <div className="bg-card p-3.5 sm:p-5 rounded-2xl sm:rounded-3xl border border-border shadow-xs flex items-center gap-3 sm:gap-4 text-card-foreground">
+        <div className="bg-card/85 backdrop-blur-md p-3.5 sm:p-5 rounded-2xl sm:rounded-3xl border border-border shadow-xs flex items-center gap-3 sm:gap-4 text-card-foreground">
           <div className="h-8 w-8 sm:h-10 sm:w-10 flex items-center justify-center shrink-0 bg-primary/10 text-primary rounded-xl sm:rounded-2xl shadow-2xs">
             <Layers className="w-4 h-4 sm:w-5 sm:h-5" />
           </div>
@@ -108,7 +108,7 @@ export default async function ExpensesPage({ params, searchParams }: ExpensesPag
           </div>
         </div>
 
-        <div className="bg-card p-3.5 sm:p-5 rounded-2xl sm:rounded-3xl border border-border shadow-xs flex items-center gap-3 sm:gap-4 text-card-foreground">
+        <div className="bg-card/85 backdrop-blur-md p-3.5 sm:p-5 rounded-2xl sm:rounded-3xl border border-border shadow-xs flex items-center gap-3 sm:gap-4 text-card-foreground">
           <div className="h-8 w-8 sm:h-10 sm:w-10 flex items-center justify-center shrink-0 bg-amber-500/10 text-amber-600 rounded-xl sm:rounded-2xl shadow-2xs">
             <Receipt className="w-4 h-4 sm:w-5 sm:h-5" />
           </div>
@@ -118,7 +118,7 @@ export default async function ExpensesPage({ params, searchParams }: ExpensesPag
           </div>
         </div>
 
-        <div className="bg-card p-3.5 sm:p-5 rounded-2xl sm:rounded-3xl border border-border shadow-xs flex items-center gap-3 sm:gap-4 text-card-foreground">
+        <div className="bg-card/85 backdrop-blur-md p-3.5 sm:p-5 rounded-2xl sm:rounded-3xl border border-border shadow-xs flex items-center gap-3 sm:gap-4 text-card-foreground">
           <div className="h-8 w-8 sm:h-10 sm:w-10 flex items-center justify-center shrink-0 bg-blue-500/10 text-blue-600 rounded-xl sm:rounded-2xl shadow-2xs">
             <Tag className="w-4 h-4 sm:w-5 sm:h-5" />
           </div>
@@ -133,7 +133,7 @@ export default async function ExpensesPage({ params, searchParams }: ExpensesPag
 
       {/* Category Distribution Pills */}
       {Object.keys(categoryMap).length > 0 && (
-        <div className="bg-card p-4 rounded-2xl border border-border shadow-xs">
+        <div className="bg-card/85 backdrop-blur-md p-4 rounded-2xl border border-border shadow-xs">
           <div className="text-sm font-bold text-foreground mb-2">Category Breakdown</div>
           <div className="flex flex-wrap gap-2">
             {Object.entries(categoryMap).map(([cat, val]) => (
@@ -150,7 +150,7 @@ export default async function ExpensesPage({ params, searchParams }: ExpensesPag
       )}
 
       {/* Expense Ledger Table */}
-      <div className="bg-card rounded-2xl border border-border shadow-xs overflow-hidden">
+      <div className="bg-card/85 backdrop-blur-md rounded-2xl border border-border shadow-xs overflow-hidden">
         <div className="p-4 border-b border-border flex items-center justify-between">
           <div className="text-base font-bold text-card-foreground">Expense Ledger</div>
           <div className="text-sm text-muted-foreground font-medium">{allExpenses.length} records</div>

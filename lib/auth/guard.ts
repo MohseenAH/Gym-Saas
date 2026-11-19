@@ -287,27 +287,29 @@ export const getCachedGymAuthContext = cache(
   }
 );
 
-export async function getAuthorizedActionContext(params: {
-  gymId: string;
-  capability?: Capability;
-  targetBranchId?: string;
-}): Promise<AuthorizedContext> {
-  const context = await getCachedGymAuthContext(params.gymId);
+export const getAuthorizedActionContext = cache(
+  async (params: {
+    gymId: string;
+    capability?: Capability;
+    targetBranchId?: string;
+  }): Promise<AuthorizedContext> => {
+    const context = await getCachedGymAuthContext(params.gymId);
 
-  // Verify capability
-  if (params.capability && !hasCapability(context.role, params.capability)) {
-    throw new AuthorizationError(
-      `Permission denied: Missing required capability '${params.capability}'`
-    );
+    // Verify capability
+    if (params.capability && !hasCapability(context.role, params.capability)) {
+      throw new AuthorizationError(
+        `Permission denied: Missing required capability '${params.capability}'`
+      );
+    }
+
+    // Verify target branch access if requested
+    if (params.targetBranchId && !context.branchIds.includes(params.targetBranchId)) {
+      throw new AuthorizationError("Permission denied: No access to this branch");
+    }
+
+    return context;
   }
-
-  // Verify target branch access if requested
-  if (params.targetBranchId && !context.branchIds.includes(params.targetBranchId)) {
-    throw new AuthorizationError("Permission denied: No access to this branch");
-  }
-
-  return context;
-}
+);
 
 /**
  * Request-level cached gym access check.

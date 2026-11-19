@@ -47,33 +47,53 @@ export default async function MembershipsPage({
 
   const supabase = await createClient();
 
-  // 1. Fetch membership plans, payments, members, and memberships in parallel
+  // 1. Fetch membership plans, payments, members, and memberships in parallel with index-backed branch scoping
+  let plansQuery = supabase
+    .from("membership_plans")
+    .select(
+      "id, name, description, price, duration_days, is_active, branch_id, created_at, branches!inner(id, name, gym_id)"
+    )
+    .eq("branches.gym_id", gymId)
+    .order("created_at", { ascending: false });
+
+  let paymentsQuery = supabase
+    .from("payments")
+    .select("id, membership_id, amount, payment_status, branch_id")
+    .eq("gym_id", gymId);
+
+  let membersQuery = supabase
+    .from("members")
+    .select(
+      "id, full_name, phone, branch_id, status, created_at, branches(id, name), memberships(id)"
+    )
+    .eq("status", "active")
+    .order("full_name", { ascending: true });
+
+  let membershipsQuery = supabase
+    .from("memberships")
+    .select(
+      "id, member_id, plan_id, start_date, end_date, status, notes, membership_plans(id, name, price, duration_days), members(id, full_name, phone, email, branch_id, branches(name))"
+    )
+    .order("end_date", { ascending: false });
+
+  if (branchContext.selectedBranchId) {
+    plansQuery = plansQuery.eq("branch_id", branchContext.selectedBranchId);
+    paymentsQuery = paymentsQuery.eq("branch_id", branchContext.selectedBranchId);
+    membersQuery = membersQuery.eq("branch_id", branchContext.selectedBranchId);
+    membershipsQuery = membershipsQuery.eq("branch_id", branchContext.selectedBranchId);
+  } else if (branchContext.effectiveBranchIds.length > 0) {
+    plansQuery = plansQuery.in("branch_id", branchContext.effectiveBranchIds);
+    paymentsQuery = paymentsQuery.in("branch_id", branchContext.effectiveBranchIds);
+    membersQuery = membersQuery.in("branch_id", branchContext.effectiveBranchIds);
+    membershipsQuery = membershipsQuery.in("branch_id", branchContext.effectiveBranchIds);
+  }
+
   const [plansRes, paymentsRes, membersRes, membershipsRes] =
     await Promise.all([
-      supabase
-        .from("membership_plans")
-        .select(
-          "id, name, description, price, duration_days, is_active, branch_id, created_at, branches!inner(id, name, gym_id)"
-        )
-        .eq("branches.gym_id", gymId)
-        .order("created_at", { ascending: false }),
-      supabase
-        .from("payments")
-        .select("id, membership_id, amount, payment_status, branch_id")
-        .eq("gym_id", gymId),
-      supabase
-        .from("members")
-        .select(
-          "id, full_name, phone, branch_id, status, created_at, branches(id, name), memberships(id)"
-        )
-        .eq("status", "active")
-        .order("full_name", { ascending: true }),
-      supabase
-        .from("memberships")
-        .select(
-          "id, member_id, plan_id, start_date, end_date, status, notes, membership_plans(id, name, price, duration_days), members(id, full_name, phone, email, branch_id, branches(name))"
-        )
-        .order("end_date", { ascending: false }),
+      plansQuery,
+      paymentsQuery,
+      membersQuery,
+      membershipsQuery,
     ]);
 
   const branches = authContext.branches;

@@ -33,25 +33,37 @@ export default async function MembersPage({ params, searchParams }: MembersPageP
     requestedBranchId,
   });
 
-  // Prepare members query with branch filtering
+  // Prepare members, plans, and memberships queries with index-backed branch filtering
   let membersQuery = supabase
     .from("members")
     .select("id, full_name, phone, email, status, created_at, user_id, branch_id, branches(name)")
     .order("created_at", { ascending: false });
 
+  let plansQuery = supabase
+    .from("membership_plans")
+    .select("id, name, price, duration_days, branches!inner(gym_id)")
+    .eq("branches.gym_id", gymId)
+    .eq("is_active", true);
+
+  let membershipsQuery = supabase
+    .from("memberships")
+    .select("id, member_id, start_date, end_date, status, membership_plans(name, duration_days)")
+    .eq("status", "active");
+
   if (branchContext.selectedBranchId) {
     membersQuery = membersQuery.eq("branch_id", branchContext.selectedBranchId);
+    plansQuery = plansQuery.eq("branch_id", branchContext.selectedBranchId);
+    membershipsQuery = membershipsQuery.eq("branch_id", branchContext.selectedBranchId);
   } else if (branchContext.effectiveBranchIds.length > 0) {
     membersQuery = membersQuery.in("branch_id", branchContext.effectiveBranchIds);
+    plansQuery = plansQuery.in("branch_id", branchContext.effectiveBranchIds);
+    membershipsQuery = membershipsQuery.in("branch_id", branchContext.effectiveBranchIds);
   }
 
   // Fetch plans, invites, members, and memberships in parallel
   const [plansRes, invitesRes, membersRes, membershipsRes] =
     await Promise.all([
-      supabase
-        .from("membership_plans")
-        .select("id, name, price, duration_days")
-        .eq("is_active", true),
+      plansQuery,
       supabase
         .from("invitations")
         .select("member_id, token_hash, status")
@@ -59,10 +71,7 @@ export default async function MembersPage({ params, searchParams }: MembersPageP
         .eq("role", "member")
         .eq("status", "pending"),
       membersQuery,
-      supabase
-        .from("memberships")
-        .select("id, member_id, start_date, end_date, status, membership_plans(name, duration_days)")
-        .eq("status", "active"),
+      membershipsQuery,
     ]);
 
   const branches = authContext.branches;
@@ -164,7 +173,7 @@ export default async function MembersPage({ params, searchParams }: MembersPageP
             branchId={branchId}
             branches={(branches || []).map((b) => ({ id: b.id, name: b.name }))}
             triggerLabel="Import CSV"
-            triggerClassName="h-11 min-h-[44px] px-4 inline-flex items-center justify-center gap-2 rounded-xl bg-card hover:bg-muted text-foreground text-sm font-bold border border-border shadow-xs hover:shadow-sm transition-all cursor-pointer w-full sm:w-auto"
+            triggerClassName="h-11 min-h-[44px] px-4 inline-flex items-center justify-center gap-2 rounded-xl bg-card/85 backdrop-blur-md hover:bg-muted text-foreground text-sm font-bold border border-border shadow-xs hover:shadow-sm transition-all cursor-pointer w-full sm:w-auto"
           />
           <QuickEnrollModal
             gymId={gymId}
@@ -176,7 +185,7 @@ export default async function MembersPage({ params, searchParams }: MembersPageP
               durationDays: p.duration_days,
             }))}
             triggerLabel="+ Add Member"
-            triggerClassName="h-11 min-h-[44px] px-4 inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-[0.99] text-white text-sm font-bold shadow-sm hover:shadow-md transition-all cursor-pointer w-full sm:w-auto"
+            triggerClassName="h-11 min-h-[44px] px-4 inline-flex items-center justify-center gap-2 rounded-xl bg-primary hover:opacity-95 active:scale-[0.99] text-primary-foreground text-sm font-bold shadow-sm hover:shadow-md transition-all cursor-pointer w-full sm:w-auto"
           />
         </div>
       </div>

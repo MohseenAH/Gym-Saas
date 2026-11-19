@@ -306,7 +306,7 @@ export function MembershipsClient({
             onClick={() => handleSwitchView("all")}
             className={`flex items-center gap-2 px-4 py-2 text-xs sm:text-sm font-bold rounded-lg transition-all cursor-pointer ${
               viewMode === "all"
-                ? "bg-emerald-700 dark:bg-emerald-600 text-white shadow-xs"
+                ? "bg-primary text-primary-foreground shadow-xs"
                 : "text-muted-foreground hover:text-foreground"
             }`}
           >
@@ -318,7 +318,7 @@ export function MembershipsClient({
             onClick={() => handleSwitchView("plans")}
             className={`flex items-center gap-2 px-4 py-2 text-xs sm:text-sm font-bold rounded-lg transition-all cursor-pointer ${
               viewMode === "plans"
-                ? "bg-emerald-700 dark:bg-emerald-600 text-white shadow-xs"
+                ? "bg-primary text-primary-foreground shadow-xs"
                 : "text-muted-foreground hover:text-foreground"
             }`}
           >
@@ -370,7 +370,7 @@ export function MembershipsClient({
               <button
                 type="button"
                 onClick={() => setAssignModalOpen(true)}
-                className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold shadow-xs transition-colors cursor-pointer"
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-lg bg-primary hover:opacity-95 text-primary-foreground text-sm font-semibold shadow-xs transition-colors cursor-pointer"
               >
                 <UserPlus className="w-4 h-4" />
                 <span>+ Assign Plan</span>
@@ -435,7 +435,7 @@ export function MembershipsClient({
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 placeholder="Search member name, phone, or plan..."
-                className="w-full pl-10 pr-4 py-2 text-sm bg-muted/50 border border-input rounded-xl focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:border-primary text-foreground placeholder:text-muted-foreground shadow-xs transition-all"
+                className="w-full pl-10 pr-4 py-2 text-sm bg-card border border-input rounded-xl focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:border-primary text-foreground placeholder:text-muted-foreground shadow-xs transition-all"
               />
             </div>
 
@@ -446,7 +446,7 @@ export function MembershipsClient({
                 onClick={() => setFilterTab("all")}
                 className={`px-3 py-1.5 rounded-full text-xs font-bold transition-all whitespace-nowrap cursor-pointer flex items-center gap-1.5 ${
                   filterTab === "all"
-                    ? "bg-emerald-700 dark:bg-emerald-600 text-white shadow-xs"
+                    ? "bg-primary text-primary-foreground shadow-xs"
                     : "bg-muted/70 hover:bg-muted text-foreground border border-border"
                 }`}
               >
@@ -467,7 +467,7 @@ export function MembershipsClient({
                 onClick={() => setFilterTab("active")}
                 className={`px-3 py-1.5 rounded-full text-xs font-bold transition-all whitespace-nowrap cursor-pointer flex items-center gap-1.5 ${
                   filterTab === "active"
-                    ? "bg-emerald-700 dark:bg-emerald-600 text-white shadow-xs"
+                    ? "bg-primary text-primary-foreground shadow-xs"
                     : "bg-muted/70 hover:bg-muted text-foreground border border-border"
                 }`}
               >
@@ -488,7 +488,7 @@ export function MembershipsClient({
                 onClick={() => setFilterTab("trial")}
                 className={`px-3 py-1.5 rounded-full text-xs font-bold transition-all whitespace-nowrap cursor-pointer flex items-center gap-1.5 ${
                   filterTab === "trial"
-                    ? "bg-emerald-700 dark:bg-emerald-600 text-white shadow-xs"
+                    ? "bg-primary text-primary-foreground shadow-xs"
                     : "bg-muted/70 hover:bg-muted text-foreground border border-border"
                 }`}
               >
@@ -509,7 +509,7 @@ export function MembershipsClient({
                 onClick={() => setFilterTab("expiring")}
                 className={`px-3 py-1.5 rounded-full text-xs font-bold transition-all whitespace-nowrap cursor-pointer flex items-center gap-1.5 ${
                   filterTab === "expiring"
-                    ? "bg-emerald-700 dark:bg-emerald-600 text-white shadow-xs"
+                    ? "bg-primary text-primary-foreground shadow-xs"
                     : "bg-muted/70 hover:bg-muted text-foreground border border-border"
                 }`}
               >
@@ -530,7 +530,7 @@ export function MembershipsClient({
                 onClick={() => setFilterTab("expired")}
                 className={`px-3 py-1.5 rounded-full text-xs font-bold transition-all whitespace-nowrap cursor-pointer flex items-center gap-1.5 ${
                   filterTab === "expired"
-                    ? "bg-emerald-700 dark:bg-emerald-600 text-white shadow-xs"
+                    ? "bg-primary text-primary-foreground shadow-xs"
                     : "bg-muted/70 hover:bg-muted text-foreground border border-border"
                 }`}
               >
@@ -551,7 +551,7 @@ export function MembershipsClient({
                 onClick={() => setFilterTab("pending")}
                 className={`px-3 py-1.5 rounded-full text-xs font-bold transition-all whitespace-nowrap cursor-pointer flex items-center gap-1.5 ${
                   filterTab === "pending"
-                    ? "bg-emerald-700 dark:bg-emerald-600 text-white shadow-xs"
+                    ? "bg-primary text-primary-foreground shadow-xs"
                     : "bg-muted/70 hover:bg-muted text-foreground border border-border"
                 }`}
               >
@@ -771,7 +771,7 @@ export function MembershipsClient({
                       onClick={() => setCurrentPage(pNum)}
                       className={`w-7 h-7 rounded-lg text-xs font-semibold transition-colors cursor-pointer ${
                         currentPage === pNum
-                          ? "bg-emerald-700 dark:bg-emerald-600 text-white"
+                          ? "bg-primary text-primary-foreground font-bold shadow-xs"
                           : "border border-border bg-card text-foreground hover:bg-muted"
                       }`}
                     >

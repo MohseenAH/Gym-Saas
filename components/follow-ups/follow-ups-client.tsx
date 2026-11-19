@@ -7,6 +7,7 @@ import {
   Phone,
   PhoneCall,
   MessageSquare,
+  MessageSquarePlus,
   Mail,
   Calendar,
   DollarSign,
@@ -750,10 +751,10 @@ export function FollowUpsClient({
           <div>
             <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
               <Link
-                href={`/app/${gymId}/payments`}
+                href={`/app/${gymId}/staff`}
                 className="hover:text-foreground transition-colors"
               >
-                Finance
+                Gym Management
               </Link>
               <span>/</span>
               <span className="text-foreground">Follow-Ups & Dues</span>
@@ -775,15 +776,18 @@ export function FollowUpsClient({
               className="h-10 px-4 rounded-xl border border-border bg-card hover:bg-muted text-foreground text-sm font-semibold flex items-center gap-2 shadow-xs transition-colors cursor-pointer"
             >
               <SlidersHorizontal className="w-4 h-4 text-muted-foreground" />
-              Manage Message Scripts
+              Manage Scripts
             </button>
 
             <button
-              onClick={() => openPaymentModal()}
-              className="h-10 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-bold flex items-center gap-2 shadow-xs transition-all active:scale-[0.98] cursor-pointer"
+              onClick={() => {
+                setEditingScripts(scripts);
+                setIsScriptModalOpen(true);
+              }}
+              className="h-10 px-4 rounded-xl bg-primary hover:opacity-95 text-primary-foreground text-sm font-bold flex items-center gap-2 shadow-xs transition-all active:scale-[0.98] cursor-pointer"
             >
-              <Plus className="w-4 h-4" />
-              + Record Payment
+              <MessageSquarePlus className="w-4 h-4" />
+              <span>+ Create Script</span>
             </button>
           </div>
         </div>
@@ -792,7 +796,7 @@ export function FollowUpsClient({
         <div className="sm:hidden space-y-3">
           <div className="flex items-center justify-between">
             <div>
-              <div className="text-xs text-muted-foreground">Finance</div>
+              <div className="text-xs text-muted-foreground">Gym Management</div>
               <h1 className="text-xl font-bold tracking-tight text-foreground">
                 Follow-Ups & Dues
               </h1>
@@ -809,13 +813,16 @@ export function FollowUpsClient({
             </button>
           </div>
 
-          {/* Full-width emerald + Record Payment button */}
+          {/* Full-width primary + Create Script button */}
           <button
-            onClick={() => openPaymentModal()}
-            className="w-full h-11 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-sm font-bold flex items-center justify-center gap-2 shadow-xs transition-all active:scale-[0.98] cursor-pointer"
+            onClick={() => {
+              setEditingScripts(scripts);
+              setIsScriptModalOpen(true);
+            }}
+            className="w-full h-11 bg-primary hover:opacity-95 text-primary-foreground rounded-xl text-sm font-bold flex items-center justify-center gap-2 shadow-xs transition-all active:scale-[0.98] cursor-pointer"
           >
-            <Plus className="w-4 h-4" />
-            + Record Payment
+            <MessageSquarePlus className="w-4 h-4" />
+            <span>+ Create Script</span>
           </button>
         </div>
       </div>
@@ -892,7 +899,7 @@ export function FollowUpsClient({
       {/* Mobile: 2x2 grid of compact metric cards */}
       <div className="grid grid-cols-2 gap-2.5 sm:hidden">
         <div className="p-3 rounded-xl border border-border bg-card">
-          <div className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground truncate">
+          <div className="text-[11px] font-semibold uppercase tracking-normal leading-tight text-muted-foreground">
             Total Outstanding
           </div>
           <div className="mt-1 text-lg font-bold text-foreground">
@@ -903,8 +910,8 @@ export function FollowUpsClient({
           </div>
         </div>
 
-        <div className="p-3 rounded-xl border border-rose-500/20 bg-rose-500/5">
-          <div className="text-[11px] font-semibold uppercase tracking-wider text-rose-400 truncate">
+        <div className="p-3 rounded-xl border border-rose-500/20 bg-rose-500/10">
+          <div className="text-[11px] font-semibold uppercase tracking-normal leading-tight text-rose-400">
             Overdue Dues
           </div>
           <div className="mt-1 text-lg font-bold text-rose-500">
@@ -915,8 +922,8 @@ export function FollowUpsClient({
           </div>
         </div>
 
-        <div className="p-3 rounded-xl border border-amber-500/20 bg-amber-500/5">
-          <div className="text-[11px] font-semibold uppercase tracking-wider text-amber-400 truncate">
+        <div className="p-3 rounded-xl border border-amber-500/20 bg-amber-500/10">
+          <div className="text-[11px] font-semibold uppercase tracking-normal leading-tight text-amber-400">
             Due in 7 Days
           </div>
           <div className="mt-1 text-lg font-bold text-amber-500">
@@ -927,8 +934,8 @@ export function FollowUpsClient({
           </div>
         </div>
 
-        <div className="p-3 rounded-xl border border-emerald-500/20 bg-emerald-500/5">
-          <div className="text-[11px] font-semibold uppercase tracking-wider text-emerald-400 truncate">
+        <div className="p-3 rounded-xl border border-emerald-500/20 bg-emerald-500/10">
+          <div className="text-[11px] font-semibold uppercase tracking-normal leading-tight text-emerald-400">
             Recovered MTD
           </div>
           <div className="mt-1 text-lg font-bold text-emerald-500">
@@ -1045,7 +1052,7 @@ export function FollowUpsClient({
         </div>
 
         {/* Desktop Script Selector Row */}
-        <div className="hidden sm:flex items-center justify-between gap-3 p-2.5 rounded-xl border border-border bg-card/60">
+        <div className="hidden sm:flex items-center justify-between gap-3 p-2.5 rounded-xl border border-border bg-card">
           <div className="flex items-center gap-2 text-xs">
             <span className="font-semibold text-foreground shrink-0">
               Active Script:

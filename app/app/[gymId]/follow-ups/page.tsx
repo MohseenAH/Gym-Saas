@@ -66,18 +66,19 @@ export default async function FollowUpsPage({ params, searchParams }: FollowUpsP
     membersQuery = membersQuery.in("branch_id", branchContext.effectiveBranchIds);
   }
 
-  // Active / Expired memberships query
-  const membershipsQuery = supabase
+  // Active / Expired memberships query with branch filtering
+  let membershipsQuery = supabase
     .from("memberships")
     .select(
       "id, member_id, plan_id, start_date, end_date, status, notes, created_at, membership_plans(id, name, price, duration_days)"
     )
     .in("status", ["active", "expired"]);
 
-  // Active plans list query
-  const plansQuery = supabase
+  // Active plans list query with gym/branch scoping
+  let plansQuery = supabase
     .from("membership_plans")
-    .select("id, name, price, duration_days")
+    .select("id, name, price, duration_days, branches!inner(gym_id)")
+    .eq("branches.gym_id", gymId)
     .eq("is_active", true);
 
   // Payments query
@@ -88,8 +89,12 @@ export default async function FollowUpsPage({ params, searchParams }: FollowUpsP
     .in("payment_status", ["paid", "partial"]);
 
   if (branchContext.selectedBranchId) {
+    membershipsQuery = membershipsQuery.eq("branch_id", branchContext.selectedBranchId);
+    plansQuery = plansQuery.eq("branch_id", branchContext.selectedBranchId);
     paymentsQuery = paymentsQuery.eq("branch_id", branchContext.selectedBranchId);
   } else if (branchContext.effectiveBranchIds.length > 0) {
+    membershipsQuery = membershipsQuery.in("branch_id", branchContext.effectiveBranchIds);
+    plansQuery = plansQuery.in("branch_id", branchContext.effectiveBranchIds);
     paymentsQuery = paymentsQuery.in("branch_id", branchContext.effectiveBranchIds);
   }
 

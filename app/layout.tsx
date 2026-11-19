@@ -28,8 +28,31 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" data-theme="light" className="transition-colors duration-200" suppressHydrationWarning>
-      <body className="antialiased min-h-screen bg-background text-foreground selection:bg-primary/20 selection:text-primary" suppressHydrationWarning>
+    <html lang="en" data-theme="obsidian-champagne" className="transition-colors duration-200" suppressHydrationWarning>
+      <body className="antialiased min-h-screen bg-transparent text-foreground selection:bg-primary/20 selection:text-primary" suppressHydrationWarning>
+        <Script
+          id="theme-init"
+          strategy="beforeInteractive"
+          dangerouslySetInnerHTML={{
+            __html: `
+              try {
+                var validThemes = ["alpine-jade", "glacier-slate", "obsidian-champagne", "arctic-titanium"];
+                var t = localStorage.getItem("gymapra_theme");
+                if (t === "royal-bordeaux") t = "obsidian-champagne";
+                else if (t === "dark") t = "obsidian-champagne";
+                else if (t === "iron") t = "obsidian-champagne";
+                else if (t === "light" || t === "sage") t = "alpine-jade";
+                if (!t || validThemes.indexOf(t) === -1) {
+                  t = "obsidian-champagne";
+                }
+                document.documentElement.setAttribute("data-theme", t);
+                document.documentElement.dataset.theme = t;
+                var isDark = t === "obsidian-champagne" || t === "arctic-titanium";
+                document.documentElement.classList.toggle("dark", isDark);
+              } catch (e) {}
+            `,
+          }}
+        />
         {children}
         <Script
           id="sw-register"

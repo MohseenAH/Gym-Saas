@@ -186,10 +186,10 @@ export function AssignMembershipModal({
 
   return (
     <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
-      <div className="bg-card text-card-foreground rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-border animate-in fade-in zoom-in-95 duration-150">
+      <div className="bg-card/95 backdrop-blur-md text-card-foreground rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-border animate-in fade-in zoom-in-95 duration-150">
         <div className="flex items-center justify-between pb-4 border-b border-border">
           <div className="flex items-center gap-2.5">
-            <div className="p-2 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded-xl border border-emerald-500/20">
+            <div className="p-2 bg-primary/10 text-primary rounded-xl border border-primary/20">
               <UserPlus className="w-5 h-5" />
             </div>
             <div>
@@ -379,7 +379,7 @@ export function AssignMembershipModal({
             <button
               type="submit"
               disabled={loading || availablePlans.length === 0}
-              className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl shadow-xs transition-colors disabled:opacity-50 cursor-pointer"
+              className="flex items-center gap-2 px-4 py-2 bg-primary hover:opacity-95 text-primary-foreground text-xs font-bold rounded-xl shadow-xs transition-colors disabled:opacity-50 cursor-pointer"
             >
               {loading ? (
                 <Loader2 className="w-3.5 h-3.5 animate-spin" />

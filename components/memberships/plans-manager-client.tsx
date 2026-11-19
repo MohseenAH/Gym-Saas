@@ -336,7 +336,7 @@ export function PlansManagerClient({
             <button
               type="button"
               onClick={() => setCreatePlanModalOpen(true)}
-              className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold shadow-xs transition-colors cursor-pointer"
+              className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-lg bg-primary hover:opacity-95 text-primary-foreground text-sm font-semibold shadow-xs transition-colors cursor-pointer"
             >
               <Plus className="w-4 h-4" />
               <span>Create Plan</span>
@@ -344,7 +344,7 @@ export function PlansManagerClient({
             <button
               type="button"
               onClick={() => setCreateOfferModalOpen(true)}
-              className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-lg border border-emerald-600 dark:border-emerald-500 hover:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-sm font-semibold transition-colors cursor-pointer"
+              className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-lg border border-primary hover:bg-primary/10 text-primary text-sm font-semibold transition-colors cursor-pointer"
             >
               <Plus className="w-4 h-4" />
               <span>Create Offer</span>

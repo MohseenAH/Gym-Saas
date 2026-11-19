@@ -1,6 +1,6 @@
 export default function AppLoadingSkeleton() {
   return (
-    <div className="space-y-6 animate-pulse p-1">
+    <div className="max-w-6xl mx-auto space-y-3.5 sm:space-y-4 animate-pulse p-1">
       {/* Header Skeleton */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div className="space-y-2">

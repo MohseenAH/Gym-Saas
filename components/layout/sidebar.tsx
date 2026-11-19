@@ -125,12 +125,6 @@ export function Sidebar({ gymId, gymName, role, branches = [], onNavigate }: Sid
           capability: "payments:record",
         },
         {
-          label: "Follow-Ups & Dues",
-          href: `/app/${gymId}/follow-ups`,
-          icon: PhoneCall,
-          capability: "payments:record",
-        },
-        {
           label: "Expenses",
           href: `/app/${gymId}/expenses`,
           icon: TrendingDown,
@@ -234,7 +228,10 @@ export function Sidebar({ gymId, gymName, role, branches = [], onNavigate }: Sid
   }
 
   return (
-    <aside className="w-full md:w-64 bg-card border-r border-border flex flex-col justify-between shrink-0 h-full text-card-foreground select-none">
+    <aside
+      style={{ backgroundColor: "var(--sidebar)" }}
+      className="w-full md:w-64 bg-sidebar border-r border-border flex flex-col justify-between shrink-0 h-full text-white select-none"
+    >
       <div className="flex flex-col flex-1 min-h-0">
         {/* Brand / Gym Header */}
         <div className="h-16 px-4 border-b border-border flex items-center justify-between shrink-0">
@@ -243,7 +240,7 @@ export function Sidebar({ gymId, gymName, role, branches = [], onNavigate }: Sid
               <Dumbbell className="w-5 h-5" />
             </div>
             <div className="min-w-0 flex-1">
-              <div className="font-bold text-foreground text-sm tracking-tight truncate leading-tight">
+              <div className="font-bold text-white text-sm tracking-tight truncate leading-tight">
                 {gymName}
               </div>
               <div className="flex items-center gap-1.5 mt-0.5">
@@ -251,7 +248,7 @@ export function Sidebar({ gymId, gymName, role, branches = [], onNavigate }: Sid
                   {role}
                 </span>
                 <span className="inline-block w-1 h-1 rounded-full bg-border" />
-                <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-primary/10 text-primary">
+                <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-primary/20 text-white border border-primary/30">
                   Pilot Pro
                 </span>
               </div>
@@ -283,7 +280,7 @@ export function Sidebar({ gymId, gymName, role, branches = [], onNavigate }: Sid
                   type="button"
                   onClick={() => toggleGroup(group.title)}
                   aria-expanded={isOpen}
-                  className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-bold uppercase tracking-wider text-muted-foreground/80 hover:text-foreground hover:bg-muted/50 transition-colors cursor-pointer select-none group focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary/20"
+                  className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-bold uppercase tracking-wider text-slate-300 hover:text-white hover:bg-white/10 transition-colors cursor-pointer select-none group focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary/20"
                 >
                   <div className="flex items-center gap-2 min-w-0">
                     <span className="truncate">{group.title}</span>
@@ -295,7 +292,7 @@ export function Sidebar({ gymId, gymName, role, branches = [], onNavigate }: Sid
                     )}
                   </div>
                   <ChevronDown
-                    className={`w-3.5 h-3.5 text-muted-foreground/70 group-hover:text-foreground transition-transform duration-200 shrink-0 ${
+                    className={`w-3.5 h-3.5 text-slate-400 group-hover:text-white transition-transform duration-200 shrink-0 ${
                       isOpen ? "rotate-180" : ""
                     }`}
                   />
@@ -326,13 +323,13 @@ export function Sidebar({ gymId, gymName, role, branches = [], onNavigate }: Sid
                           onClick={onNavigate}
                           className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-150 ${
                             isActive
-                              ? "bg-primary/10 text-primary font-semibold ring-1 ring-primary/25 shadow-2xs"
-                              : "text-muted-foreground hover:text-foreground hover:bg-muted/70"
+                              ? "bg-primary text-primary-foreground font-semibold shadow-sm"
+                              : "text-slate-300 hover:text-white hover:bg-white/10"
                           }`}
                         >
                           <Icon
                             className={`w-4 h-4 shrink-0 transition-colors ${
-                              isActive ? "text-primary" : "text-muted-foreground"
+                              isActive ? "text-primary-foreground" : "text-slate-400"
                             }`}
                           />
                           <span className="truncate">{item.label}</span>
@@ -348,31 +345,34 @@ export function Sidebar({ gymId, gymName, role, branches = [], onNavigate }: Sid
       </div>
 
       {/* Pinned Branch Switcher & Workspace Switcher Footer */}
-      <div className="p-3 border-t border-border shrink-0 bg-card space-y-2">
+      <div
+        style={{ backgroundColor: "var(--sidebar)" }}
+        className="p-3 border-t border-border shrink-0 bg-sidebar/95 space-y-2"
+      >
         {branches.length > 1 ? (
           <div className="space-y-1">
-            <div className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground px-1 flex items-center justify-between">
+            <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400 px-1 flex items-center justify-between">
               <span>Operating Branch</span>
-              <Building2 className="w-3 h-3 text-muted-foreground" />
+              <Building2 className="w-3 h-3 text-slate-400" />
             </div>
             <div className="relative">
               <select
                 value={currentBranchId || "all"}
                 onChange={(e) => handleBranchChange(e.target.value === "all" ? null : e.target.value)}
-                className="w-full h-9 pl-2.5 pr-7 bg-muted/60 hover:bg-muted border border-border rounded-xl text-xs font-semibold text-foreground focus:outline-hidden focus:ring-2 focus:ring-primary/20 transition-all cursor-pointer appearance-none truncate"
+                className="w-full h-9 pl-2.5 pr-7 bg-white/5 hover:bg-white/10 border border-border rounded-xl text-xs font-semibold text-white focus:outline-hidden focus:ring-2 focus:ring-primary/20 transition-all cursor-pointer appearance-none truncate"
               >
-                <option value="all">All Branches (Consolidated)</option>
+                <option value="all" className="bg-sidebar text-white">All Branches (Consolidated)</option>
                 {branches.map((b) => (
-                  <option key={b.id} value={b.id}>
+                  <option key={b.id} value={b.id} className="bg-sidebar text-white">
                     {b.name}
                   </option>
                 ))}
               </select>
-              <ChevronDown className="w-3.5 h-3.5 text-muted-foreground absolute right-2.5 top-3 pointer-events-none" />
+              <ChevronDown className="w-3.5 h-3.5 text-slate-400 absolute right-2.5 top-3 pointer-events-none" />
             </div>
           </div>
         ) : branches.length === 1 ? (
-          <div className="flex items-center gap-2 px-2.5 py-1.5 rounded-xl bg-muted/50 border border-border text-xs font-semibold text-foreground">
+          <div className="flex items-center gap-2 px-2.5 py-1.5 rounded-xl bg-white/5 border border-border text-xs font-semibold text-white">
             <Building2 className="w-3.5 h-3.5 text-primary shrink-0" />
             <span className="truncate">{branches[0].name}</span>
           </div>
@@ -383,7 +383,7 @@ export function Sidebar({ gymId, gymName, role, branches = [], onNavigate }: Sid
           prefetch={true}
           onMouseEnter={() => router.prefetch("/select-workspace")}
           onTouchStart={() => router.prefetch("/select-workspace")}
-          className="w-full flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs font-semibold text-muted-foreground hover:text-foreground hover:bg-muted transition-all"
+          className="w-full flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs font-semibold text-slate-300 hover:text-white hover:bg-white/10 transition-all"
         >
           <ArrowLeftRight className="w-3 h-3" />
           <span>Switch Workspace</span>

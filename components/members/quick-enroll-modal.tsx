@@ -138,7 +138,7 @@ export function QuickEnrollModal({
 
       {isOpen && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-card text-card-foreground rounded-3xl max-w-lg w-full p-6 sm:p-7 shadow-2xl border border-border animate-in fade-in zoom-in-95 duration-150 max-h-[90vh] overflow-y-auto">
+          <div className="bg-card/95 backdrop-blur-md text-card-foreground rounded-3xl max-w-lg w-full p-6 sm:p-7 shadow-2xl border border-border animate-in fade-in zoom-in-95 duration-150 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between pb-4 border-b border-border">
               <div className="flex items-center gap-3">
                 <div className="p-2.5 bg-primary/10 text-primary rounded-2xl shadow-2xs">

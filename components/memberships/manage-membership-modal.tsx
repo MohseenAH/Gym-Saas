@@ -244,11 +244,11 @@ export function ManageMembershipModal({
         if (e.target === e.currentTarget && !loading) onClose();
       }}
     >
-      <div className="bg-card text-card-foreground rounded-2xl sm:rounded-3xl max-w-lg w-full p-5 sm:p-7 shadow-2xl border border-border animate-in zoom-in-95 duration-150 my-auto">
+      <div className="bg-card/95 backdrop-blur-md text-card-foreground rounded-2xl sm:rounded-3xl max-w-lg w-full p-5 sm:p-7 shadow-2xl border border-border animate-in zoom-in-95 duration-150 my-auto">
         {/* Header */}
         <div className="flex items-center justify-between pb-3.5 sm:pb-4 border-b border-border">
           <div className="flex items-center gap-2.5 sm:gap-3">
-            <div className="p-2 sm:p-2.5 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded-xl sm:rounded-2xl border border-emerald-500/20">
+            <div className="p-2 sm:p-2.5 bg-primary/10 text-primary rounded-xl sm:rounded-2xl border border-primary/20">
               <Layers className="w-4 h-4 sm:w-5 sm:h-5" />
             </div>
             <div>
@@ -428,7 +428,7 @@ export function ManageMembershipModal({
                 <button
                   type="submit"
                   disabled={loading || customEndDate === membership.endDate}
-                  className="flex items-center gap-1.5 h-10 px-4 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl shadow-xs transition-all disabled:opacity-50 cursor-pointer"
+                  className="flex items-center gap-1.5 h-10 px-4 bg-primary hover:opacity-95 text-primary-foreground text-xs font-bold rounded-xl shadow-xs transition-all disabled:opacity-50 cursor-pointer"
                 >
                   {loading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CheckCircle2 className="w-3.5 h-3.5" />}
                   <span>Save Validity</span>
@@ -547,7 +547,7 @@ export function ManageMembershipModal({
               <button
                 type="submit"
                 disabled={loading || selectedNewPlanId === membership.planId}
-                className="flex items-center gap-1.5 h-10 px-4 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl shadow-xs transition-all disabled:opacity-50 cursor-pointer"
+                className="flex items-center gap-1.5 h-10 px-4 bg-primary hover:opacity-95 text-primary-foreground text-xs font-bold rounded-xl shadow-xs transition-all disabled:opacity-50 cursor-pointer"
               >
                 {loading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
                 <span>Confirm Plan Change</span>
@@ -620,7 +620,7 @@ export function ManageMembershipModal({
                     onClose();
                     onOpenAssignModal?.(membership.memberId);
                   }}
-                  className="flex items-center gap-1.5 px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl shadow-xs transition-colors cursor-pointer shrink-0"
+                  className="flex items-center gap-1.5 px-3.5 py-2 bg-primary hover:opacity-95 text-primary-foreground text-xs font-bold rounded-xl shadow-xs transition-colors cursor-pointer shrink-0"
                 >
                   <ArrowUpRight className="w-4 h-4" />
                   <span>Proceed to Renew Plan</span>

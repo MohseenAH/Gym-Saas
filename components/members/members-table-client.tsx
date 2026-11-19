@@ -548,7 +548,7 @@ export function MembersTableClient({
                 }}
                 className={`px-3 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
                   filterType === "all"
-                    ? "bg-emerald-700 dark:bg-emerald-600 text-white shadow-xs"
+                    ? "bg-primary text-primary-foreground shadow-xs"
                     : "bg-muted/70 hover:bg-muted text-foreground border border-border"
                 }`}
               >
@@ -573,7 +573,7 @@ export function MembersTableClient({
                 }}
                 className={`px-3 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
                   filterType === "active"
-                    ? "bg-emerald-700 dark:bg-emerald-600 text-white shadow-xs"
+                    ? "bg-primary text-primary-foreground shadow-xs"
                     : "bg-muted/70 hover:bg-muted text-foreground border border-border"
                 }`}
               >
@@ -598,7 +598,7 @@ export function MembersTableClient({
                 }}
                 className={`px-3 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
                   filterType === "expiring"
-                    ? "bg-emerald-700 dark:bg-emerald-600 text-white shadow-xs"
+                    ? "bg-primary text-primary-foreground shadow-xs"
                     : "bg-muted/70 hover:bg-muted text-foreground border border-border"
                 }`}
               >
@@ -623,7 +623,7 @@ export function MembersTableClient({
                 }}
                 className={`px-3 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
                   filterType === "expired"
-                    ? "bg-emerald-700 dark:bg-emerald-600 text-white shadow-xs"
+                    ? "bg-primary text-primary-foreground shadow-xs"
                     : "bg-muted/70 hover:bg-muted text-foreground border border-border"
                 }`}
               >
@@ -648,7 +648,7 @@ export function MembersTableClient({
                 }}
                 className={`px-3 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
                   filterType === "unassigned"
-                    ? "bg-emerald-700 dark:bg-emerald-600 text-white shadow-xs"
+                    ? "bg-primary text-primary-foreground shadow-xs"
                     : "bg-muted/70 hover:bg-muted text-foreground border border-border"
                 }`}
               >

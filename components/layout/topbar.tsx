@@ -5,6 +5,7 @@ import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { logoutAction } from "@/lib/actions/auth";
 import { StaffRole, ROLE_LABELS } from "@/lib/auth/roles";
 import { GymTheme, THEME_CONFIGS, useGymTheme } from "@/lib/theme";
+import { ThemeSwitcher } from "./theme-switcher";
 import {
   Building2,
   ChevronDown,
@@ -127,7 +128,7 @@ export function Topbar({
     : "U";
 
   return (
-    <header className="h-16 px-4 md:px-6 backdrop-blur-md bg-card/85 border-b border-border flex items-center justify-between shrink-0 sticky top-0 z-30 transition-colors">
+    <header className="h-16 px-4 md:px-6 bg-card/95 border-b border-border flex items-center justify-between shrink-0 sticky top-0 z-30 transition-colors">
       {/* Left: Mobile Toggle & Branch Selector */}
       <div className="flex items-center gap-2 md:gap-3">
         {onMenuClick && (
@@ -229,8 +230,10 @@ export function Topbar({
         ) : null}
       </div>
 
-      {/* Right: Quick Action & User Profile Dropdown */}
-      <div className="flex items-center gap-2.5 md:gap-3">
+      {/* Right: Quick Action, Theme Switcher & User Profile Dropdown */}
+      <div className="flex items-center gap-2 sm:gap-2.5 md:gap-3">
+        <ThemeSwitcher />
+
         <Link
           href={`/app/${gymId}/members`}
           prefetch={true}
@@ -301,7 +304,7 @@ export function Topbar({
                   <span className="capitalize text-primary font-semibold">{theme}</span>
                 </div>
                 <div className="grid grid-cols-4 gap-1">
-                  {(["light", "dark", "iron", "sage"] as GymTheme[]).map((t) => {
+                  {(["alpine-jade", "glacier-slate", "obsidian-champagne", "arctic-titanium"] as GymTheme[]).map((t) => {
                     const cfg = THEME_CONFIGS[t];
                     const isCurrent = theme === t;
                     return (
@@ -317,11 +320,16 @@ export function Topbar({
                         }`}
                       >
                         <span
-                          className="w-3.5 h-3.5 rounded-full border border-black/10 shrink-0"
-                          style={{ backgroundColor: cfg.primaryColor }}
-                        />
-                        <span className="capitalize truncate w-full text-center">
-                          {t}
+                          className="w-4 h-4 rounded-full border border-border flex items-center justify-center shrink-0 shadow-2xs"
+                          style={{ backgroundColor: cfg.swatchColors[0] }}
+                        >
+                          <span
+                            className="w-2 h-2 rounded-full"
+                            style={{ backgroundColor: cfg.swatchColors[1] }}
+                          />
+                        </span>
+                        <span className="capitalize text-[10px] truncate w-full text-center">
+                          {t.split("-")[0]}
                         </span>
                       </button>
                     );

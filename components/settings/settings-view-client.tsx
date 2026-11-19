@@ -71,7 +71,7 @@ export function SettingsViewClient({
   userRole,
 }: SettingsViewClientProps) {
   const router = useRouter();
-  const { theme, changeTheme } = useGymTheme();
+  const { theme, changeTheme, themeList } = useGymTheme();
 
   const [activeTab, setActiveTab] = useState<
     "profile" | "theme" | "branches" | "plans" | "receipts" | "account" | "pilot"
@@ -318,36 +318,36 @@ export function SettingsViewClient({
           </div>
 
           <div className="grid grid-cols-2 gap-2.5 sm:gap-4">
-            {(Object.keys(THEME_CONFIGS) as GymTheme[]).map((themeKey) => {
-              const cfg = THEME_CONFIGS[themeKey];
-              const isSelected = theme === themeKey;
+            {themeList.map((cfg) => {
+              const isSelected = theme === cfg.id;
 
               return (
-                <div
-                  key={themeKey}
-                  onClick={() => changeTheme(themeKey)}
-                  className={`p-3 sm:p-5 rounded-2xl border-2 cursor-pointer transition-all flex flex-col justify-between gap-2.5 sm:gap-4 ${
+                <button
+                  type="button"
+                  key={cfg.id}
+                  onClick={() => changeTheme(cfg.id)}
+                  className={`w-full text-left p-3 sm:p-5 rounded-2xl border-2 cursor-pointer transition-all flex flex-col justify-between gap-2.5 sm:gap-4 ${
                     isSelected
                       ? "border-primary bg-primary/5 shadow-sm ring-1 ring-primary/20"
                       : "border-border bg-card hover:border-muted-foreground/30 hover:bg-muted/20"
                   }`}
                 >
-                  <div className="flex items-start justify-between gap-1.5">
+                  <div className="flex items-start justify-between gap-1.5 w-full">
                     <div className="flex items-start sm:items-center gap-2 sm:gap-3 min-w-0">
                       <div
                         className="w-6 h-6 sm:w-7 sm:h-7 rounded-full border border-border shadow-xs flex items-center justify-center shrink-0 mt-0.5 sm:mt-0"
-                        style={{ backgroundColor: cfg.bgTone }}
+                        style={{ backgroundColor: cfg.swatchColors[0] }}
                       >
                         <div
                           className="w-3 h-3 sm:w-3.5 sm:h-3.5 rounded-full"
-                          style={{ backgroundColor: cfg.primaryColor }}
+                          style={{ backgroundColor: cfg.swatchColors[1] }}
                         />
                       </div>
                       <div className="min-w-0">
                         <div className="font-bold text-xs sm:text-sm text-foreground flex items-center gap-1 sm:gap-2 truncate">
-                          <span className="truncate">{cfg.label}</span>
-                          <span className="text-[10px] sm:text-xs font-mono text-muted-foreground uppercase shrink-0">
-                            ({themeKey})
+                          <span className="truncate">{cfg.name}</span>
+                          <span className="text-[10px] font-bold uppercase px-1.5 py-0.5 rounded bg-muted text-muted-foreground border border-border shrink-0">
+                            {cfg.mode}
                           </span>
                         </div>
                         <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{cfg.description}</p>
@@ -361,7 +361,7 @@ export function SettingsViewClient({
                     )}
                   </div>
 
-                  <div className="flex items-center gap-2 pt-2 border-t border-border">
+                  <div className="flex items-center gap-2 pt-2 border-t border-border w-full">
                     <div
                       className="h-2 rounded-full flex-1"
                       style={{ backgroundColor: cfg.primaryColor }}
@@ -371,7 +371,7 @@ export function SettingsViewClient({
                       style={{ backgroundColor: cfg.bgTone }}
                     />
                   </div>
-                </div>
+                </button>
               );
             })}
           </div>

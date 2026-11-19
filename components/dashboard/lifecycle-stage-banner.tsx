@@ -50,7 +50,7 @@ export function LifecycleStageBanner({
       {isFrontDeskRole && (
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 px-4 py-2.5 sm:py-3 rounded-2xl bg-primary text-primary-foreground shadow-sm">
           <div className="flex items-center gap-3">
-            <div className="h-8 w-8 rounded-xl bg-white/20 text-white flex items-center justify-center shrink-0">
+            <div className="h-8 w-8 rounded-xl bg-primary-foreground/20 text-primary-foreground flex items-center justify-center shrink-0">
               <CalendarCheck className="w-4 h-4" />
             </div>
             <div>
@@ -60,9 +60,9 @@ export function LifecycleStageBanner({
           </div>
           <Link
             href={`/app/${gymId}/attendance`}
-            className="inline-flex items-center justify-center gap-1.5 h-8 px-3 text-xs rounded-xl bg-white text-slate-900 font-bold shadow-xs hover:bg-slate-100 transition-colors shrink-0 cursor-pointer"
+            className="inline-flex items-center justify-center gap-1.5 h-8 px-3 text-xs rounded-xl bg-card text-card-foreground border border-border/50 font-bold shadow-xs hover:bg-muted transition-colors shrink-0 cursor-pointer"
           >
-            <Zap className="w-3.5 h-3.5 text-emerald-600 fill-emerald-600" />
+            <Zap className="w-3.5 h-3.5 text-primary fill-primary" />
             <span>Launch Attendance Kiosk</span>
           </Link>
         </div>

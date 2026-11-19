@@ -134,7 +134,7 @@ export default async function PaymentsPage({ params, searchParams }: PaymentsPag
 
       {/* KPI Cards */}
       <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4">
-        <div className="bg-card p-3.5 sm:p-5 rounded-2xl sm:rounded-3xl border border-border shadow-xs flex items-center gap-3 sm:gap-4 text-card-foreground">
+        <div className="bg-card/85 backdrop-blur-md p-3.5 sm:p-5 rounded-2xl sm:rounded-3xl border border-border shadow-xs flex items-center gap-3 sm:gap-4 text-card-foreground">
           <div className="h-8 w-8 sm:h-10 sm:w-10 flex items-center justify-center shrink-0 bg-emerald-500/10 text-emerald-600 rounded-xl sm:rounded-2xl shadow-2xs">
             <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5" />
           </div>
@@ -146,7 +146,7 @@ export default async function PaymentsPage({ params, searchParams }: PaymentsPag
           </div>
         </div>
 
-        <div className="bg-card p-3.5 sm:p-5 rounded-2xl sm:rounded-3xl border border-border shadow-xs flex items-center gap-3 sm:gap-4 text-card-foreground">
+        <div className="bg-card/85 backdrop-blur-md p-3.5 sm:p-5 rounded-2xl sm:rounded-3xl border border-border shadow-xs flex items-center gap-3 sm:gap-4 text-card-foreground">
           <div className="h-8 w-8 sm:h-10 sm:w-10 flex items-center justify-center shrink-0 bg-primary/10 text-primary rounded-xl sm:rounded-2xl shadow-2xs">
             <Wallet className="w-4 h-4 sm:w-5 sm:h-5" />
           </div>
@@ -158,7 +158,7 @@ export default async function PaymentsPage({ params, searchParams }: PaymentsPag
           </div>
         </div>
 
-        <div className="bg-card p-3.5 sm:p-5 rounded-2xl sm:rounded-3xl border border-border shadow-xs flex items-center gap-3 sm:gap-4 text-card-foreground">
+        <div className="bg-card/85 backdrop-blur-md p-3.5 sm:p-5 rounded-2xl sm:rounded-3xl border border-border shadow-xs flex items-center gap-3 sm:gap-4 text-card-foreground">
           <div className="h-8 w-8 sm:h-10 sm:w-10 flex items-center justify-center shrink-0 bg-amber-500/10 text-amber-600 rounded-xl sm:rounded-2xl shadow-2xs">
             <Banknote className="w-4 h-4 sm:w-5 sm:h-5" />
           </div>
@@ -170,7 +170,7 @@ export default async function PaymentsPage({ params, searchParams }: PaymentsPag
           </div>
         </div>
 
-        <div className="bg-card p-3.5 sm:p-5 rounded-2xl sm:rounded-3xl border border-border shadow-xs flex items-center gap-3 sm:gap-4 text-card-foreground">
+        <div className="bg-card/85 backdrop-blur-md p-3.5 sm:p-5 rounded-2xl sm:rounded-3xl border border-border shadow-xs flex items-center gap-3 sm:gap-4 text-card-foreground">
           <div className="h-8 w-8 sm:h-10 sm:w-10 flex items-center justify-center shrink-0 bg-blue-500/10 text-blue-600 rounded-xl sm:rounded-2xl shadow-2xs">
             <Receipt className="w-4 h-4 sm:w-5 sm:h-5" />
           </div>
