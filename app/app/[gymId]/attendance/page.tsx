@@ -272,8 +272,16 @@ export default async function AttendancePage({ params, searchParams }: Attendanc
   };
 
   const canOverride = ["owner", "partner", "manager"].includes(authContext.role);
-  const currentUserName =
-    authContext.user.user_metadata?.full_name || authContext.profile?.full_name || "Staff";
+  const rawMetaName = authContext.user.user_metadata?.full_name;
+  const metadataName =
+    typeof rawMetaName === "string" && rawMetaName.trim().length > 0
+      ? rawMetaName.trim()
+      : null;
+  const profileName =
+    typeof authContext.profile?.full_name === "string" && authContext.profile.full_name.trim().length > 0
+      ? authContext.profile.full_name.trim()
+      : null;
+  const currentUserName: string = metadataName || profileName || "Staff";
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto text-foreground">

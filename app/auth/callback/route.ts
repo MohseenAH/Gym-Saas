@@ -1,6 +1,6 @@
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
-import { resolvePostLoginRedirect } from "@/lib/auth/redirect";
+import { resolvePostLoginRedirect, isSafeInternalRedirect } from "@/lib/auth/redirect";
 import { NextResponse } from "next/server";
 
 export async function GET(request: Request) {
@@ -64,8 +64,9 @@ export async function GET(request: Request) {
     return NextResponse.redirect(new URL("/login", requestUrl.origin));
   }
 
-  // Determine post-login redirect path
-  let targetPath = next;
+  // Determine post-login redirect path, ensuring target is a safe internal route
+  let targetPath: string | null = isSafeInternalRedirect(next) ? next.trim() : null;
+
   if (!targetPath || targetPath === "/" || targetPath === "/select-workspace") {
     try {
       const cachedUser = {
@@ -81,7 +82,8 @@ export async function GET(request: Request) {
     }
   }
 
-  const response = NextResponse.redirect(new URL(targetPath, requestUrl.origin));
+  const safeTarget = isSafeInternalRedirect(targetPath) ? targetPath : "/select-workspace";
+  const response = NextResponse.redirect(new URL(safeTarget, requestUrl.origin));
 
   // Explicitly set all cookies on the NextResponse redirect object
   cookiesToSetLater.forEach(({ name, value, options }) => {

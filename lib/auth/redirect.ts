@@ -7,6 +7,25 @@ export interface PersonaDestination {
 }
 
 /**
+ * Validates that a redirect target is a safe internal relative path.
+ * Rejects absolute URLs (http://, https://), protocol-relative URLs (//),
+ * backslash paths (\), non-HTTP protocols (javascript:), and control characters.
+ */
+export function isSafeInternalRedirect(path: string | null | undefined): path is string {
+  if (!path || typeof path !== "string") return false;
+  const trimmed = path.trim();
+  if (!trimmed.startsWith("/") || trimmed.startsWith("//") || trimmed.includes("\\")) {
+    return false;
+  }
+  try {
+    const url = new URL(trimmed, "http://localhost");
+    return url.origin === "http://localhost" && url.pathname.startsWith("/");
+  } catch {
+    return false;
+  }
+}
+
+/**
  * Deterministic redirect helper:
  * - 0 gyms and no member profile -> /onboarding
  * - Owner/staff of exactly 1 gym -> /app/[gymId]/dashboard (skips /select-workspace)

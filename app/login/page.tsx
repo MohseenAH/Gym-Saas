@@ -1,15 +1,17 @@
 "use client";
 
-import { useActionState, Suspense } from "react";
+import { useActionState, Suspense, useState } from "react";
 import { loginAction } from "@/lib/actions/auth";
 import Link from "next/link";
-import { Dumbbell, Lock, Mail, Loader2 } from "lucide-react";
+import { Dumbbell, Lock, Mail, Loader2, Eye, EyeOff, CheckCircle2 } from "lucide-react";
 import { useSearchParams } from "next/navigation";
 
 function LoginForm() {
   const searchParams = useSearchParams();
   const redirectParam = searchParams.get("redirect") || "";
   const errorParam = searchParams.get("error");
+  const noticeParam = searchParams.get("notice");
+  const [showPassword, setShowPassword] = useState(false);
 
   const [state, formAction, isPending] = useActionState(
     async (_prevState: unknown, formData: FormData) => {
@@ -20,6 +22,10 @@ function LoginForm() {
   );
 
   const errorMessage = state?.error || errorParam;
+  const noticeMessage =
+    noticeParam === "password_updated"
+      ? "Your password has been reset successfully. Please sign in with your new password."
+      : null;
 
   return (
     <div className="w-full max-w-md bg-card rounded-3xl border border-border shadow-xl p-8 sm:p-10 text-card-foreground">
@@ -34,6 +40,13 @@ function LoginForm() {
           Access your gym workspace or member portal
         </p>
       </div>
+
+      {noticeMessage && (
+        <div className="mb-6 p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-sm text-emerald-600 font-medium animate-in fade-in-50 flex items-start gap-2.5">
+          <CheckCircle2 className="w-4 h-4 shrink-0 mt-0.5" />
+          <span>{noticeMessage}</span>
+        </div>
+      )}
 
       {errorMessage && (
         <div className="mb-6 p-4 rounded-xl bg-rose-500/10 border border-rose-500/20 text-sm text-rose-600 font-medium animate-in fade-in-50">
@@ -55,6 +68,7 @@ function LoginForm() {
               type="email"
               name="email"
               required
+              autoComplete="email"
               placeholder="owner@yourgym.com"
               className="h-12 w-full pl-10 pr-4 rounded-xl border border-input bg-background text-foreground text-sm focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:border-primary transition-all"
             />
@@ -76,12 +90,26 @@ function LoginForm() {
           <div className="relative">
             <Lock className="w-4 h-4 text-muted-foreground absolute left-3.5 top-4 pointer-events-none" />
             <input
-              type="password"
+              type={showPassword ? "text" : "password"}
               name="password"
               required
+              autoComplete="current-password"
               placeholder="••••••••"
-              className="h-12 w-full pl-10 pr-4 rounded-xl border border-input bg-background text-foreground text-sm focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:border-primary transition-all"
+              className="h-12 w-full pl-10 pr-11 rounded-xl border border-input bg-background text-foreground text-sm focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:border-primary transition-all"
             />
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute right-3.5 top-3.5 text-muted-foreground hover:text-foreground transition-colors p-0.5"
+              title={showPassword ? "Hide password" : "Show password"}
+              tabIndex={-1}
+            >
+              {showPassword ? (
+                <EyeOff className="w-4 h-4" />
+              ) : (
+                <Eye className="w-4 h-4" />
+              )}
+            </button>
           </div>
         </div>
 

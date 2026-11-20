@@ -1,7 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
-import { resolvePostLoginRedirect } from "@/lib/auth/redirect";
+import { resolvePostLoginRedirect, isSafeInternalRedirect } from "@/lib/auth/redirect";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import type { User } from "@supabase/supabase-js";
@@ -170,13 +170,12 @@ export async function loginAction(formData: FormData) {
       }
     : null;
 
-  // Safe redirect param handling
+  // Safe redirect param handling (preserves valid internal destinations including deep-links and invites)
   if (
     redirectParam &&
-    (redirectParam.startsWith("/app") ||
-      redirectParam.startsWith("/portal") ||
-      redirectParam.startsWith("/select-workspace") ||
-      redirectParam.startsWith("/onboarding"))
+    isSafeInternalRedirect(redirectParam) &&
+    redirectParam !== "/login" &&
+    redirectParam !== "/signup"
   ) {
     redirect(redirectParam);
   }

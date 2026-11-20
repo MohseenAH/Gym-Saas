@@ -24,7 +24,7 @@ describe("PWA Manifest & Mobile Standalone Metadata Suite", () => {
 
     it("specifies valid start_url for session entry", () => {
       expect(pwaManifest.start_url).toBeDefined();
-      expect(pwaManifest.start_url).toBe("/");
+      expect(pwaManifest.start_url).toBe("/app");
     });
 
     it("configures obsidian theme and background colors", () => {
