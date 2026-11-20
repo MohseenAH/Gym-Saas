@@ -3,6 +3,8 @@ import { redirect } from "next/navigation";
 import { Dumbbell, LogOut, Home, CalendarCheck, CreditCard, Bell } from "lucide-react";
 import Link from "next/link";
 import { logoutAction } from "@/lib/actions/auth";
+import { ThemeSwitcher } from "@/components/layout/theme-switcher";
+import { ThemedPageBackground } from "@/components/layout/themed-page-background";
 
 interface BranchRelation {
   gym_id: string;
@@ -44,9 +46,12 @@ export default async function MemberPortalLayout({
   const gymName = branchData?.gyms?.name || "Member Portal";
 
   return (
-    <div className="min-h-screen bg-background text-foreground flex flex-col justify-between">
+    <div className="relative min-h-screen bg-transparent text-foreground flex flex-col justify-between">
+      {/* Dynamic Themed Background Canvas Layer */}
+      <ThemedPageBackground />
+
       {/* Top Header */}
-      <header className="h-16 px-6 bg-card/85 backdrop-blur-md border-b border-border flex items-center justify-between sticky top-0 z-40 transition-colors">
+      <header className="h-16 px-4 sm:px-6 bg-card/90 backdrop-blur-md border-b border-border flex items-center justify-between sticky top-0 z-40 transition-colors">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 bg-primary text-primary-foreground rounded-2xl flex items-center justify-center shadow-xs">
             <Dumbbell className="w-5 h-5" />
@@ -89,7 +94,10 @@ export default async function MemberPortalLayout({
           </Link>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3">
+          {/* Parity Theme Switcher */}
+          <ThemeSwitcher />
+
           <Link
             href="/select-workspace"
             className="text-xs text-muted-foreground hover:text-foreground hidden sm:block font-medium transition-colors"

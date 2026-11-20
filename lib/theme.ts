@@ -26,52 +26,74 @@ export const THEME_CONFIGS: Record<
     swatchColors: [string, string];
   }
 > = {
-  "alpine-jade": {
-    label: "Alpine Jade",
-    description: "Fresh, natural, green/teal identity.",
-    primaryColor: "#0F766E",
-    bgTone: "#E2F1EA",
+  "emerald-mist": {
+    label: "Emerald Mist",
+    description: "Fresh, natural emerald & mist-white identity (Default Light).",
+    primaryColor: "#059669",
+    bgTone: "#DDEFE6",
     mode: "light",
-    swatchColors: ["#FFFFFF", "#0F766E"],
+    swatchColors: ["#FFFFFF", "#059669"],
   },
-  "glacier-slate": {
-    label: "Glacier Slate",
-    description: "Clean, professional, high-trust SaaS.",
+  "glacier-frost": {
+    label: "Glacier Frost",
+    description: "Clean, crisp sapphire & glacier-white SaaS.",
     primaryColor: "#2563EB",
-    bgTone: "#E1ECF8",
+    bgTone: "#DCEAF7",
     mode: "light",
     swatchColors: ["#FFFFFF", "#2563EB"],
   },
   "obsidian-champagne": {
     label: "Obsidian Champagne",
-    description: "Premium, elegant, dark luxury.",
-    primaryColor: "#D49B35",
-    bgTone: "#090B0F",
+    description: "Premium, elegant dark luxury with warm champagne gold.",
+    primaryColor: "#C9A66B",
+    bgTone: "#171717",
     mode: "dark",
-    swatchColors: ["#12151C", "#D49B35"],
+    swatchColors: ["#242424", "#C9A66B"],
   },
-  "arctic-titanium": {
-    label: "Arctic Titanium",
-    description: "Cool, modern, technology-inspired.",
-    primaryColor: "#2563EB",
-    bgTone: "#08111E",
+  "electric-sapphire": {
+    label: "Electric Sapphire",
+    description: "Cool, high-energy deep sapphire with vivid electric blue.",
+    primaryColor: "#3B82F6",
+    bgTone: "#080F24",
     mode: "dark",
-    swatchColors: ["#0F1C2E", "#2563EB"],
+    swatchColors: ["#111D38", "#3B82F6"],
   },
 };
 
 export function isDarkTheme(theme: ThemeId | string | null | undefined): boolean {
-  return theme === "obsidian-champagne" || theme === "arctic-titanium";
+  return (
+    theme === "obsidian-champagne" ||
+    theme === "electric-sapphire" ||
+    theme === "arctic-titanium" ||
+    theme === "dark" ||
+    theme === "royal-bordeaux" ||
+    theme === "iron"
+  );
 }
 
 export function normalizeTheme(rawTheme: string | null | undefined): ThemeId {
   if (!rawTheme) return DEFAULT_THEME_ID;
   if (isValidTheme(rawTheme)) return rawTheme;
-  // Graceful migration & fallbacks
-  if (rawTheme === "royal-bordeaux") return "obsidian-champagne";
-  if (rawTheme === "dark") return "obsidian-champagne";
-  if (rawTheme === "iron") return "obsidian-champagne";
-  if (rawTheme === "light" || rawTheme === "sage") return "alpine-jade";
+
+  // Legacy Theme Fallbacks
+  if (rawTheme === "alpine-jade" || rawTheme === "light" || rawTheme === "sage") {
+    return "emerald-mist";
+  }
+  if (rawTheme === "glacier-slate") {
+    return "glacier-frost";
+  }
+  if (rawTheme === "arctic-titanium") {
+    return "electric-sapphire";
+  }
+  if (
+    rawTheme === "obsidian-champagne" ||
+    rawTheme === "royal-bordeaux" ||
+    rawTheme === "dark" ||
+    rawTheme === "iron"
+  ) {
+    return "obsidian-champagne";
+  }
+
   return DEFAULT_THEME_ID;
 }
 
@@ -92,10 +114,7 @@ export function setGymTheme(theme: ThemeId | string) {
     localStorage.setItem("gymapra_theme", valid);
     document.documentElement.setAttribute("data-theme", valid);
     document.documentElement.dataset.theme = valid;
-    document.documentElement.classList.toggle(
-      "dark",
-      valid === "obsidian-champagne" || valid === "arctic-titanium"
-    );
+    document.documentElement.classList.toggle("dark", isDarkTheme(valid));
     window.dispatchEvent(new CustomEvent("gymapra-theme-change", { detail: valid }));
   } catch {
     // Ignore storage errors

@@ -304,8 +304,9 @@ export function Topbar({
                   <span className="capitalize text-primary font-semibold">{theme}</span>
                 </div>
                 <div className="grid grid-cols-4 gap-1">
-                  {(["alpine-jade", "glacier-slate", "obsidian-champagne", "arctic-titanium"] as GymTheme[]).map((t) => {
+                  {(["emerald-mist", "glacier-frost", "obsidian-champagne", "electric-sapphire"] as GymTheme[]).map((t) => {
                     const cfg = THEME_CONFIGS[t];
+                    if (!cfg) return null;
                     const isCurrent = theme === t;
                     return (
                       <button
@@ -329,7 +330,7 @@ export function Topbar({
                           />
                         </span>
                         <span className="capitalize text-[10px] truncate w-full text-center">
-                          {t.split("-")[0]}
+                          {cfg.label.split(" ")[0]}
                         </span>
                       </button>
                     );

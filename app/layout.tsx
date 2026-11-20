@@ -28,7 +28,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" data-theme="obsidian-champagne" className="transition-colors duration-200" suppressHydrationWarning>
+    <html lang="en" data-theme="emerald-mist" className="transition-colors duration-200" suppressHydrationWarning>
       <body className="antialiased min-h-screen bg-transparent text-foreground selection:bg-primary/20 selection:text-primary" suppressHydrationWarning>
         <Script
           id="theme-init"
@@ -36,18 +36,19 @@ export default function RootLayout({
           dangerouslySetInnerHTML={{
             __html: `
               try {
-                var validThemes = ["alpine-jade", "glacier-slate", "obsidian-champagne", "arctic-titanium"];
+                var validThemes = ["emerald-mist", "glacier-frost", "obsidian-champagne", "electric-sapphire"];
                 var t = localStorage.getItem("gymapra_theme");
-                if (t === "royal-bordeaux") t = "obsidian-champagne";
-                else if (t === "dark") t = "obsidian-champagne";
-                else if (t === "iron") t = "obsidian-champagne";
-                else if (t === "light" || t === "sage") t = "alpine-jade";
+                if (t === "alpine-jade" || t === "light" || t === "sage") t = "emerald-mist";
+                else if (t === "glacier-slate") t = "glacier-frost";
+                else if (t === "arctic-titanium") t = "electric-sapphire";
+                else if (t === "royal-bordeaux" || t === "dark" || t === "iron") t = "obsidian-champagne";
                 if (!t || validThemes.indexOf(t) === -1) {
-                  t = "obsidian-champagne";
+                  t = "emerald-mist";
                 }
+                localStorage.setItem("gymapra_theme", t);
                 document.documentElement.setAttribute("data-theme", t);
                 document.documentElement.dataset.theme = t;
-                var isDark = t === "obsidian-champagne" || t === "arctic-titanium";
+                var isDark = t === "obsidian-champagne" || t === "electric-sapphire";
                 document.documentElement.classList.toggle("dark", isDark);
               } catch (e) {}
             `,

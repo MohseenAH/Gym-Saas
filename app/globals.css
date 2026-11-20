@@ -8,17 +8,21 @@
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
-  --color-card-foreground: var(--foreground);
+  --color-card-foreground: var(--card-foreground);
   --color-sidebar: var(--sidebar);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-muted: var(--sidebar-muted);
   --color-popover: var(--popover);
-  --color-popover-foreground: var(--foreground);
+  --color-popover-foreground: var(--popover-foreground);
   --color-muted: var(--muted);
   --color-muted-foreground: var(--muted-foreground);
   --color-border: var(--border);
   --color-primary: var(--primary);
+  --color-primary-hover: var(--primary-hover);
   --color-primary-foreground: var(--primary-foreground);
   --color-secondary: var(--secondary);
-  --color-secondary-foreground: var(--foreground);
+  --color-secondary-foreground: var(--secondary-foreground);
   --color-accent: var(--accent);
   --color-accent-foreground: var(--accent-foreground);
   --color-input: var(--input);
@@ -106,54 +110,65 @@ input, select, textarea {
 }
 
 /* ==========================================================================
-   GymApra V2 — 4 Explicit Theme Palettes
+   GymApra V2 — Final 4 Color Themes (2 Light + 2 Dark)
    ========================================================================== */
 
-/* 1. Light — White-Jade Blended Wash: Alpine Jade */
+/* 1. Light — Default Light Theme: Emerald Mist (Aliases: alpine-jade) */
+:root,
+html[data-theme="emerald-mist"],
 html[data-theme="alpine-jade"] {
-  --background: #E2F1EA;
+  --background: #DDEFE6;
   --card: #FFFFFF;
-  --card-foreground: #0F1F18;
-  --sidebar: #0B2E26;
+  --card-foreground: #123D30;
+  --sidebar: #064E3B;
+  --sidebar-accent: #126C54;
+  --sidebar-foreground: #FFFFFF;
+  --sidebar-muted: #A7F3D0;
   --popover: #FFFFFF;
-  --popover-foreground: #0F1F18;
-  --foreground: #0F1F18;
-  --muted: #D5E9DF;
-  --muted-foreground: #476356;
-  --border: #BDD8CC;
-  --input: #D5E9DF;
-  --primary: #0F766E;
+  --popover-foreground: #123D30;
+  --foreground: #123D30;
+  --muted: #D3E9DD;
+  --muted-foreground: #3B6B5C;
+  --border: #B7D8C9;
+  --input: #B7D8C9;
+  --primary: #059669;
+  --primary-hover: #047857;
   --primary-foreground: #FFFFFF;
-  --secondary: #D5E9DF;
-  --secondary-foreground: #0F1F18;
-  --accent: rgba(15, 118, 110, 0.12);
-  --accent-foreground: #0F766E;
-  --ring: #0F766E;
+  --secondary: #D3E9DD;
+  --secondary-foreground: #123D30;
+  --accent: rgba(5, 150, 105, 0.12);
+  --accent-foreground: #059669;
+  --ring: #059669;
   --success: hsl(158 75% 38%);
   --warning: hsl(38 92% 50%);
   --destructive: hsl(0 84% 60%);
   --radius: 0.625rem;
-  --bg-overlay: radial-gradient(circle at 85% 10%, rgba(15, 118, 110, 0.08), transparent 45%), linear-gradient(135deg, #D9EEE4 0%, #E7F4EE 52%, #D4EAE0 100%);
-  --bg-radial-glow: radial-gradient(circle at 50% 0%, rgba(15, 118, 110, 0.06) 0%, transparent 60%);
+  --bg-overlay: radial-gradient(circle at 85% 10%, rgba(5, 150, 105, 0.08), transparent 45%), linear-gradient(135deg, #D5EBE0 0%, #E3F2EB 52%, #D0E7DC 100%);
+  --bg-radial-glow: radial-gradient(circle at 50% 0%, rgba(5, 150, 105, 0.06) 0%, transparent 60%);
 }
 
-/* 2. Light — Glacier-Tinted Wash Mixed with White: Glacier Slate */
+/* 2. Light — Glacier Frost (Aliases: glacier-slate) */
+html[data-theme="glacier-frost"],
 html[data-theme="glacier-slate"] {
-  --background: #E1ECF8;
+  --background: #DCEAF7;
   --card: #FFFFFF;
-  --card-foreground: #0F172A;
-  --sidebar: #0F172A;
+  --card-foreground: #10243E;
+  --sidebar: #10243E;
+  --sidebar-accent: #234C78;
+  --sidebar-foreground: #FFFFFF;
+  --sidebar-muted: #BFDBFE;
   --popover: #FFFFFF;
-  --popover-foreground: #0F172A;
-  --foreground: #0F172A;
-  --muted: #D4E3F4;
-  --muted-foreground: #475569;
-  --border: #C0D4EB;
-  --input: #D4E3F4;
+  --popover-foreground: #10243E;
+  --foreground: #10243E;
+  --muted: #D0E1F1;
+  --muted-foreground: #476484;
+  --border: #B8D0E6;
+  --input: #B8D0E6;
   --primary: #2563EB;
+  --primary-hover: #1D4ED8;
   --primary-foreground: #FFFFFF;
-  --secondary: #D4E3F4;
-  --secondary-foreground: #0F172A;
+  --secondary: #D0E1F1;
+  --secondary-foreground: #10243E;
   --accent: rgba(37, 99, 235, 0.12);
   --accent-foreground: #2563EB;
   --ring: #2563EB;
@@ -161,66 +176,78 @@ html[data-theme="glacier-slate"] {
   --warning: hsl(38 92% 50%);
   --destructive: hsl(0 84% 60%);
   --radius: 0.625rem;
-  --bg-overlay: radial-gradient(circle at 85% 10%, rgba(37, 99, 235, 0.08), transparent 45%), linear-gradient(135deg, #D9E7F6 0%, #E8F1FA 52%, #D4E3F4 100%);
+  --bg-overlay: radial-gradient(circle at 85% 10%, rgba(37, 99, 235, 0.08), transparent 45%), linear-gradient(135deg, #D4E5F5 0%, #E4EFF9 52%, #CFE2F3 100%);
   --bg-radial-glow: radial-gradient(circle at 50% 0%, rgba(37, 99, 235, 0.06) 0%, transparent 60%);
 }
 
-/* 3. Dark — Deep Charcoal with Warm-Gold Depth: Obsidian Champagne (Default Root) */
-:root,
+/* 3. Dark — Obsidian Champagne */
 html[data-theme="obsidian-champagne"] {
-  --background: #090B0F;
-  --card: #12151C;
-  --card-foreground: #F8FAFC;
-  --sidebar: #0D1017;
-  --popover: #12151C;
-  --popover-foreground: #F8FAFC;
-  --foreground: #F8FAFC;
-  --muted: #1A1F2B;
-  --muted-foreground: #94A3B8;
-  --border: #262C3A;
-  --input: #1A1F2B;
-  --primary: #D49B35;
-  --primary-foreground: #090B0F;
-  --secondary: #1A1F2B;
-  --secondary-foreground: #F8FAFC;
-  --accent: rgba(212, 155, 53, 0.15);
-  --accent-foreground: #D49B35;
-  --ring: #D49B35;
+  --background: #171717;
+  --card: #242424;
+  --card-foreground: #F5F5F4;
+  --sidebar: #0D0D0D;
+  --sidebar-accent: #383024;
+  --sidebar-foreground: #F5F5F4;
+  --sidebar-muted: #A8A29E;
+  --popover: #242424;
+  --popover-foreground: #F5F5F4;
+  --foreground: #F5F5F4;
+  --muted: #333333;
+  --muted-foreground: #A8A29E;
+  --border: #404040;
+  --input: #404040;
+  --primary: #C9A66B;
+  --primary-hover: #B89455;
+  --primary-foreground: #171717;
+  --secondary: #333333;
+  --secondary-foreground: #F5F5F4;
+  --accent: rgba(201, 166, 107, 0.15);
+  --accent-foreground: #C9A66B;
+  --ring: #C9A66B;
   --success: hsl(142 71% 45%);
   --warning: hsl(38 92% 50%);
   --destructive: hsl(0 84% 60%);
   --radius: 0.625rem;
-  --bg-overlay: radial-gradient(circle at top right, rgba(212, 155, 53, 0.14), transparent 50%), linear-gradient(180deg, #090B0F 0%, #0D1016 100%);
-  --bg-radial-glow: radial-gradient(circle at 50% 0%, rgba(212, 155, 53, 0.08) 0%, transparent 60%);
+  --bg-overlay: radial-gradient(circle at top right, rgba(201, 166, 107, 0.14), transparent 50%), linear-gradient(180deg, #171717 0%, #1F1F1F 100%);
+  --bg-radial-glow: radial-gradient(circle at 50% 0%, rgba(201, 166, 107, 0.08) 0%, transparent 60%);
 }
 
-/* 4. Dark — Midnight Slate with Sapphire Depth: Arctic Titanium */
+/* 4. Dark — Electric Sapphire (Aliases: arctic-titanium) */
+html[data-theme="electric-sapphire"],
 html[data-theme="arctic-titanium"] {
-  --background: #08111E;
-  --card: #0F1C2E;
-  --card-foreground: #F1F5F9;
-  --sidebar: #0A1525;
-  --popover: #0F1C2E;
-  --popover-foreground: #F1F5F9;
-  --foreground: #F1F5F9;
-  --muted: #16263D;
-  --muted-foreground: #94A3B8;
-  --border: #1E3352;
-  --input: #16263D;
-  --primary: #2563EB;
+  --background: #080F24;
+  --card: #111D38;
+  --card-foreground: #F1F6FF;
+  --sidebar: #060B19;
+  --sidebar-accent: #1D4ED8;
+  --sidebar-foreground: #F1F6FF;
+  --sidebar-muted: #94A8C7;
+  --popover: #111D38;
+  --popover-foreground: #F1F6FF;
+  --foreground: #F1F6FF;
+  --muted: #1B2B4A;
+  --muted-foreground: #94A8C7;
+  --border: #334766;
+  --input: #334766;
+  --primary: #3B82F6;
+  --primary-hover: #2563EB;
   --primary-foreground: #FFFFFF;
-  --secondary: #16263D;
-  --secondary-foreground: #F1F5F9;
-  --accent: rgba(37, 99, 235, 0.15);
-  --accent-foreground: #2563EB;
-  --ring: #2563EB;
+  --secondary: #1B2B4A;
+  --secondary-foreground: #F1F6FF;
+  --accent: rgba(59, 130, 246, 0.16);
+  --accent-foreground: #3B82F6;
+  --ring: #3B82F6;
   --success: hsl(158 75% 38%);
   --warning: hsl(38 92% 50%);
   --destructive: hsl(0 84% 60%);
   --radius: 0.625rem;
-  --bg-overlay: radial-gradient(circle at top right, rgba(37, 99, 235, 0.16), transparent 50%), linear-gradient(180deg, #08111E 0%, #0B1626 100%);
-  --bg-radial-glow: radial-gradient(circle at 50% 0%, rgba(37, 99, 235, 0.08) 0%, transparent 60%);
+  --bg-overlay: radial-gradient(circle at top right, rgba(59, 130, 246, 0.16), transparent 50%), linear-gradient(180deg, #080F24 0%, #0D1735 100%);
+  --bg-radial-glow: radial-gradient(circle at 50% 0%, rgba(59, 130, 246, 0.08) 0%, transparent 60%);
 }
+
+/* ==========================================================================
+   Print Styles
+   ========================================================================== */
 
 @media print {
   aside,
@@ -242,4 +269,3 @@ html[data-theme="arctic-titanium"] {
     box-shadow: none !important;
   }
 }
-

@@ -229,8 +229,8 @@ export function Sidebar({ gymId, gymName, role, branches = [], onNavigate }: Sid
 
   return (
     <aside
-      style={{ backgroundColor: "var(--sidebar)" }}
-      className="w-full md:w-64 bg-sidebar border-r border-border flex flex-col justify-between shrink-0 h-full text-white select-none"
+      style={{ backgroundColor: "var(--sidebar)", color: "var(--sidebar-foreground)" }}
+      className="w-full md:w-64 bg-sidebar border-r border-border flex flex-col justify-between shrink-0 h-full select-none"
     >
       <div className="flex flex-col flex-1 min-h-0">
         {/* Brand / Gym Header */}
@@ -240,7 +240,10 @@ export function Sidebar({ gymId, gymName, role, branches = [], onNavigate }: Sid
               <Dumbbell className="w-5 h-5" />
             </div>
             <div className="min-w-0 flex-1">
-              <div className="font-bold text-white text-sm tracking-tight truncate leading-tight">
+              <div
+                className="font-bold text-sm tracking-tight truncate leading-tight"
+                style={{ color: "var(--sidebar-foreground)" }}
+              >
                 {gymName}
               </div>
               <div className="flex items-center gap-1.5 mt-0.5">
@@ -280,19 +283,21 @@ export function Sidebar({ gymId, gymName, role, branches = [], onNavigate }: Sid
                   type="button"
                   onClick={() => toggleGroup(group.title)}
                   aria-expanded={isOpen}
-                  className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-bold uppercase tracking-wider text-slate-300 hover:text-white hover:bg-white/10 transition-colors cursor-pointer select-none group focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary/20"
+                  className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-bold uppercase tracking-wider hover:opacity-100 hover:bg-white/10 transition-colors cursor-pointer select-none group focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary/20"
+                  style={{ color: "var(--sidebar-muted)" }}
                 >
                   <div className="flex items-center gap-2 min-w-0">
                     <span className="truncate">{group.title}</span>
                     {isGroupActive && !isOpen && (
                       <span
-                        className="w-1.5 h-1.5 rounded-full bg-primary shrink-0"
+                        className="w-1.5 h-1.5 rounded-full shrink-0"
+                        style={{ backgroundColor: "var(--sidebar-accent)" }}
                         title="Active page inside"
                       />
                     )}
                   </div>
                   <ChevronDown
-                    className={`w-3.5 h-3.5 text-slate-400 group-hover:text-white transition-transform duration-200 shrink-0 ${
+                    className={`w-3.5 h-3.5 opacity-70 group-hover:opacity-100 transition-transform duration-200 shrink-0 ${
                       isOpen ? "rotate-180" : ""
                     }`}
                   />
@@ -323,14 +328,27 @@ export function Sidebar({ gymId, gymName, role, branches = [], onNavigate }: Sid
                           onClick={onNavigate}
                           className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-150 ${
                             isActive
-                              ? "bg-primary text-primary-foreground font-semibold shadow-sm"
-                              : "text-slate-300 hover:text-white hover:bg-white/10"
+                              ? "font-semibold shadow-xs"
+                              : "hover:bg-white/10"
                           }`}
+                          style={
+                            isActive
+                              ? {
+                                  backgroundColor: "var(--sidebar-accent)",
+                                  color: "var(--sidebar-foreground)",
+                                }
+                              : {
+                                  color: "var(--sidebar-muted)",
+                                }
+                          }
                         >
                           <Icon
-                            className={`w-4 h-4 shrink-0 transition-colors ${
-                              isActive ? "text-primary-foreground" : "text-slate-400"
-                            }`}
+                            className="w-4 h-4 shrink-0 transition-colors"
+                            style={{
+                              color: isActive
+                                ? "var(--sidebar-foreground)"
+                                : "var(--sidebar-muted)",
+                            }}
                           />
                           <span className="truncate">{item.label}</span>
                         </Link>
