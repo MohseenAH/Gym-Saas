@@ -1,6 +1,7 @@
 "use server";
 
 import { z } from "zod";
+import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { getAuthorizedActionContext } from "@/lib/auth/guard";
 import { getTodayIST, isMembershipValidForAttendance } from "@/lib/utils";
@@ -9,6 +10,8 @@ const staffCheckInSchema = z.object({
   gymId: z.string().uuid("Invalid gym ID"),
   branchId: z.string().uuid("Invalid branch ID"),
   memberId: z.string().uuid("Invalid member ID"),
+  isOverride: z.boolean().optional(),
+  overrideReason: z.string().max(300).optional(),
 });
 
 const memberSelfCheckInSchema = z.object({
@@ -20,6 +23,8 @@ export async function staffCheckInAction(params: {
   gymId: string;
   branchId: string;
   memberId: string;
+  isOverride?: boolean;
+  overrideReason?: string;
 }) {
   try {
     const parseResult = staffCheckInSchema.safeParse(params);
@@ -64,11 +69,24 @@ export async function staffCheckInAction(params: {
 
     const gate = isMembershipValidForAttendance(activeMembership, today);
     if (!gate.isValid) {
-      return {
-        success: false,
-        error: "Membership expired or inactive. Please renew plan before checking in.",
-        isExpired: true,
-      };
+      if (params.isOverride) {
+        const allowedRoles = ["owner", "partner", "manager"];
+        if (!allowedRoles.includes(context.role)) {
+          return {
+            success: false,
+            error: "Grace overrides require Manager or Owner authorization.",
+            isExpired: true,
+            needsManagerOverride: true,
+          };
+        }
+        // Grace override authorized!
+      } else {
+        return {
+          success: false,
+          error: "Membership expired or inactive. Please renew plan before checking in.",
+          isExpired: true,
+        };
+      }
     }
 
     // 3. Pre-check for existing check-in today
@@ -126,9 +144,52 @@ export async function staffCheckInAction(params: {
       return { success: false, error: error.message };
     }
 
+    revalidatePath(`/app/${params.gymId}/attendance`);
     return { success: true, checkInId: checkIn.id, checkInTime: checkIn.check_in_time };
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Failed to record attendance";
+    return { success: false, error: message };
+  }
+}
+
+const undoCheckInSchema = z.object({
+  gymId: z.string().uuid("Invalid gym ID"),
+  attendanceId: z.string().uuid("Invalid attendance ID"),
+});
+
+export async function undoCheckInAction(params: {
+  gymId: string;
+  attendanceId: string;
+}) {
+  try {
+    const parseResult = undoCheckInSchema.safeParse(params);
+    if (!parseResult.success) {
+      return {
+        success: false,
+        error: parseResult.error.issues[0]?.message || "Invalid input parameters",
+      };
+    }
+
+    await getAuthorizedActionContext({
+      gymId: params.gymId,
+      capability: "attendance:record",
+    });
+
+    const supabase = await createClient();
+
+    const { error } = await supabase
+      .from("attendance")
+      .delete()
+      .eq("id", params.attendanceId);
+
+    if (error) {
+      return { success: false, error: error.message };
+    }
+
+    revalidatePath(`/app/${params.gymId}/attendance`);
+    return { success: true };
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : "Failed to void attendance check-in";
     return { success: false, error: message };
   }
 }

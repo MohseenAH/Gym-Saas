@@ -221,3 +221,25 @@ html[data-theme="arctic-titanium"] {
   --bg-overlay: radial-gradient(circle at top right, rgba(37, 99, 235, 0.16), transparent 50%), linear-gradient(180deg, #08111E 0%, #0B1626 100%);
   --bg-radial-glow: radial-gradient(circle at 50% 0%, rgba(37, 99, 235, 0.08) 0%, transparent 60%);
 }
+
+@media print {
+  aside,
+  nav,
+  header,
+  .no-print {
+    display: none !important;
+  }
+  body,
+  main {
+    background: #ffffff !important;
+    color: #000000 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+  .bg-card {
+    background: #ffffff !important;
+    border-color: #cbd5e1 !important;
+    box-shadow: none !important;
+  }
+}
+

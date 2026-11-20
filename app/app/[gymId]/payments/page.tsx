@@ -2,13 +2,29 @@ import { createClient } from "@/lib/supabase/server";
 import { getAuthorizedActionContext } from "@/lib/auth/guard";
 import { cookies } from "next/headers";
 import { resolveBranchContext } from "@/lib/auth/branch-context";
-import { RecordPaymentModal } from "@/components/payments/record-payment-modal";
 import { PaymentsLedgerClient, PaymentLedgerItem } from "@/components/payments/payments-ledger-client";
-import { CreditCard, TrendingUp, Wallet, Banknote, Receipt } from "lucide-react";
 
 interface PaymentsPageProps {
   params: Promise<{ gymId: string }>;
   searchParams?: Promise<{ branchId?: string; memberId?: string }>;
+}
+
+function extractUtrFromNotes(notes?: string | null): string | null {
+  if (!notes) return null;
+  const match = notes.match(/utr[:\s#-]+([A-Za-z0-9_-]+)/i);
+  return match && match[1] ? match[1].trim() : null;
+}
+
+function extractProofUrlFromNotes(notes?: string | null): string | null {
+  if (!notes) return null;
+  const match = notes.match(/https?:\/\/[^\s"',)]+/i);
+  if (match) {
+    const url = match[0];
+    if (url.match(/\.(jpeg|jpg|png|webp|gif)/i) || url.includes("/storage/")) {
+      return url;
+    }
+  }
+  return null;
 }
 
 export default async function PaymentsPage({ params, searchParams }: PaymentsPageProps) {
@@ -49,10 +65,11 @@ export default async function PaymentsPage({ params, searchParams }: PaymentsPag
   let paymentsQuery = supabase
     .from("payments")
     .select(
-      "id, member_id, amount, payment_method, payment_status, payment_date, notes, members(id, full_name, phone, email), branches(name)"
+      "id, member_id, membership_id, amount, payment_method, payment_status, payment_date, notes, created_at, members(id, full_name, phone, email, branch_id), branches(name), memberships(id, membership_plans(name, price))"
     )
     .eq("gym_id", gymId)
-    .order("payment_date", { ascending: false });
+    .order("payment_date", { ascending: false })
+    .order("created_at", { ascending: false });
 
   if (branchContext.selectedBranchId) {
     paymentsQuery = paymentsQuery.eq("branch_id", branchContext.selectedBranchId);
@@ -72,29 +89,14 @@ export default async function PaymentsPage({ params, searchParams }: PaymentsPag
   const members = membersRes.data || [];
   const allPayments = paymentsRes.data || [];
 
-  // Business Correctness: Only count 'paid' and 'partial' payments as collected revenue
-  const validPayments = allPayments.filter(
-    (p) => p.payment_status === "paid" || p.payment_status === "partial"
-  );
-  const totalRevenue = Math.round(validPayments.reduce((sum, p) => sum + Number(p.amount), 0) * 100) / 100;
-
-  // Method breakdown (collected revenue only)
-  let upiTotal = 0;
-  let cashTotal = 0;
-  let cardTotal = 0;
-  validPayments.forEach((p) => {
-    const amt = Number(p.amount);
-    if (p.payment_method === "upi") upiTotal += amt;
-    else if (p.payment_method === "cash") cashTotal += amt;
-    else cardTotal += amt;
-  });
-  upiTotal = Math.round(upiTotal * 100) / 100;
-  cashTotal = Math.round(cashTotal * 100) / 100;
-  cardTotal = Math.round(cardTotal * 100) / 100;
-
   const formattedLedger: PaymentLedgerItem[] = allPayments.map((p) => {
     const member = p.members as unknown as { full_name?: string; phone?: string; email?: string } | null;
     const branch = p.branches as unknown as { name?: string } | null;
+    const membership = p.memberships as unknown as { membership_plans?: { name?: string; price?: number } | null } | null;
+    const utr = extractUtrFromNotes(p.notes);
+    const proofUrl = extractProofUrlFromNotes(p.notes);
+    const planName = membership?.membership_plans?.name || (p.notes && !p.notes.startsWith("Member UPI") ? p.notes : "Membership Fee");
+
     return {
       id: p.id,
       memberId: p.member_id,
@@ -102,90 +104,39 @@ export default async function PaymentsPage({ params, searchParams }: PaymentsPag
       memberPhone: member?.phone || "",
       memberEmail: member?.email || null,
       branchName: branch?.name || "Main Branch",
+      planName,
+      membershipId: p.membership_id,
       amount: Number(p.amount),
       paymentMethod: p.payment_method,
       paymentStatus: p.payment_status,
       paymentDate: p.payment_date,
+      createdAt: p.created_at,
       notes: p.notes,
+      utr,
+      proofUrl,
     };
   });
 
+  const modalMembers = members.map((m) => ({
+    id: m.id,
+    fullName: m.full_name,
+    phone: m.phone,
+    branchId: m.branch_id,
+  }));
+
+  const modalBranches = (branches || []).map((b) => ({
+    id: b.id,
+    name: b.name,
+  }));
+
   return (
-    <div className="space-y-6">
-      {/* Top Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-black text-foreground tracking-tight">Payment & Revenue Ledger</h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            Track member fee collections, payment methods, and automated WhatsApp & printable receipts
-          </p>
-        </div>
-        <RecordPaymentModal
-          gymId={gymId}
-          branches={branches || []}
-          members={(members || []).map((m) => ({
-            id: m.id,
-            fullName: m.full_name,
-            phone: m.phone,
-            branchId: m.branch_id,
-          }))}
-        />
-      </div>
-
-      {/* KPI Cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4">
-        <div className="bg-card/85 backdrop-blur-md p-3.5 sm:p-5 rounded-2xl sm:rounded-3xl border border-border shadow-xs flex items-center gap-3 sm:gap-4 text-card-foreground">
-          <div className="h-8 w-8 sm:h-10 sm:w-10 flex items-center justify-center shrink-0 bg-emerald-500/10 text-emerald-600 rounded-xl sm:rounded-2xl shadow-2xs">
-            <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5" />
-          </div>
-          <div className="min-w-0">
-            <div className="text-xl sm:text-3xl font-bold tracking-tight text-foreground truncate">
-              ₹{totalRevenue.toLocaleString("en-IN", { minimumFractionDigits: 0, maximumFractionDigits: 2 })}
-            </div>
-            <div className="text-xs sm:text-sm font-semibold uppercase tracking-wider text-muted-foreground truncate">Total Revenue</div>
-          </div>
-        </div>
-
-        <div className="bg-card/85 backdrop-blur-md p-3.5 sm:p-5 rounded-2xl sm:rounded-3xl border border-border shadow-xs flex items-center gap-3 sm:gap-4 text-card-foreground">
-          <div className="h-8 w-8 sm:h-10 sm:w-10 flex items-center justify-center shrink-0 bg-primary/10 text-primary rounded-xl sm:rounded-2xl shadow-2xs">
-            <Wallet className="w-4 h-4 sm:w-5 sm:h-5" />
-          </div>
-          <div className="min-w-0">
-            <div className="text-xl sm:text-3xl font-bold tracking-tight text-foreground truncate">
-              ₹{upiTotal.toLocaleString("en-IN")}
-            </div>
-            <div className="text-xs sm:text-sm font-semibold uppercase tracking-wider text-muted-foreground truncate">UPI Collections</div>
-          </div>
-        </div>
-
-        <div className="bg-card/85 backdrop-blur-md p-3.5 sm:p-5 rounded-2xl sm:rounded-3xl border border-border shadow-xs flex items-center gap-3 sm:gap-4 text-card-foreground">
-          <div className="h-8 w-8 sm:h-10 sm:w-10 flex items-center justify-center shrink-0 bg-amber-500/10 text-amber-600 rounded-xl sm:rounded-2xl shadow-2xs">
-            <Banknote className="w-4 h-4 sm:w-5 sm:h-5" />
-          </div>
-          <div className="min-w-0">
-            <div className="text-xl sm:text-3xl font-bold tracking-tight text-foreground truncate">
-              ₹{cashTotal.toLocaleString("en-IN")}
-            </div>
-            <div className="text-xs sm:text-sm font-semibold uppercase tracking-wider text-muted-foreground truncate">Cash Collections</div>
-          </div>
-        </div>
-
-        <div className="bg-card/85 backdrop-blur-md p-3.5 sm:p-5 rounded-2xl sm:rounded-3xl border border-border shadow-xs flex items-center gap-3 sm:gap-4 text-card-foreground">
-          <div className="h-8 w-8 sm:h-10 sm:w-10 flex items-center justify-center shrink-0 bg-blue-500/10 text-blue-600 rounded-xl sm:rounded-2xl shadow-2xs">
-            <Receipt className="w-4 h-4 sm:w-5 sm:h-5" />
-          </div>
-          <div className="min-w-0">
-            <div className="text-xl sm:text-3xl font-bold tracking-tight text-foreground truncate">{allPayments.length}</div>
-            <div className="text-xs sm:text-sm font-semibold uppercase tracking-wider text-muted-foreground truncate">Receipts Issued</div>
-          </div>
-        </div>
-      </div>
-
-      {/* Interactive Payment Ledger with ReceiptModal */}
+    <div className="space-y-4 max-w-7xl mx-auto">
       <PaymentsLedgerClient
         gymId={gymId}
         gymName={gym?.name || "Our Gym"}
         payments={formattedLedger}
+        members={modalMembers}
+        branches={modalBranches}
       />
     </div>
   );
