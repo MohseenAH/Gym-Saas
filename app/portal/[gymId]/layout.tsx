@@ -51,7 +51,7 @@ export default async function MemberPortalLayout({
       <ThemedPageBackground />
 
       {/* Top Header */}
-      <header className="h-16 px-4 sm:px-6 bg-card/90 backdrop-blur-md border-b border-border flex items-center justify-between sticky top-0 z-40 transition-colors">
+      <header className="h-16 px-4 sm:px-6 bg-card border-b border-border flex items-center justify-between sticky top-0 z-40 transition-colors">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 bg-primary text-primary-foreground rounded-2xl flex items-center justify-center shadow-xs">
             <Dumbbell className="w-5 h-5" />
@@ -122,7 +122,7 @@ export default async function MemberPortalLayout({
       </main>
 
       {/* Mobile Bottom Navigation */}
-      <nav className="sm:hidden fixed bottom-0 left-0 right-0 h-16 bg-card/90 backdrop-blur-md border-t border-border flex items-center justify-around z-40 px-2 transition-colors">
+      <nav className="sm:hidden fixed bottom-0 left-0 right-0 h-16 bg-card border-t border-border flex items-center justify-around z-40 px-2 transition-colors">
         <Link
           href={`/portal/${gymId}/dashboard`}
           className="flex flex-col items-center gap-1 text-muted-foreground hover:text-primary active:text-primary text-[11px] font-bold transition-colors"
