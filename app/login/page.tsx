@@ -3,8 +3,9 @@
 import { useActionState, Suspense, useState } from "react";
 import { loginAction } from "@/lib/actions/auth";
 import Link from "next/link";
-import { Dumbbell, Lock, Mail, Loader2, Eye, EyeOff, CheckCircle2 } from "lucide-react";
+import { Lock, Mail, Loader2, Eye, EyeOff, CheckCircle2, AlertCircle } from "lucide-react";
 import { useSearchParams } from "next/navigation";
+import { AuthSplitLayout } from "@/components/auth/auth-split-layout";
 
 function LoginForm() {
   const searchParams = useSearchParams();
@@ -28,132 +29,145 @@ function LoginForm() {
       : null;
 
   return (
-    <div className="w-full max-w-md bg-card rounded-3xl border border-border shadow-xl p-8 sm:p-10 text-card-foreground">
-      <div className="flex flex-col items-center text-center mb-8">
-        <div className="p-3.5 bg-primary text-primary-foreground rounded-2xl shadow-md shadow-primary/20 mb-3.5">
-          <Dumbbell className="w-6 h-6" />
-        </div>
-        <h1 className="text-2xl font-black text-foreground tracking-tight">
-          Sign in to GymApra
-        </h1>
-        <p className="text-sm text-muted-foreground mt-1.5">
-          Access your gym workspace or member portal
-        </p>
-      </div>
-
-      {noticeMessage && (
-        <div className="mb-6 p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-sm text-emerald-600 font-medium animate-in fade-in-50 flex items-start gap-2.5">
-          <CheckCircle2 className="w-4 h-4 shrink-0 mt-0.5" />
-          <span>{noticeMessage}</span>
-        </div>
-      )}
-
-      {errorMessage && (
-        <div className="mb-6 p-4 rounded-xl bg-rose-500/10 border border-rose-500/20 text-sm text-rose-600 font-medium animate-in fade-in-50">
-          {errorMessage}
-        </div>
-      )}
-
-      <form action={formAction} className="space-y-4">
-        {redirectParam && (
-          <input type="hidden" name="redirect" value={redirectParam} />
+    <AuthSplitLayout
+      imageSrc="/images/auth-gym-dumbbells.jpg"
+      imageAlt="Gym dumbbells rack with cool lighting"
+      leftHeadline={"Run Your Gym.\nSimplify Everything."}
+      leftSubheadline="The complete operating system for fitness clubs, trainers, and gym owners."
+      desktopTitle="Welcome back"
+      desktopSubtitle="Sign in to your GymApra account to continue."
+      mobileHeadline={"Run Your Gym.\nSimplify Everything."}
+      mobileSubheadline="Sign in to your GymApra account."
+    >
+      <div className="w-full">
+        {noticeMessage && (
+          <div className="mb-4 p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-xs sm:text-sm text-emerald-800 font-medium animate-in fade-in-50 flex items-start gap-2.5">
+            <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+            <span className="leading-snug">{noticeMessage}</span>
+          </div>
         )}
-        <div>
-          <label className="block text-xs font-bold uppercase tracking-wider text-muted-foreground mb-1.5">
-            Email Address
-          </label>
-          <div className="relative">
-            <Mail className="w-4 h-4 text-muted-foreground absolute left-3.5 top-4 pointer-events-none" />
-            <input
-              type="email"
-              name="email"
-              required
-              autoComplete="email"
-              placeholder="owner@yourgym.com"
-              className="h-12 w-full pl-10 pr-4 rounded-xl border border-input bg-background text-foreground text-sm focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:border-primary transition-all"
-            />
-          </div>
-        </div>
 
-        <div>
-          <div className="flex items-center justify-between mb-1.5">
-            <label className="block text-xs font-bold uppercase tracking-wider text-muted-foreground">
-              Password
-            </label>
-            <Link
-              href="/forgot-password"
-              className="text-xs text-primary hover:underline font-semibold"
-            >
-              Forgot?
-            </Link>
+        {errorMessage && (
+          <div className="mb-4 p-3 rounded-xl bg-rose-50 border border-rose-200 text-xs sm:text-sm text-rose-800 font-medium animate-in fade-in-50 flex items-start gap-2.5">
+            <AlertCircle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
+            <span className="leading-snug">{errorMessage}</span>
           </div>
-          <div className="relative">
-            <Lock className="w-4 h-4 text-muted-foreground absolute left-3.5 top-4 pointer-events-none" />
-            <input
-              type={showPassword ? "text" : "password"}
-              name="password"
-              required
-              autoComplete="current-password"
-              placeholder="••••••••"
-              className="h-12 w-full pl-10 pr-11 rounded-xl border border-input bg-background text-foreground text-sm focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:border-primary transition-all"
-            />
-            <button
-              type="button"
-              onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-3.5 top-3.5 text-muted-foreground hover:text-foreground transition-colors p-0.5"
-              title={showPassword ? "Hide password" : "Show password"}
-              tabIndex={-1}
-            >
-              {showPassword ? (
-                <EyeOff className="w-4 h-4" />
-              ) : (
-                <Eye className="w-4 h-4" />
-              )}
-            </button>
-          </div>
-        </div>
+        )}
 
-        <button
-          type="submit"
-          disabled={isPending}
-          className="h-12 w-full mt-3 rounded-xl bg-primary hover:opacity-95 text-primary-foreground font-bold text-sm shadow-md shadow-primary/25 transition-all flex items-center justify-center gap-2 active:scale-[0.99] disabled:opacity-50 cursor-pointer"
-        >
-          {isPending ? (
-            <>
-              <Loader2 className="w-4 h-4 animate-spin" />
-              Signing in...
-            </>
-          ) : (
-            "Sign in"
+        <form action={formAction} className="space-y-3 sm:space-y-3.5">
+          {redirectParam && (
+            <input type="hidden" name="redirect" value={redirectParam} />
           )}
-        </button>
-      </form>
 
-      <div className="mt-8 pt-6 border-t border-border text-center text-xs text-muted-foreground">
-        New gym owner?{" "}
-        <Link
-          href="/signup"
-          className="text-primary hover:underline font-bold"
-        >
-          Create an account
-        </Link>
+          {/* Email field */}
+          <div>
+            <label
+              htmlFor="email"
+              className="block text-xs sm:text-sm font-semibold text-[#10243E] mb-1 sm:mb-1.5"
+            >
+              Email address
+            </label>
+            <div className="relative">
+              <Mail className="w-4 h-4 text-[#94A3B8] absolute left-3.5 top-3.5 sm:top-3 pointer-events-none" />
+              <input
+                id="email"
+                type="email"
+                name="email"
+                required
+                autoComplete="email"
+                placeholder="owner@yourgym.com"
+                className="h-11 sm:h-11 w-full pl-10 sm:pl-10 pr-4 rounded-xl border border-[#CBD5E1] bg-white hover:border-[#94A3B8] text-[#10243E] placeholder-[#94A3B8] text-sm focus:outline-hidden focus:border-[#2563EB] focus:ring-2 focus:ring-[#2563EB]/15 transition-all font-normal"
+              />
+            </div>
+          </div>
+
+          {/* Password field */}
+          <div>
+            <div className="flex items-center justify-between mb-1 sm:mb-1.5">
+              <label
+                htmlFor="password"
+                className="block text-xs sm:text-sm font-semibold text-[#10243E]"
+              >
+                Password
+              </label>
+            </div>
+            <div className="relative">
+              <Lock className="w-4 h-4 text-[#94A3B8] absolute left-3.5 top-3.5 sm:top-3 pointer-events-none" />
+              <input
+                id="password"
+                type={showPassword ? "text" : "password"}
+                name="password"
+                required
+                autoComplete="current-password"
+                placeholder="Enter your password"
+                className="h-11 sm:h-11 w-full pl-10 sm:pl-10 pr-10 rounded-xl border border-[#CBD5E1] bg-white hover:border-[#94A3B8] text-[#10243E] placeholder-[#94A3B8] text-sm focus:outline-hidden focus:border-[#2563EB] focus:ring-2 focus:ring-[#2563EB]/15 transition-all font-normal"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-2 top-2 h-7 w-7 flex items-center justify-center text-[#94A3B8] hover:text-[#10243E] rounded-lg transition-colors cursor-pointer"
+                title={showPassword ? "Hide password" : "Show password"}
+                tabIndex={-1}
+              >
+                {showPassword ? (
+                  <EyeOff className="w-4 h-4" />
+                ) : (
+                  <Eye className="w-4 h-4" />
+                )}
+              </button>
+            </div>
+
+            <div className="flex justify-end mt-1.5">
+              <Link
+                href="/forgot-password"
+                className="text-xs text-[#2563EB] hover:text-[#1D4ED8] hover:underline font-medium transition-colors"
+              >
+                Forgot password?
+              </Link>
+            </div>
+          </div>
+
+          {/* Submit button */}
+          <button
+            type="submit"
+            disabled={isPending}
+            className="h-11 sm:h-11 w-full mt-1.5 rounded-xl bg-[#2563EB] hover:bg-[#1D4ED8] text-white font-semibold text-sm shadow-xs hover:shadow-sm transition-all flex items-center justify-center gap-2 active:scale-[0.99] disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-[#2563EB] focus-visible:ring-offset-2"
+          >
+            {isPending ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" />
+                Signing in...
+              </>
+            ) : (
+              "Sign in"
+            )}
+          </button>
+        </form>
+
+        <div className="mt-5 pt-4 border-t border-[#E2EAF5] text-center text-xs text-[#64748B]">
+          Don&apos;t have an account?{" "}
+          <Link
+            href="/signup"
+            className="text-[#2563EB] hover:text-[#1D4ED8] hover:underline font-bold transition-colors ml-1"
+          >
+            Create account
+          </Link>
+        </div>
       </div>
-    </div>
+    </AuthSplitLayout>
   );
 }
 
 export default function LoginPage() {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background px-4 py-12 transition-colors">
-      <Suspense
-        fallback={
-          <div className="w-full max-w-md bg-card rounded-3xl border border-border shadow-xl p-10 flex justify-center py-16">
-            <Loader2 className="w-7 h-7 animate-spin text-primary" />
-          </div>
-        }
-      >
-        <LoginForm />
-      </Suspense>
-    </div>
+    <Suspense
+      fallback={
+        <div className="min-h-dvh bg-white flex items-center justify-center p-4">
+          <Loader2 className="w-7 h-7 animate-spin text-[#2563EB]" />
+        </div>
+      }
+    >
+      <LoginForm />
+    </Suspense>
   );
 }

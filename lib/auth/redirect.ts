@@ -26,12 +26,12 @@ export function isSafeInternalRedirect(path: string | null | undefined): path is
 }
 
 /**
- * Deterministic redirect helper:
+ * Authoritative server-side redirect resolver:
  * - 0 gyms and no member profile -> /onboarding
- * - Owner/staff of exactly 1 gym -> /app/[gymId]/dashboard (skips /select-workspace)
- * - Owner/staff of >1 gym -> /select-workspace
- * - Only a gym member (1 gym) -> /portal/[gymId]/dashboard
- * - Member of >1 gym -> /select-workspace
+ * - Owner/staff of exactly 1 gym (and 0 member portals) -> /app/[gymId]/dashboard (bypasses /select-workspace)
+ * - Only a member of exactly 1 gym (and 0 staff gyms) -> /portal/[gymId]/dashboard (bypasses /select-workspace)
+ * - Multiple authorized destinations (>1 staff, >1 member, or both) -> /select-workspace
+ * Never trusts client cookies without server-side database verification.
  */
 export async function resolvePostLoginRedirect(
   client?: SupabaseClient,
@@ -74,6 +74,16 @@ export async function resolvePostLoginRedirect(
     gym_id: string;
     role: string;
     gyms?: GymItem | null;
+  }
+  interface BranchInfo {
+    id: string;
+    gym_id: string;
+    gyms?: { id: string; name: string } | null;
+  }
+  interface MemberItem {
+    id: string;
+    branch_id: string;
+    branches?: BranchInfo | null;
   }
 
   const staffMap = new Map<string, StaffEntry>();
@@ -120,37 +130,44 @@ export async function resolvePostLoginRedirect(
   }
 
   const staffList = Array.from(staffMap.values());
-  const memberList = memberProfilesRes.data || [];
 
-  // Rule 1: Owner or staff of exactly 1 gym and not a member elsewhere -> straight to /app/[gymId]/dashboard
-  if (staffList.length === 1 && memberList.length === 0) {
+  // Distinct member portals by gym_id
+  const memberPortalMap = new Map<string, string>(); // gymId -> portal URL
+  const memberList = (memberProfilesRes.data || []) as unknown as MemberItem[];
+  for (const m of memberList) {
+    const gymId = m.branches?.gym_id;
+    if (gymId) {
+      memberPortalMap.set(gymId, `/portal/${gymId}/dashboard`);
+    }
+  }
+
+  const staffCount = staffList.length;
+  const memberCount = memberPortalMap.size;
+  const totalDestinations = staffCount + memberCount;
+
+  // Single-workspace rule:
+  // Exactly 1 staff gym and 0 member portals -> straight to staff dashboard
+  if (staffCount === 1 && memberCount === 0) {
     return {
       path: `/app/${staffList[0].gym_id}/dashboard`,
       type: "staff",
     };
   }
 
-  // Rule 2: Multiple staff workspaces or both staff and member -> /select-workspace
-  if (staffList.length > 1 || (staffList.length > 0 && memberList.length > 0)) {
+  // Exactly 0 staff gyms and 1 member portal -> straight to member portal
+  if (staffCount === 0 && memberCount === 1) {
+    const portalPath = Array.from(memberPortalMap.values())[0];
+    return {
+      path: portalPath,
+      type: "member",
+    };
+  }
+
+  // Multiple workspaces (multiple staff, multiple members, or both) -> /select-workspace
+  if (totalDestinations > 1) {
     return { path: "/select-workspace", type: "selector" };
   }
 
-  // Rule 3: Only a gym member
-  if (memberList.length === 1) {
-    const branches = memberList[0].branches as unknown as { gym_id?: string } | null;
-    const gymId = branches?.gym_id;
-    if (gymId) {
-      return {
-        path: `/portal/${gymId}/dashboard`,
-        type: "member",
-      };
-    }
-  }
-
-  if (memberList.length > 1) {
-    return { path: "/select-workspace", type: "selector" };
-  }
-
-  // Rule 4: Authenticated user with 0 gyms and no member profile -> /onboarding
+  // Zero workspaces found -> /onboarding
   return { path: "/onboarding", type: "onboarding" };
 }

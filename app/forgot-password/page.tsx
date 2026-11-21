@@ -3,7 +3,8 @@
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import Link from "next/link";
-import { Dumbbell, Mail, ArrowLeft, Loader2, CheckCircle2 } from "lucide-react";
+import { Mail, ArrowLeft, Loader2, CheckCircle2, AlertCircle } from "lucide-react";
+import { AuthSplitLayout } from "@/components/auth/auth-split-layout";
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("");
@@ -37,60 +38,70 @@ export default function ForgotPasswordPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background px-4 py-12 transition-colors">
-      <div className="w-full max-w-md bg-card rounded-3xl border border-border shadow-xl p-8 sm:p-10 text-card-foreground">
-        <div className="flex flex-col items-center text-center mb-8">
-          <div className="p-3.5 bg-primary text-primary-foreground rounded-2xl shadow-md shadow-primary/20 mb-3.5">
-            <Dumbbell className="w-6 h-6" />
+    <AuthSplitLayout
+      imageSrc="/images/auth-gym-kettlebells.jpg"
+      imageAlt="Gym kettlebells equipment with deep navy tones"
+      leftHeadline={"Need Help\nSigning In?"}
+      leftSubheadline="Recover access to your gym workspace or member account securely."
+      desktopTitle="Forgot your password?"
+      desktopSubtitle="Enter your email address and we'll send you a recovery link."
+      mobileHeadline="Forgot your password?"
+      mobileSubheadline="Enter your email address and we'll send you a recovery link."
+    >
+      <div className="w-full">
+        {error && (
+          <div className="mb-4 p-3 rounded-xl bg-rose-50 border border-rose-200 text-xs sm:text-sm text-rose-800 font-medium animate-in fade-in-50 flex items-start gap-2.5">
+            <AlertCircle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
+            <span className="leading-snug">{error}</span>
           </div>
-          <h1 className="text-2xl font-black text-foreground tracking-tight">
-            Reset Password
-          </h1>
-          <p className="text-sm text-muted-foreground mt-1.5">
-            Enter your email to receive recovery instructions
-          </p>
-        </div>
+        )}
 
         {submitted ? (
-          <div className="p-6 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-center space-y-3">
-            <CheckCircle2 className="w-10 h-10 text-emerald-600 mx-auto" />
-            <h3 className="text-base font-bold text-foreground">
-              Reset Link Sent
-            </h3>
-            <p className="text-xs text-muted-foreground leading-relaxed">
-              If an account exists with <span className="font-semibold text-foreground">{email}</span>, you will receive password reset instructions shortly.
-            </p>
-            <div className="pt-3">
-              <Link
-                href="/login"
-                className="text-xs font-bold text-primary hover:underline"
-              >
-                Return to Login
-              </Link>
+          <div className="space-y-4">
+            <div className="p-3.5 rounded-xl bg-emerald-50/90 border border-emerald-200 flex items-start gap-3 animate-in fade-in-50">
+              <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" />
+              <div>
+                <h3 className="text-sm font-bold text-emerald-900">
+                  Check your email
+                </h3>
+                <p className="text-xs text-emerald-800/90 mt-1 leading-relaxed">
+                  If an account exists, you&apos;ll receive a password reset link shortly at{" "}
+                  <span className="font-semibold text-emerald-950">{email}</span>.
+                </p>
+              </div>
             </div>
+
+            <button
+              type="button"
+              onClick={() => {
+                setSubmitted(false);
+                setEmail("");
+              }}
+              className="text-xs sm:text-sm text-[#2563EB] hover:text-[#1D4ED8] hover:underline font-semibold block text-center w-full cursor-pointer pt-1"
+            >
+              Didn&apos;t receive it? Try another email
+            </button>
           </div>
         ) : (
-          <form onSubmit={handleSubmit} className="space-y-4">
-            {error && (
-              <div className="p-4 rounded-xl bg-rose-500/10 border border-rose-500/20 text-sm text-rose-600 font-medium">
-                {error}
-              </div>
-            )}
-
+          <form onSubmit={handleSubmit} className="space-y-3.5">
             <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-muted-foreground mb-1.5">
-                Email Address
+              <label
+                htmlFor="email"
+                className="block text-xs sm:text-sm font-semibold text-[#10243E] mb-1 sm:mb-1.5"
+              >
+                Email address
               </label>
               <div className="relative">
-                <Mail className="w-4 h-4 text-muted-foreground absolute left-3.5 top-4 pointer-events-none" />
+                <Mail className="w-4 h-4 text-[#94A3B8] absolute left-3.5 top-3.5 sm:top-3 pointer-events-none" />
                 <input
+                  id="email"
                   type="email"
                   required
                   autoComplete="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="owner@yourgym.com"
-                  className="h-12 w-full pl-10 pr-4 rounded-xl border border-input bg-background text-foreground text-sm focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:border-primary transition-all"
+                  className="h-11 sm:h-11 w-full pl-10 pr-4 rounded-xl border border-[#CBD5E1] bg-white hover:border-[#94A3B8] text-[#10243E] placeholder-[#94A3B8] text-sm focus:outline-hidden focus:border-[#2563EB] focus:ring-2 focus:ring-[#2563EB]/15 transition-all font-normal"
                 />
               </div>
             </div>
@@ -98,12 +109,12 @@ export default function ForgotPasswordPage() {
             <button
               type="submit"
               disabled={loading}
-              className="h-12 w-full mt-3 rounded-xl bg-primary hover:opacity-95 text-primary-foreground font-bold text-sm shadow-md shadow-primary/25 transition-all flex items-center justify-center gap-2 active:scale-[0.99] disabled:opacity-50 cursor-pointer"
+              className="h-11 sm:h-11 w-full mt-1.5 rounded-xl bg-[#2563EB] hover:bg-[#1D4ED8] text-white font-semibold text-sm shadow-xs hover:shadow-sm transition-all flex items-center justify-center gap-2 active:scale-[0.99] disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-[#2563EB] focus-visible:ring-offset-2"
             >
               {loading ? (
                 <>
                   <Loader2 className="w-4 h-4 animate-spin" />
-                  Sending Link...
+                  Sending link...
                 </>
               ) : (
                 "Send Reset Link"
@@ -112,15 +123,15 @@ export default function ForgotPasswordPage() {
           </form>
         )}
 
-        <div className="mt-8 pt-6 border-t border-border text-center">
+        <div className="mt-5 pt-4 border-t border-[#E2EAF5] text-center">
           <Link
             href="/login"
-            className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground font-semibold transition-colors"
+            className="inline-flex items-center gap-1.5 text-xs sm:text-sm text-[#2563EB] hover:text-[#1D4ED8] font-bold hover:underline transition-colors"
           >
-            <ArrowLeft className="w-3.5 h-3.5" /> Back to sign in
+            <ArrowLeft className="w-3.5 h-3.5" /> Back to login
           </Link>
         </div>
       </div>
-    </div>
+    </AuthSplitLayout>
   );
 }

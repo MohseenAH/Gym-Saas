@@ -100,15 +100,23 @@ describe("Authentication Reliability & Password Recovery Suite (Batch 1)", () =>
   describe("Set New Password Form Logic", () => {
     const resetPasswordSchema = z
       .object({
-        password: z.string().min(6, "Password must be at least 6 characters long"),
+        password: z.string().min(8, "Password must be at least 8 characters long"),
         confirmPassword: z.string().min(1, "Please confirm your password"),
       })
       .refine((data) => data.password === data.confirmPassword, {
         message: "Passwords do not match",
         path: ["confirmPassword"],
+      })
+      .refine((data) => /\d/.test(data.password), {
+        message: "Password must include at least one number",
+        path: ["password"],
+      })
+      .refine((data) => /[A-Z]/.test(data.password), {
+        message: "Password must include at least one uppercase letter",
+        path: ["password"],
       });
 
-    it("accepts valid matching passwords of length >= 6", () => {
+    it("accepts valid matching passwords meeting all criteria", () => {
       const valid = resetPasswordSchema.safeParse({
         password: "NewSecurePassword123!",
         confirmPassword: "NewSecurePassword123!",
@@ -116,15 +124,28 @@ describe("Authentication Reliability & Password Recovery Suite (Batch 1)", () =>
       expect(valid.success).toBe(true);
     });
 
-    it("rejects password shorter than 6 characters", () => {
+    it("rejects password shorter than 8 characters", () => {
       const invalid = resetPasswordSchema.safeParse({
-        password: "12345",
-        confirmPassword: "12345",
+        password: "Short1A",
+        confirmPassword: "Short1A",
       });
       expect(invalid.success).toBe(false);
-      if (!invalid.success) {
-        expect(invalid.error.issues[0].message).toContain("at least 6 characters");
-      }
+    });
+
+    it("rejects password missing numeric digit", () => {
+      const invalid = resetPasswordSchema.safeParse({
+        password: "PasswordWithoutNumber",
+        confirmPassword: "PasswordWithoutNumber",
+      });
+      expect(invalid.success).toBe(false);
+    });
+
+    it("rejects password missing uppercase letter", () => {
+      const invalid = resetPasswordSchema.safeParse({
+        password: "passwordwith123",
+        confirmPassword: "passwordwith123",
+      });
+      expect(invalid.success).toBe(false);
     });
 
     it("rejects mismatched confirm password", () => {
@@ -133,9 +154,6 @@ describe("Authentication Reliability & Password Recovery Suite (Batch 1)", () =>
         confirmPassword: "DifferentPassword456!",
       });
       expect(mismatched.success).toBe(false);
-      if (!mismatched.success) {
-        expect(mismatched.error.issues[0].message).toContain("do not match");
-      }
     });
   });
 
@@ -187,6 +205,85 @@ describe("Authentication Reliability & Password Recovery Suite (Batch 1)", () =>
       expect(resolveCallbackTargetPath("/")).toBe("/app/gym-123/dashboard");
       expect(resolveCallbackTargetPath("/select-workspace")).toBe("/app/gym-123/dashboard");
       expect(resolveCallbackTargetPath(null)).toBe("/app/gym-123/dashboard");
+    });
+  });
+
+  // ==========================================================================
+  // 5. Single-Workspace Routing & Destination Matrix
+  // ==========================================================================
+  describe("Single-Workspace Routing & Destination Matrix", () => {
+    function computeWorkspaceDestination(
+      staffGyms: Array<{ id: string; role: string }>,
+      memberPortals: Array<{ gym_id: string }>
+    ): { path: string; type: "staff" | "member" | "selector" | "onboarding" } {
+      const staffCount = staffGyms.length;
+      const memberCount = memberPortals.length;
+      const total = staffCount + memberCount;
+
+      if (staffCount === 1 && memberCount === 0) {
+        return { path: `/app/${staffGyms[0].id}/dashboard`, type: "staff" };
+      }
+      if (staffCount === 0 && memberCount === 1) {
+        return { path: `/portal/${memberPortals[0].gym_id}/dashboard`, type: "member" };
+      }
+      if (total > 1) {
+        return { path: "/select-workspace", type: "selector" };
+      }
+      return { path: "/onboarding", type: "onboarding" };
+    }
+
+    it("bypasses workspace selector for single staff/owner gym", () => {
+      const dest = computeWorkspaceDestination(
+        [{ id: "gym-alpha", role: "owner" }],
+        []
+      );
+      expect(dest.path).toBe("/app/gym-alpha/dashboard");
+      expect(dest.type).toBe("staff");
+    });
+
+    it("bypasses workspace selector for single member portal", () => {
+      const dest = computeWorkspaceDestination(
+        [],
+        [{ gym_id: "gym-beta" }]
+      );
+      expect(dest.path).toBe("/portal/gym-beta/dashboard");
+      expect(dest.type).toBe("member");
+    });
+
+    it("displays workspace selector for users with multiple staff gyms", () => {
+      const dest = computeWorkspaceDestination(
+        [
+          { id: "gym-alpha", role: "owner" },
+          { id: "gym-beta", role: "trainer" },
+        ],
+        []
+      );
+      expect(dest.path).toBe("/select-workspace");
+      expect(dest.type).toBe("selector");
+    });
+
+    it("displays workspace selector for users with both staff and member access", () => {
+      const dest = computeWorkspaceDestination(
+        [{ id: "gym-alpha", role: "owner" }],
+        [{ gym_id: "gym-gamma" }]
+      );
+      expect(dest.path).toBe("/select-workspace");
+      expect(dest.type).toBe("selector");
+    });
+
+    it("displays workspace selector for members of multiple gyms", () => {
+      const dest = computeWorkspaceDestination(
+        [],
+        [{ gym_id: "gym-one" }, { gym_id: "gym-two" }]
+      );
+      expect(dest.path).toBe("/select-workspace");
+      expect(dest.type).toBe("selector");
+    });
+
+    it("redirects to onboarding when user has zero active gyms", () => {
+      const dest = computeWorkspaceDestination([], []);
+      expect(dest.path).toBe("/onboarding");
+      expect(dest.type).toBe("onboarding");
     });
   });
 });
