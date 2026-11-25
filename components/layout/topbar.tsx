@@ -304,7 +304,7 @@ export function Topbar({
                   <span className="capitalize text-primary font-semibold">{theme}</span>
                 </div>
                 <div className="grid grid-cols-4 gap-1">
-                  {(["emerald-mist", "glacier-frost", "obsidian-champagne", "electric-sapphire"] as GymTheme[]).map((t) => {
+                  {(["titanium-chalk", "glacier-frost", "obsidian-champagne", "obsidian-ember"] as GymTheme[]).map((t) => {
                     const cfg = THEME_CONFIGS[t];
                     if (!cfg) return null;
                     const isCurrent = theme === t;

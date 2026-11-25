@@ -12,6 +12,7 @@
   --color-sidebar: var(--sidebar);
   --color-sidebar-accent: var(--sidebar-accent);
   --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-active-foreground: var(--sidebar-active-foreground);
   --color-sidebar-muted: var(--sidebar-muted);
   --color-popover: var(--popover);
   --color-popover-foreground: var(--popover-foreground);
@@ -113,38 +114,40 @@ input, select, textarea {
    GymApra V2 — Final 4 Color Themes (2 Light + 2 Dark)
    ========================================================================== */
 
-/* 1. Light — Default Light Theme: Emerald Mist (Aliases: alpine-jade) */
+/* 1. Light — Default Light Theme: Titanium Chalk (Aliases: emerald-mist, alpine-jade) */
 :root,
+html[data-theme="titanium-chalk"],
 html[data-theme="emerald-mist"],
 html[data-theme="alpine-jade"] {
-  --background: #DDEFE6;
+  --background: #F8F9FA;
   --card: #FFFFFF;
-  --card-foreground: #123D30;
-  --sidebar: #064E3B;
-  --sidebar-accent: #126C54;
+  --card-foreground: #09090B;
+  --sidebar: #18181B;
+  --sidebar-accent: #3F3F46;
   --sidebar-foreground: #FFFFFF;
-  --sidebar-muted: #A7F3D0;
+  --sidebar-active-foreground: #FFFFFF;
+  --sidebar-muted: #D4D4D8;
   --popover: #FFFFFF;
-  --popover-foreground: #123D30;
-  --foreground: #123D30;
-  --muted: #D3E9DD;
-  --muted-foreground: #3B6B5C;
-  --border: #B7D8C9;
-  --input: #B7D8C9;
-  --primary: #059669;
-  --primary-hover: #047857;
+  --popover-foreground: #09090B;
+  --foreground: #09090B;
+  --muted: #F4F4F5;
+  --muted-foreground: #71717A;
+  --border: #E4E4E7;
+  --input: #E4E4E7;
+  --primary: #18181B;
+  --primary-hover: #27272A;
   --primary-foreground: #FFFFFF;
-  --secondary: #D3E9DD;
-  --secondary-foreground: #123D30;
-  --accent: rgba(5, 150, 105, 0.12);
-  --accent-foreground: #059669;
-  --ring: #059669;
-  --success: hsl(158 75% 38%);
+  --secondary: #F4F4F5;
+  --secondary-foreground: #09090B;
+  --accent: #F4F4F5;
+  --accent-foreground: #18181B;
+  --ring: #18181B;
+  --success: hsl(142 71% 45%);
   --warning: hsl(38 92% 50%);
   --destructive: hsl(0 84% 60%);
   --radius: 0.625rem;
-  --bg-overlay: radial-gradient(circle at 85% 10%, rgba(5, 150, 105, 0.08), transparent 45%), linear-gradient(135deg, #D5EBE0 0%, #E3F2EB 52%, #D0E7DC 100%);
-  --bg-radial-glow: radial-gradient(circle at 50% 0%, rgba(5, 150, 105, 0.06) 0%, transparent 60%);
+  --bg-overlay: linear-gradient(135deg, #F4F5F7 0%, #F8F9FA 52%, #F1F3F5 100%);
+  --bg-radial-glow: radial-gradient(circle at 50% 0%, rgba(24, 24, 27, 0.03) 0%, transparent 60%);
 }
 
 /* 2. Light — Glacier Frost (Aliases: glacier-slate) */
@@ -212,37 +215,39 @@ html[data-theme="obsidian-champagne"] {
   --bg-radial-glow: radial-gradient(circle at 50% 0%, rgba(201, 166, 107, 0.08) 0%, transparent 60%);
 }
 
-/* 4. Dark — Electric Sapphire (Aliases: arctic-titanium) */
+/* 4. Dark — Obsidian Ember (Aliases: electric-sapphire, arctic-titanium) */
+html[data-theme="obsidian-ember"],
 html[data-theme="electric-sapphire"],
 html[data-theme="arctic-titanium"] {
-  --background: #080F24;
-  --card: #111D38;
-  --card-foreground: #F1F6FF;
-  --sidebar: #060B19;
-  --sidebar-accent: #1D4ED8;
-  --sidebar-foreground: #F1F6FF;
-  --sidebar-muted: #94A8C7;
-  --popover: #111D38;
-  --popover-foreground: #F1F6FF;
-  --foreground: #F1F6FF;
-  --muted: #1B2B4A;
-  --muted-foreground: #94A8C7;
-  --border: #334766;
-  --input: #334766;
-  --primary: #3B82F6;
-  --primary-hover: #2563EB;
-  --primary-foreground: #FFFFFF;
-  --secondary: #1B2B4A;
-  --secondary-foreground: #F1F6FF;
-  --accent: rgba(59, 130, 246, 0.16);
-  --accent-foreground: #3B82F6;
-  --ring: #3B82F6;
-  --success: hsl(158 75% 38%);
+  --background: #121212;
+  --card: #1C1C1C;
+  --card-foreground: #FAFAFA;
+  --sidebar: #090909;
+  --sidebar-accent: #332013;
+  --sidebar-foreground: #FAFAFA;
+  --sidebar-active-foreground: #FF6500;
+  --sidebar-muted: #A1A1AA;
+  --popover: #1C1C1C;
+  --popover-foreground: #FAFAFA;
+  --foreground: #FAFAFA;
+  --muted: #262626;
+  --muted-foreground: #A1A1AA;
+  --border: #303030;
+  --input: #303030;
+  --primary: #FF6500;
+  --primary-hover: #FF8533;
+  --primary-foreground: #090909;
+  --secondary: #262626;
+  --secondary-foreground: #FAFAFA;
+  --accent: #332013;
+  --accent-foreground: #FF6500;
+  --ring: #FF6500;
+  --success: hsl(142 71% 45%);
   --warning: hsl(38 92% 50%);
   --destructive: hsl(0 84% 60%);
   --radius: 0.625rem;
-  --bg-overlay: radial-gradient(circle at top right, rgba(59, 130, 246, 0.16), transparent 50%), linear-gradient(180deg, #080F24 0%, #0D1735 100%);
-  --bg-radial-glow: radial-gradient(circle at 50% 0%, rgba(59, 130, 246, 0.08) 0%, transparent 60%);
+  --bg-overlay: linear-gradient(180deg, #121212 0%, #161616 100%);
+  --bg-radial-glow: none;
 }
 
 /* ==========================================================================

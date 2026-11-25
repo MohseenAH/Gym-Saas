@@ -1,6 +1,7 @@
 import { verifyInvitationTokenAction } from "@/lib/actions/invitations";
 import { StaffAcceptanceClient } from "./client";
-import { Dumbbell, AlertTriangle } from "lucide-react";
+import { AlertTriangle } from "lucide-react";
+import { GymApraLogo } from "@/components/ui/gymapra-logo";
 import Link from "next/link";
 
 interface PageProps {
@@ -39,8 +40,8 @@ export default async function StaffInvitePage({ params }: PageProps) {
     <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
       <div className="w-full max-w-md bg-white rounded-2xl border border-slate-200/80 shadow-sm p-8">
         <div className="flex flex-col items-center text-center mb-6">
-          <div className="p-3 bg-indigo-600 text-white rounded-2xl shadow-sm mb-3">
-            <Dumbbell className="w-6 h-6" />
+          <div className="p-2.5 bg-black rounded-2xl shadow-sm mb-3 flex items-center justify-center">
+            <GymApraLogo variant="symbol" size="md" />
           </div>
           <h1 className="text-2xl font-bold text-slate-900 tracking-tight">
             Join {verification.gym_name}

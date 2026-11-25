@@ -3,16 +3,16 @@
 // ============================================================================
 
 export type ThemeId =
-  | "emerald-mist"
+  | "titanium-chalk"
   | "glacier-frost"
   | "obsidian-champagne"
-  | "electric-sapphire";
+  | "obsidian-ember";
 
 export const VALID_THEMES: readonly ThemeId[] = [
-  "emerald-mist",
+  "titanium-chalk",
   "glacier-frost",
   "obsidian-champagne",
-  "electric-sapphire",
+  "obsidian-ember",
 ] as const;
 
 export function isValidTheme(theme: string | null | undefined): theme is ThemeId {
@@ -38,22 +38,22 @@ export interface ThemeMetadata {
 
 export const THEME_LIST: ThemeMetadata[] = [
   {
-    id: "emerald-mist",
-    name: "Emerald Mist",
+    id: "titanium-chalk",
+    name: "Titanium Chalk",
     mode: "light",
-    description: "Fresh, natural emerald & mist-white identity (Default Light).",
-    primaryColor: "#059669",
-    primaryHover: "#047857",
-    bgTone: "#DDEFE6",
-    swatchColors: ["#FFFFFF", "#059669"],
+    description: "Crisp architectural chalk-white with sharp zinc contrast (Default Light).",
+    primaryColor: "#18181B",
+    primaryHover: "#27272A",
+    bgTone: "#F8F9FA",
+    swatchColors: ["#FFFFFF", "#18181B"],
     overlayCss:
-      "radial-gradient(circle at 85% 10%, rgba(5, 150, 105, 0.08), transparent 45%), linear-gradient(135deg, #D5EBE0 0%, #E3F2EB 52%, #D0E7DC 100%)",
+      "linear-gradient(135deg, #F4F5F7 0%, #F8F9FA 52%, #F1F3F5 100%)",
     radialGlow:
-      "radial-gradient(circle at 50% 0%, rgba(5, 150, 105, 0.06) 0%, transparent 60%)",
-    sidebarBg: "#064E3B",
-    sidebarAccent: "#126C54",
+      "radial-gradient(circle at 50% 0%, rgba(24, 24, 27, 0.03) 0%, transparent 60%)",
+    sidebarBg: "#18181B",
+    sidebarAccent: "#3F3F46",
     sidebarForeground: "#FFFFFF",
-    sidebarMuted: "#A7F3D0",
+    sidebarMuted: "#D4D4D8",
   },
   {
     id: "glacier-frost",
@@ -92,22 +92,21 @@ export const THEME_LIST: ThemeMetadata[] = [
     sidebarMuted: "#A8A29E",
   },
   {
-    id: "electric-sapphire",
-    name: "Electric Sapphire",
+    id: "obsidian-ember",
+    name: "Obsidian Ember",
     mode: "dark",
-    description: "Cool, high-energy deep sapphire with vivid electric blue.",
-    primaryColor: "#3B82F6",
-    primaryHover: "#2563EB",
-    bgTone: "#080F24",
-    swatchColors: ["#111D38", "#3B82F6"],
+    description: "Deep obsidian charcoal with high-contrast ember orange accents.",
+    primaryColor: "#FF6500",
+    primaryHover: "#FF8533",
+    bgTone: "#121212",
+    swatchColors: ["#1C1C1C", "#FF6500"],
     overlayCss:
-      "radial-gradient(circle at top right, rgba(59, 130, 246, 0.16), transparent 50%), linear-gradient(180deg, #080F24 0%, #0D1735 100%)",
-    radialGlow:
-      "radial-gradient(circle at 50% 0%, rgba(59, 130, 246, 0.08) 0%, transparent 60%)",
-    sidebarBg: "#060B19",
-    sidebarAccent: "#1D4ED8",
-    sidebarForeground: "#F1F6FF",
-    sidebarMuted: "#94A8C7",
+      "linear-gradient(180deg, #121212 0%, #161616 100%)",
+    radialGlow: "none",
+    sidebarBg: "#090909",
+    sidebarAccent: "#332013",
+    sidebarForeground: "#FAFAFA",
+    sidebarMuted: "#A1A1AA",
   },
 ];
 
@@ -119,4 +118,4 @@ export const THEMES_BY_ID: Record<ThemeId, ThemeMetadata> = THEME_LIST.reduce(
   {} as Record<ThemeId, ThemeMetadata>
 );
 
-export const DEFAULT_THEME_ID: ThemeId = "emerald-mist";
+export const DEFAULT_THEME_ID: ThemeId = "titanium-chalk";

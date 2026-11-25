@@ -26,13 +26,13 @@ export const THEME_CONFIGS: Record<
     swatchColors: [string, string];
   }
 > = {
-  "emerald-mist": {
-    label: "Emerald Mist",
-    description: "Fresh, natural emerald & mist-white identity (Default Light).",
-    primaryColor: "#059669",
-    bgTone: "#DDEFE6",
+  "titanium-chalk": {
+    label: "Titanium Chalk",
+    description: "Crisp architectural chalk-white with sharp zinc contrast (Default Light).",
+    primaryColor: "#18181B",
+    bgTone: "#F8F9FA",
     mode: "light",
-    swatchColors: ["#FFFFFF", "#059669"],
+    swatchColors: ["#FFFFFF", "#18181B"],
   },
   "glacier-frost": {
     label: "Glacier Frost",
@@ -50,19 +50,20 @@ export const THEME_CONFIGS: Record<
     mode: "dark",
     swatchColors: ["#242424", "#C9A66B"],
   },
-  "electric-sapphire": {
-    label: "Electric Sapphire",
-    description: "Cool, high-energy deep sapphire with vivid electric blue.",
-    primaryColor: "#3B82F6",
-    bgTone: "#080F24",
+  "obsidian-ember": {
+    label: "Obsidian Ember",
+    description: "Deep obsidian charcoal with high-contrast ember orange accents.",
+    primaryColor: "#FF6500",
+    bgTone: "#121212",
     mode: "dark",
-    swatchColors: ["#111D38", "#3B82F6"],
+    swatchColors: ["#1C1C1C", "#FF6500"],
   },
 };
 
 export function isDarkTheme(theme: ThemeId | string | null | undefined): boolean {
   return (
     theme === "obsidian-champagne" ||
+    theme === "obsidian-ember" ||
     theme === "electric-sapphire" ||
     theme === "arctic-titanium" ||
     theme === "dark" ||
@@ -75,15 +76,20 @@ export function normalizeTheme(rawTheme: string | null | undefined): ThemeId {
   if (!rawTheme) return DEFAULT_THEME_ID;
   if (isValidTheme(rawTheme)) return rawTheme;
 
-  // Legacy Theme Fallbacks
-  if (rawTheme === "alpine-jade" || rawTheme === "light" || rawTheme === "sage") {
-    return "emerald-mist";
+  // Legacy Theme Fallbacks & Replaced Theme Migrations
+  if (
+    rawTheme === "emerald-mist" ||
+    rawTheme === "alpine-jade" ||
+    rawTheme === "light" ||
+    rawTheme === "sage"
+  ) {
+    return "titanium-chalk";
   }
   if (rawTheme === "glacier-slate") {
     return "glacier-frost";
   }
-  if (rawTheme === "arctic-titanium") {
-    return "electric-sapphire";
+  if (rawTheme === "electric-sapphire" || rawTheme === "arctic-titanium") {
+    return "obsidian-ember";
   }
   if (
     rawTheme === "obsidian-champagne" ||

@@ -17,12 +17,12 @@ import {
   Building2,
   Bell,
   Settings,
-  Dumbbell,
   ArrowLeftRight,
   Compass,
   ChevronDown,
   PhoneCall,
 } from "lucide-react";
+import { GymApraLogo } from "@/components/ui/gymapra-logo";
 
 interface NavItem {
   label: string;
@@ -236,8 +236,8 @@ export function Sidebar({ gymId, gymName, role, branches = [], onNavigate }: Sid
         {/* Brand / Gym Header */}
         <div className="h-16 px-4 border-b border-border flex items-center justify-between shrink-0">
           <div className="flex items-center gap-3 min-w-0 pr-8 md:pr-0">
-            <div className="p-2.5 bg-primary text-primary-foreground rounded-xl shadow-xs shrink-0 flex items-center justify-center">
-              <Dumbbell className="w-5 h-5" />
+            <div className="w-10 h-10 bg-black rounded-xl border border-white/15 shadow-xs shrink-0 flex items-center justify-center p-1.5">
+              <GymApraLogo variant="symbol" size="sm" />
             </div>
             <div className="min-w-0 flex-1">
               <div
@@ -335,7 +335,7 @@ export function Sidebar({ gymId, gymName, role, branches = [], onNavigate }: Sid
                             isActive
                               ? {
                                   backgroundColor: "var(--sidebar-accent)",
-                                  color: "var(--sidebar-foreground)",
+                                  color: "var(--sidebar-active-foreground, var(--sidebar-foreground))",
                                 }
                               : {
                                   color: "var(--sidebar-muted)",
@@ -346,7 +346,7 @@ export function Sidebar({ gymId, gymName, role, branches = [], onNavigate }: Sid
                             className="w-4 h-4 shrink-0 transition-colors"
                             style={{
                               color: isActive
-                                ? "var(--sidebar-foreground)"
+                                ? "var(--sidebar-active-foreground, var(--sidebar-foreground))"
                                 : "var(--sidebar-muted)",
                             }}
                           />

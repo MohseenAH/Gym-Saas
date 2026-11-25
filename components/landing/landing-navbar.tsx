@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { Dumbbell, Menu, X } from "lucide-react";
+import { Menu, X } from "lucide-react";
+import { GymApraLogo } from "@/components/ui/gymapra-logo";
 
 export function LandingNavbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -32,13 +33,8 @@ export function LandingNavbar() {
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
         {/* Logo */}
-        <Link href="/" className="flex items-center gap-2 group select-none flex-shrink-0">
-          <div className="w-9 h-9 rounded-xl bg-[#2563EB] text-white flex items-center justify-center shadow-sm transition-transform group-hover:scale-105">
-            <Dumbbell className="w-5 h-5 -rotate-45" />
-          </div>
-          <span className="text-lg font-bold tracking-tight text-[#10243E]">
-            GymApra
-          </span>
+        <Link href="/" className="flex items-center group select-none flex-shrink-0 transition-transform group-hover:scale-[1.02]">
+          <GymApraLogo variant="dark" size="md" />
         </Link>
 
         {/* Desktop Nav */}

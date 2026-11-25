@@ -4,7 +4,6 @@ import { resolvePostLoginRedirect } from "@/lib/auth/redirect";
 import { redirect } from "next/navigation";
 import { cookies } from "next/headers";
 import {
-  Dumbbell,
   ArrowRight,
   Zap,
   Users,
@@ -23,6 +22,7 @@ import {
 import { LandingNavbar } from "@/components/landing/landing-navbar";
 import { LandingHeroWaves } from "@/components/landing/landing-hero-waves";
 import { LandingIllustration } from "@/components/landing/landing-illustration";
+import { GymApraLogo } from "@/components/ui/gymapra-logo";
 import { LandingFaq } from "@/components/landing/landing-faq";
 
 // ─── Feature card data ───────────────────────────────────────────────────────
@@ -360,13 +360,8 @@ export default async function HomePage() {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8 lg:gap-10">
             {/* Brand */}
             <div className="col-span-2 md:col-span-1">
-              <Link href="/" className="inline-flex items-center gap-2 select-none mb-3">
-                <div className="w-8 h-8 rounded-xl bg-[#2563EB] flex items-center justify-center">
-                  <Dumbbell className="w-4 h-4 text-white -rotate-45" />
-                </div>
-                <span className="text-base font-bold text-[#10243E]">
-                  GymApra
-                </span>
+              <Link href="/" className="inline-flex items-center select-none mb-3">
+                <GymApraLogo variant="dark" size="sm" />
               </Link>
               <p className="text-xs text-[#10243E]/65 leading-relaxed max-w-[200px]">
                 A simple and powerful gym management solution for modern gym

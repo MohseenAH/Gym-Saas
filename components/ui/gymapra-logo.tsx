@@ -1,60 +1,59 @@
 import React from "react";
 
+export type GymApraLogoVariant = "white" | "dark" | "orange" | "black-bg" | "symbol";
+
 interface GymApraLogoProps {
-  variant?: "white" | "dark";
-  size?: "sm" | "md" | "lg";
+  /**
+   * "white" / "orange" -> /brand/gymapra-logo.svg (orange transparent full logo for dark backgrounds)
+   * "dark"             -> /brand/gymapra-logo-light.svg (orange symbol + dark lettering for light backgrounds)
+   * "black-bg"         -> /brand/gymapra-logo-black-bg.svg (black background variant)
+   * "symbol"           -> /brand/gymapra-symbol.svg (compact brand symbol)
+   */
+  variant?: GymApraLogoVariant;
+  size?: "xs" | "sm" | "md" | "lg";
   className?: string;
 }
 
 export function GymApraLogo({
-  variant = "white",
+  variant = "orange",
   size = "md",
   className = "",
 }: GymApraLogoProps) {
-  const isWhite = variant === "white";
+  const isSymbol = variant === "symbol";
 
-  const sizeClasses = {
-    sm: "h-5 text-base gap-1.5",
-    md: "h-6 text-lg gap-2",
-    lg: "h-7 text-xl gap-2",
+  const src =
+    variant === "symbol"
+      ? "/brand/gymapra-symbol.svg"
+      : variant === "dark"
+      ? "/brand/gymapra-logo-light.svg"
+      : variant === "black-bg"
+      ? "/brand/gymapra-logo-black-bg.svg"
+      : "/brand/gymapra-logo.svg";
+
+  const lockupSizes = {
+    xs: "h-5",
+    sm: "h-6",
+    md: "h-7",
+    lg: "h-8",
   };
 
-  const iconSizes = {
-    sm: "w-5 h-5",
-    md: "w-6 h-6",
-    lg: "w-7 h-7",
+  const symbolSizes = {
+    xs: "h-4",
+    sm: "h-5",
+    md: "h-6",
+    lg: "h-7",
   };
+
+  const heightClass = isSymbol ? symbolSizes[size] : lockupSizes[size];
 
   return (
-    <div className={`inline-flex items-center font-black tracking-tight ${sizeClasses[size]} ${className}`}>
-      {/* Dynamic GymApra Emblem */}
-      <svg
-        className={iconSizes[size]}
-        viewBox="0 0 36 36"
-        fill="none"
-        xmlns="http://www.w3.org/2000/svg"
-      >
-        <defs>
-          <linearGradient id="gymapra-grad" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#38BDF8" />
-            <stop offset="100%" stopColor="#2563EB" />
-          </linearGradient>
-        </defs>
-        <path
-          d="M6 25L15 7H23L14 25H6Z"
-          fill="url(#gymapra-grad)"
-        />
-        <path
-          d="M16 29L22 17H30L24 29H16Z"
-          fill="#38BDF8"
-          fillOpacity={isWhite ? "0.9" : "0.85"}
-        />
-        <circle cx="27" cy="11" r="3" fill="#60A5FA" />
-      </svg>
-
-      <span className={isWhite ? "text-white" : "text-[#10243E]"}>
-        Gym<span className="text-[#38BDF8]">Apra</span>
-      </span>
-    </div>
+    <img
+      src={src}
+      alt="GymApra"
+      width={isSymbol ? 520 : 500}
+      height={isSymbol ? 430 : 115}
+      className={`${heightClass} w-auto object-contain select-none shrink-0 ${className}`}
+      decoding="async"
+    />
   );
 }

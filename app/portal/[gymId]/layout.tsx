@@ -1,6 +1,7 @@
 import { createClient, getCachedUser } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
-import { Dumbbell, LogOut, Home, CalendarCheck, CreditCard, Bell } from "lucide-react";
+import { LogOut, Home, CalendarCheck, CreditCard, Bell } from "lucide-react";
+import { GymApraLogo } from "@/components/ui/gymapra-logo";
 import Link from "next/link";
 import { logoutAction } from "@/lib/actions/auth";
 import { ThemeSwitcher } from "@/components/layout/theme-switcher";
@@ -53,8 +54,8 @@ export default async function MemberPortalLayout({
       {/* Top Header */}
       <header className="h-16 px-4 sm:px-6 bg-card border-b border-border flex items-center justify-between sticky top-0 z-40 transition-colors">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-primary text-primary-foreground rounded-2xl flex items-center justify-center shadow-xs">
-            <Dumbbell className="w-5 h-5" />
+          <div className="w-10 h-10 bg-black rounded-2xl border border-border/50 flex items-center justify-center p-1.5 shadow-xs shrink-0">
+            <GymApraLogo variant="symbol" size="sm" />
           </div>
           <div>
             <div className="text-sm font-black text-foreground tracking-tight">

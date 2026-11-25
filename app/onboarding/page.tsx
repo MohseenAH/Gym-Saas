@@ -2,7 +2,8 @@ import { createClient, getCachedUser } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import OnboardingForm from "./onboarding-form";
 import { logoutAction } from "@/lib/actions/auth";
-import { Dumbbell, LogOut } from "lucide-react";
+import { LogOut } from "lucide-react";
+import { GymApraLogo } from "@/components/ui/gymapra-logo";
 
 export default async function OnboardingPage() {
   const user = await getCachedUser();
@@ -32,8 +33,8 @@ export default async function OnboardingPage() {
       <div className="sm:mx-auto sm:w-full sm:max-w-lg">
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-3">
-            <div className="p-3 rounded-2xl bg-primary text-primary-foreground shadow-md shadow-primary/20">
-              <Dumbbell className="w-5 h-5" />
+            <div className="p-2 rounded-xl bg-black border border-border/50 shadow-xs flex items-center justify-center">
+              <GymApraLogo variant="symbol" size="sm" />
             </div>
             <div>
               <span className="font-black text-foreground tracking-tight text-xl">

@@ -12,6 +12,13 @@ export const viewport: Viewport = {
 export const metadata: Metadata = {
   title: "GymApra V2 — Gym Management Platform",
   description: "Modern, high-velocity gym management and member intelligence OS",
+  icons: {
+    icon: [
+      { url: "/favicon.ico" },
+      { url: "/icons/icon.svg", type: "image/svg+xml" },
+    ],
+    apple: "/icons/apple-touch-icon.png",
+  },
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
@@ -28,7 +35,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" data-theme="emerald-mist" className="transition-colors duration-200" suppressHydrationWarning>
+    <html lang="en" data-theme="titanium-chalk" className="transition-colors duration-200" suppressHydrationWarning>
       <body className="antialiased min-h-screen bg-transparent text-foreground selection:bg-primary/20 selection:text-primary" suppressHydrationWarning>
         <Script
           id="theme-init"
@@ -36,19 +43,19 @@ export default function RootLayout({
           dangerouslySetInnerHTML={{
             __html: `
               try {
-                var validThemes = ["emerald-mist", "glacier-frost", "obsidian-champagne", "electric-sapphire"];
+                var validThemes = ["titanium-chalk", "glacier-frost", "obsidian-champagne", "obsidian-ember"];
                 var t = localStorage.getItem("gymapra_theme");
-                if (t === "alpine-jade" || t === "light" || t === "sage") t = "emerald-mist";
+                if (t === "emerald-mist" || t === "alpine-jade" || t === "light" || t === "sage") t = "titanium-chalk";
                 else if (t === "glacier-slate") t = "glacier-frost";
-                else if (t === "arctic-titanium") t = "electric-sapphire";
+                else if (t === "electric-sapphire" || t === "arctic-titanium") t = "obsidian-ember";
                 else if (t === "royal-bordeaux" || t === "dark" || t === "iron") t = "obsidian-champagne";
                 if (!t || validThemes.indexOf(t) === -1) {
-                  t = "emerald-mist";
+                  t = "titanium-chalk";
                 }
                 localStorage.setItem("gymapra_theme", t);
                 document.documentElement.setAttribute("data-theme", t);
                 document.documentElement.dataset.theme = t;
-                var isDark = t === "obsidian-champagne" || t === "electric-sapphire";
+                var isDark = t === "obsidian-champagne" || t === "obsidian-ember";
                 document.documentElement.classList.toggle("dark", isDark);
               } catch (e) {}
             `,

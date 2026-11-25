@@ -47,7 +47,7 @@ describe("PWA Manifest & Mobile Standalone Metadata Suite", () => {
       expect(hasAny).toBe(true);
 
       icons.forEach((icon) => {
-        expect(icon.src).toMatch(/^\/icon-\d+\.png$/);
+        expect(icon.src).toMatch(/^\/icons\/icon-(?:maskable-)?\d+\.png$/);
         expect(icon.type).toBe("image/png");
       });
     });
