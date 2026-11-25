@@ -1,5 +1,5 @@
 // GymApra V2 Lightweight Service Worker - Static Asset Caching
-const CACHE_NAME = "gymapra-v2-static-v1";
+const CACHE_NAME = "gymapra-v2-static-v2";
 
 self.addEventListener("install", (event) => {
   self.skipWaiting();
@@ -24,10 +24,24 @@ self.addEventListener("activate", (event) => {
 
 self.addEventListener("fetch", (event) => {
   const { request } = event;
-  const url = new URL(request.url);
 
   // Only handle GET requests
   if (request.method !== "GET") {
+    return;
+  }
+
+  let url;
+  try {
+    url = new URL(request.url);
+  } catch {
+    return;
+  }
+
+  // Exclude unsupported schemes (e.g., chrome-extension://) and cross-origin requests
+  if (url.protocol !== "http:" && url.protocol !== "https:") {
+    return;
+  }
+  if (url.origin !== self.location.origin) {
     return;
   }
 

@@ -36,14 +36,16 @@ export function AuthSplitLayout({
           ========================================================================= */}
       <div className="relative hidden lg:flex flex-col justify-between p-8 lg:p-10 xl:p-14 overflow-hidden min-h-dvh h-full w-full select-none">
         {/* Full-bleed Gym Photography */}
-        <Image
-          src={imageSrc}
-          alt={imageAlt}
-          fill
-          priority
-          sizes="50vw"
-          className="object-cover object-center"
-        />
+        <div className="absolute inset-0 h-full w-full">
+          <Image
+            src={imageSrc}
+            alt={imageAlt}
+            fill
+            loading="eager"
+            sizes="(min-width: 1024px) 50vw, 100vw"
+            className="object-cover object-center"
+          />
+        </div>
 
         {/* Deep Navy/Black Gradient Overlay for Contrast */}
         <div className="absolute inset-0 bg-gradient-to-t from-[#10243E]/95 via-[#10243E]/65 to-[#10243E]/80 z-0" />
@@ -94,14 +96,16 @@ export function AuthSplitLayout({
           ========================================================================= */}
       <div className="relative h-44 sm:h-50 w-full lg:hidden overflow-hidden flex flex-col justify-between p-4 sm:p-5 shrink-0 select-none">
         {/* Gym Photography */}
-        <Image
-          src={imageSrc}
-          alt={imageAlt}
-          fill
-          priority
-          sizes="100vw"
-          className="object-cover object-center"
-        />
+        <div className="absolute inset-0 h-full w-full">
+          <Image
+            src={imageSrc}
+            alt={imageAlt}
+            fill
+            loading="eager"
+            sizes="(min-width: 1024px) 50vw, 100vw"
+            className="object-cover object-center"
+          />
+        </div>
 
         {/* Dark Navy Gradient Overlay */}
         <div className="absolute inset-0 bg-gradient-to-b from-[#10243E]/90 via-[#10243E]/75 to-[#10243E]/95 z-0" />

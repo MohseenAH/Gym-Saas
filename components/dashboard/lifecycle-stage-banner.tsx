@@ -1,19 +1,15 @@
 "use client";
 
-import { useState, useEffect } from "react";
 import Link from "next/link";
 import {
   Sparkles,
-  CheckCircle2,
   Circle,
   ArrowRight,
-  FileSpreadsheet,
   IdCard,
   AlertTriangle,
   CalendarCheck,
   CreditCard,
   Users,
-  Compass,
   Zap,
   Check,
   ChevronRight,
@@ -27,6 +23,7 @@ interface LifecycleStageBannerProps {
   membersCount: number;
   unassignedCount: number;
   userRole?: string;
+  showEstablishedQuickBar?: boolean;
 }
 
 export function LifecycleStageBanner({
@@ -36,12 +33,8 @@ export function LifecycleStageBanner({
   membersCount,
   unassignedCount,
   userRole,
+  showEstablishedQuickBar = true,
 }: LifecycleStageBannerProps) {
-  const [isMounted, setIsMounted] = useState(false);
-  useEffect(() => {
-    setIsMounted(true);
-  }, []);
-
   const isFrontDeskRole = userRole === "trainer" || userRole === "receptionist";
 
   return (
@@ -74,30 +67,30 @@ export function LifecycleStageBanner({
         const progressPct = Math.round((completedSteps / 2) * 100);
 
         return (
-          <div className="bg-gradient-to-r from-emerald-500/10 via-teal-500/10 to-emerald-500/5 rounded-2xl border border-emerald-500/25 shadow-xs px-4 py-2.5 sm:py-3 text-card-foreground">
+          <div className="bg-card rounded-2xl border border-border shadow-xs px-4 py-2.5 sm:py-3 text-card-foreground">
             {/* Desktop Stepper Banner (hidden md:flex) */}
             <div className="hidden md:flex items-center justify-between gap-4">
               <div className="flex items-center gap-2.5">
-                <div className="p-1.5 rounded-lg bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 shrink-0">
+                <div className="p-1.5 rounded-lg bg-primary/10 text-primary shrink-0">
                   <Sparkles className="w-4 h-4" />
                 </div>
                 <div>
                   <div className="flex items-center gap-2">
                     <span className="font-bold text-foreground text-xs sm:text-sm">
-                      Gym Launch Checklist
+                      Finish setting up your gym
                     </span>
-                    <span className="px-2 py-0.2 rounded-full text-[10px] font-bold uppercase tracking-wider bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30">
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-primary/10 text-primary border border-primary/20">
                       Setup Mode
                     </span>
                   </div>
                   <div className="flex items-center gap-2 mt-0.5">
-                    <div className="w-24 h-1.5 rounded-full bg-emerald-500/20 overflow-hidden" suppressHydrationWarning>
+                    <div className="w-24 h-1.5 rounded-full bg-muted overflow-hidden" suppressHydrationWarning>
                       <div
-                        className="h-full bg-emerald-600 transition-all duration-300"
+                        className="h-full bg-primary transition-all duration-300"
                         style={{ width: `${progressPct}%` }}
                       />
                     </div>
-                    <span className="text-[11px] font-semibold text-emerald-700 dark:text-emerald-300" suppressHydrationWarning>
+                    <span className="text-[11px] font-semibold text-muted-foreground" suppressHydrationWarning>
                       {completedSteps} of 2 complete ({progressPct}%)
                     </span>
                   </div>
@@ -109,8 +102,8 @@ export function LifecycleStageBanner({
                   href={`/app/${gymId}/memberships?tab=plans`}
                   className={`inline-flex items-center gap-1.5 h-8 px-3 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                     plansCount > 0
-                      ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30"
-                      : "bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs"
+                      ? "bg-primary/10 text-primary border border-primary/20 hover:bg-primary/15"
+                      : "bg-primary hover:bg-primary/90 text-primary-foreground shadow-xs"
                   }`}
                 >
                   {plansCount > 0 ? (
@@ -121,14 +114,14 @@ export function LifecycleStageBanner({
                   <span>1. Create Plans</span>
                 </Link>
 
-                <div className="w-6 h-px bg-emerald-500/30" />
+                <div className="w-6 h-px bg-border" />
 
                 <Link
                   href={`/app/${gymId}/members`}
                   className={`inline-flex items-center gap-1.5 h-8 px-3 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                     membersCount > 0
-                      ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30"
-                      : "bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs"
+                      ? "bg-primary/10 text-primary border border-primary/20 hover:bg-primary/15"
+                      : "bg-primary hover:bg-primary/90 text-primary-foreground shadow-xs"
                   }`}
                 >
                   {membersCount > 0 ? (
@@ -146,20 +139,20 @@ export function LifecycleStageBanner({
               <div className="flex items-center justify-between">
                 <div>
                   <div className="font-bold text-foreground text-xs sm:text-sm">
-                    Gym Launch Checklist
+                    Finish setting up your gym
                   </div>
-                  <div className="text-[11px] font-medium text-emerald-700 dark:text-emerald-300">
+                  <div className="text-[11px] font-medium text-muted-foreground">
                     {completedSteps} of 2 steps complete ({progressPct}%)
                   </div>
                 </div>
-                <span className="px-2 py-0.2 rounded-md text-[10px] font-bold uppercase tracking-wider bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30">
+                <span className="px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider bg-primary/10 text-primary border border-primary/20">
                   SETUP MODE
                 </span>
               </div>
 
-              <div className="w-full h-1.5 rounded-full bg-emerald-500/20 overflow-hidden" suppressHydrationWarning>
+              <div className="w-full h-1.5 rounded-full bg-muted overflow-hidden" suppressHydrationWarning>
                 <div
-                  className="h-full bg-emerald-600 transition-all duration-300"
+                  className="h-full bg-primary transition-all duration-300"
                   style={{ width: `${progressPct}%` }}
                 />
               </div>
@@ -169,13 +162,13 @@ export function LifecycleStageBanner({
                   href={`/app/${gymId}/memberships?tab=plans`}
                   className={`p-2 rounded-xl flex items-center justify-between text-xs font-bold border transition-colors ${
                     plansCount > 0
-                      ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-500/30"
-                      : "bg-card text-foreground border-border"
+                      ? "bg-primary/10 text-primary border-primary/20"
+                      : "bg-card text-foreground border-border hover:bg-muted/50"
                   }`}
                 >
                   <span>1. Create Plans</span>
                   {plansCount > 0 ? (
-                    <Check className="w-3.5 h-3.5 text-emerald-600" />
+                    <Check className="w-3.5 h-3.5 text-primary stroke-[2.5]" />
                   ) : (
                     <ChevronRight className="w-3.5 h-3.5 text-muted-foreground" />
                   )}
@@ -185,13 +178,13 @@ export function LifecycleStageBanner({
                   href={`/app/${gymId}/members`}
                   className={`p-2 rounded-xl flex items-center justify-between text-xs font-bold border transition-colors ${
                     membersCount > 0
-                      ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-500/30"
-                      : "bg-card text-foreground border-border"
+                      ? "bg-primary/10 text-primary border-primary/20"
+                      : "bg-card text-foreground border-border hover:bg-muted/50"
                   }`}
                 >
                   <span>2. Add Members</span>
                   {membersCount > 0 ? (
-                    <Check className="w-3.5 h-3.5 text-emerald-600" />
+                    <Check className="w-3.5 h-3.5 text-primary stroke-[2.5]" />
                   ) : (
                     <ChevronRight className="w-3.5 h-3.5 text-muted-foreground" />
                   )}
@@ -273,7 +266,7 @@ export function LifecycleStageBanner({
       )}
 
       {/* STAGE 4: Established Gym — Clean 4-Button Quick Operations Bar */}
-      {stage === "STAGE_4_ESTABLISHED" && (
+      {showEstablishedQuickBar && stage === "STAGE_4_ESTABLISHED" && (
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
           {/* 1. Attendance Kiosk */}
           <Link
