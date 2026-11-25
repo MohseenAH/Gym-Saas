@@ -3,27 +3,40 @@
 import { useState, useMemo } from "react";
 import Link from "next/link";
 import {
-  TrendingDown,
-  TrendingUp,
-  Receipt,
-  Tag,
-  Layers,
-  ArrowRight,
-  ExternalLink,
+  Wallet,
   Calendar,
   Building2,
-  Clock,
+  Search,
+  ChevronRight,
+  MoreVertical,
   Eye,
+  Edit2,
+  Trash2,
+  FileBarChart2,
+  Bookmark,
+  Home,
+  Zap,
+  Users,
+  Dumbbell,
+  Wrench,
+  Megaphone,
+  Receipt,
+  CreditCard,
+  X,
   Plus,
 } from "lucide-react";
+import { KpiCard } from "@/components/ui/kpi-card";
 import {
   RecordExpenseModal,
   ViewExpenseModal,
+  EditExpenseModal,
+  DeleteExpenseModal,
   getCategoryBadgeClass,
   formatVoucherId,
   type ExpenseItem,
   EXPENSE_CATEGORIES,
 } from "@/components/expenses/expense-modals";
+import { formatDate } from "@/lib/utils";
 
 type Period = "today" | "week" | "month" | "year" | "all";
 
@@ -32,6 +45,94 @@ interface ExpenseOverviewClientProps {
   branches: { id: string; name: string }[];
   initialExpenses: ExpenseItem[];
   canManage: boolean;
+  canDelete?: boolean;
+  todayStr: string;
+}
+
+const CATEGORY_COLORS: Record<
+  string,
+  { stroke: string; dot: string; iconBg: string }
+> = {
+  rent: {
+    stroke: "#7c3aed",
+    dot: "bg-violet-600",
+    iconBg: "bg-violet-500/12 text-violet-600 dark:text-violet-400",
+  },
+  salaries: {
+    stroke: "#10b981",
+    dot: "bg-emerald-500",
+    iconBg: "bg-emerald-500/12 text-emerald-600 dark:text-emerald-400",
+  },
+  electricity: {
+    stroke: "#3b82f6",
+    dot: "bg-blue-500",
+    iconBg: "bg-blue-500/12 text-blue-600 dark:text-blue-400",
+  },
+  equipment: {
+    stroke: "#a855f7",
+    dot: "bg-purple-500",
+    iconBg: "bg-purple-500/12 text-purple-600 dark:text-purple-400",
+  },
+  maintenance: {
+    stroke: "#f59e0b",
+    dot: "bg-amber-500",
+    iconBg: "bg-amber-500/12 text-amber-600 dark:text-amber-400",
+  },
+  marketing: {
+    stroke: "#f43f5e",
+    dot: "bg-rose-500",
+    iconBg: "bg-rose-500/12 text-rose-600 dark:text-rose-400",
+  },
+  miscellaneous: {
+    stroke: "#64748b",
+    dot: "bg-slate-500",
+    iconBg: "bg-slate-500/12 text-slate-600 dark:text-slate-400",
+  },
+  other: {
+    stroke: "#f97316",
+    dot: "bg-orange-500",
+    iconBg: "bg-orange-500/12 text-orange-600 dark:text-orange-400",
+  },
+};
+
+function getCategoryIcon(category: string) {
+  switch (category) {
+    case "rent":
+      return Home;
+    case "electricity":
+      return Zap;
+    case "salaries":
+      return Users;
+    case "equipment":
+      return Dumbbell;
+    case "maintenance":
+      return Wrench;
+    case "marketing":
+      return Megaphone;
+    default:
+      return Receipt;
+  }
+}
+
+function getCategoryLabel(category: string): string {
+  return EXPENSE_CATEGORIES.find((c) => c.value === category)?.label || category;
+}
+
+function formatPaymentMethod(method: string): string {
+  switch (method) {
+    case "bank_transfer":
+      return "Bank Transfer";
+    case "upi":
+      return "UPI";
+    case "cash":
+      return "Cash";
+    case "card":
+      return "Card";
+    case "cheque":
+      return "Cheque";
+    default:
+      return "Other";
+  }
 }
 
 export function ExpenseOverviewClient({
@@ -39,664 +140,686 @@ export function ExpenseOverviewClient({
   branches,
   initialExpenses,
   canManage,
+  canDelete = false,
+  todayStr,
 }: ExpenseOverviewClientProps) {
   const [period, setPeriod] = useState<Period>("month");
   const [selectedBranchId, setSelectedBranchId] = useState<string>("all");
-  const [viewingExpense, setViewingExpense] = useState<ExpenseItem | null>(null);
+  const [selectedCategory, setSelectedCategory] = useState<string>("all");
+  const [search, setSearch] = useState("");
+  const [openMenuId, setOpenMenuId] = useState<string | null>(null);
 
-  // Filter expenses by branch if branch selected
-  const branchFilteredExpenses = useMemo(() => {
+  // Modals
+  const [isRecordOpen, setIsRecordOpen] = useState(false);
+  const [viewingExpense, setViewingExpense] = useState<ExpenseItem | null>(null);
+  const [editingExpense, setEditingExpense] = useState<ExpenseItem | null>(null);
+  const [deletingExpense, setDeletingExpense] = useState<ExpenseItem | null>(null);
+  const [isCategoriesModalOpen, setIsCategoriesModalOpen] = useState(false);
+
+  // Branch-scoped expenses
+  const branchExpenses = useMemo(() => {
     if (selectedBranchId === "all") return initialExpenses;
     return initialExpenses.filter((e) => e.branch_id === selectedBranchId);
   }, [initialExpenses, selectedBranchId]);
 
-  // Compute period data with gym-local Asia/Kolkata date boundaries
-  const { currentPeriodExpenses, prevPeriodExpenses, prevPeriodLabel } = useMemo(() => {
-    const timeZone = "Asia/Kolkata";
-    const todayStr = new Intl.DateTimeFormat("en-CA", {
-      timeZone,
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit",
-    }).format(new Date());
-
+  // Fixed KPIs: This Month vs Last Month & Today vs Yesterday
+  const {
+    thisMonthTotal,
+    monthTrend,
+    todayTotal,
+    todayTrend,
+  } = useMemo(() => {
     const [y, m, d] = todayStr.split("-").map(Number);
 
-    if (period === "all") {
+    const curMonthPrefix = `${y}-${String(m).padStart(2, "0")}`;
+    const prevM = m === 1 ? 12 : m - 1;
+    const prevY = m === 1 ? y - 1 : y;
+    const prevMonthPrefix = `${prevY}-${String(prevM).padStart(2, "0")}`;
+
+    const yesterdayStr = new Date(Date.UTC(y, m - 1, d - 1))
+      .toISOString()
+      .slice(0, 10);
+
+    const curMonthSum = branchExpenses
+      .filter((e) => e.expense_date.startsWith(curMonthPrefix))
+      .reduce((s, e) => s + Number(e.amount), 0);
+    const prevMonthSum = branchExpenses
+      .filter((e) => e.expense_date.startsWith(prevMonthPrefix))
+      .reduce((s, e) => s + Number(e.amount), 0);
+
+    const curDaySum = branchExpenses
+      .filter((e) => e.expense_date === todayStr)
+      .reduce((s, e) => s + Number(e.amount), 0);
+    const prevDaySum = branchExpenses
+      .filter((e) => e.expense_date === yesterdayStr)
+      .reduce((s, e) => s + Number(e.amount), 0);
+
+    // For expenses, increase is NOT positive (amber/red), decrease is favorable (emerald)
+    function computeExpenseTrend(current: number, previous: number) {
+      if (previous <= 0) {
+        return current > 0
+          ? { value: "New spend", isDecrease: false }
+          : null;
+      }
+      const diff = current - previous;
+      const pct = Math.round((diff / previous) * 100);
       return {
-        currentPeriodExpenses: branchFilteredExpenses,
-        prevPeriodExpenses: [],
-        prevPeriodLabel: "",
+        value: `${pct > 0 ? "+" : ""}${pct}%`,
+        isDecrease: diff <= 0,
       };
     }
 
+    return {
+      thisMonthTotal: curMonthSum,
+      monthTrend: computeExpenseTrend(curMonthSum, prevMonthSum),
+      todayTotal: curDaySum,
+      todayTrend: computeExpenseTrend(curDaySum, prevDaySum),
+    };
+  }, [branchExpenses, todayStr]);
+
+  // Period-filtered expenses (drives both Category Breakdown Chart & Recent Expenses)
+  const periodExpenses = useMemo(() => {
+    const [y, m, d] = todayStr.split("-").map(Number);
+    if (period === "all") return branchExpenses;
     if (period === "today") {
-      const yesterdayDate = new Date(Date.UTC(y, m - 1, d - 1));
-      const yesterdayStr = yesterdayDate.toISOString().slice(0, 10);
-      return {
-        currentPeriodExpenses: branchFilteredExpenses.filter((e) => e.expense_date === todayStr),
-        prevPeriodExpenses: branchFilteredExpenses.filter((e) => e.expense_date === yesterdayStr),
-        prevPeriodLabel: "vs yesterday",
-      };
+      return branchExpenses.filter((e) => e.expense_date === todayStr);
     }
-
     if (period === "week") {
       const curUtc = new Date(Date.UTC(y, m - 1, d));
       const day = curUtc.getUTCDay();
       const diffToMonday = (day === 0 ? -6 : 1) - day;
-      const mondayUtc = new Date(Date.UTC(y, m - 1, d + diffToMonday));
-      const weekStartStr = mondayUtc.toISOString().slice(0, 10);
-
-      const prevMondayUtc = new Date(Date.UTC(y, m - 1, d + diffToMonday - 7));
-      const prevSundayUtc = new Date(Date.UTC(y, m - 1, d + diffToMonday - 1));
-      const prevWeekStartStr = prevMondayUtc.toISOString().slice(0, 10);
-      const prevWeekEndStr = prevSundayUtc.toISOString().slice(0, 10);
-
-      return {
-        currentPeriodExpenses: branchFilteredExpenses.filter(
-          (e) => e.expense_date >= weekStartStr && e.expense_date <= todayStr
-        ),
-        prevPeriodExpenses: branchFilteredExpenses.filter(
-          (e) => e.expense_date >= prevWeekStartStr && e.expense_date <= prevWeekEndStr
-        ),
-        prevPeriodLabel: "vs last week",
-      };
+      const weekStartStr = new Date(Date.UTC(y, m - 1, d + diffToMonday))
+        .toISOString()
+        .slice(0, 10);
+      return branchExpenses.filter(
+        (e) => e.expense_date >= weekStartStr && e.expense_date <= todayStr
+      );
     }
-
     if (period === "month") {
       const curMonthPrefix = `${y}-${String(m).padStart(2, "0")}`;
-      const prevM = m === 1 ? 12 : m - 1;
-      const prevY = m === 1 ? y - 1 : y;
-      const prevMonthPrefix = `${prevY}-${String(prevM).padStart(2, "0")}`;
-
-      return {
-        currentPeriodExpenses: branchFilteredExpenses.filter((e) =>
-          e.expense_date.startsWith(curMonthPrefix)
-        ),
-        prevPeriodExpenses: branchFilteredExpenses.filter((e) =>
-          e.expense_date.startsWith(prevMonthPrefix)
-        ),
-        prevPeriodLabel: "vs last month",
-      };
+      return branchExpenses.filter((e) => e.expense_date.startsWith(curMonthPrefix));
     }
+    const curYearPrefix = `${y}-`;
+    return branchExpenses.filter((e) => e.expense_date.startsWith(curYearPrefix));
+  }, [branchExpenses, period, todayStr]);
 
-    if (period === "year") {
-      const curYearPrefix = `${y}-`;
-      const prevYearPrefix = `${y - 1}-`;
-      return {
-        currentPeriodExpenses: branchFilteredExpenses.filter((e) =>
-          e.expense_date.startsWith(curYearPrefix)
-        ),
-        prevPeriodExpenses: branchFilteredExpenses.filter((e) =>
-          e.expense_date.startsWith(prevYearPrefix)
-        ),
-        prevPeriodLabel: "vs last year",
-      };
-    }
+  const periodTotal = useMemo(
+    () => periodExpenses.reduce((sum, e) => sum + Number(e.amount), 0),
+    [periodExpenses]
+  );
 
-    return {
-      currentPeriodExpenses: branchFilteredExpenses,
-      prevPeriodExpenses: [],
-      prevPeriodLabel: "",
-    };
-  }, [branchFilteredExpenses, period]);
-
-  // Aggregations for current period
-  const totalAmount = useMemo(() => {
-    return currentPeriodExpenses.reduce((sum, e) => sum + Number(e.amount), 0);
-  }, [currentPeriodExpenses]);
-
-  const prevTotalAmount = useMemo(() => {
-    return prevPeriodExpenses.reduce((sum, e) => sum + Number(e.amount), 0);
-  }, [prevPeriodExpenses]);
-
-  const voucherCount = currentPeriodExpenses.length;
-  const avgVoucher = voucherCount > 0 ? totalAmount / voucherCount : 0;
-
-  // Comparison Delta
-  const delta = useMemo(() => {
-    if (period === "all" || prevPeriodExpenses.length === 0) {
-      return null;
-    }
-    if (prevTotalAmount === 0) {
-      return totalAmount > 0 ? { pct: 100, isUp: true, text: "+100% " + prevPeriodLabel } : null;
-    }
-    const diff = totalAmount - prevTotalAmount;
-    const pct = Math.round((diff / prevTotalAmount) * 100);
-    return {
-      pct: Math.abs(pct),
-      isUp: diff > 0,
-      text: `${diff >= 0 ? "+" : ""}${pct}% ${prevPeriodLabel}`,
-    };
-  }, [period, prevPeriodExpenses, prevTotalAmount, totalAmount, prevPeriodLabel]);
-
-  // Category breakdown for current period
+  // Category breakdown for donut chart
   const categoryBreakdown = useMemo(() => {
     const map: Record<string, number> = {};
-    currentPeriodExpenses.forEach((e) => {
+    periodExpenses.forEach((e) => {
       map[e.category] = (map[e.category] || 0) + Number(e.amount);
     });
 
-    const entries = Object.entries(map).map(([category, amount]) => ({
-      category,
-      amount,
-      pct: totalAmount > 0 ? Math.round((amount / totalAmount) * 100) : 0,
-      label: EXPENSE_CATEGORIES.find((c) => c.value === category)?.label || category,
-    }));
+    const entries = Object.entries(map).map(([category, amount]) => {
+      const pct = periodTotal > 0 ? Math.round((amount / periodTotal) * 100) : 0;
+      const colors = CATEGORY_COLORS[category] || CATEGORY_COLORS.other;
+      return {
+        category,
+        label: getCategoryLabel(category),
+        amount,
+        pct,
+        stroke: colors.stroke,
+        dot: colors.dot,
+      };
+    });
 
     entries.sort((a, b) => b.amount - a.amount);
     return entries;
-  }, [currentPeriodExpenses, totalAmount]);
+  }, [periodExpenses, periodTotal]);
 
-  const topCategory = categoryBreakdown[0] || null;
+  // SVG Donut geometry
+  const donutSegments = useMemo(() => {
+    const radius = 58;
+    const circumference = 2 * Math.PI * radius;
+    let offset = 0;
+    return categoryBreakdown.map((item) => {
+      const fraction = periodTotal > 0 ? item.amount / periodTotal : 0;
+      const length = fraction * circumference;
+      const seg = {
+        ...item,
+        dasharray: `${length} ${circumference}`,
+        dashoffset: -offset,
+      };
+      offset += length;
+      return seg;
+    });
+  }, [categoryBreakdown, periodTotal]);
 
-  // Monthly trends for the last 6 months
-  const monthlyTrends = useMemo(() => {
-    const timeZone = "Asia/Kolkata";
-    const todayStr = new Intl.DateTimeFormat("en-CA", {
-      timeZone,
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit",
-    }).format(new Date());
+  // Filtered recent expenses (applies period, category, search)
+  const filteredRecent = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    return periodExpenses
+      .filter((e) => {
+        if (selectedCategory !== "all" && e.category !== selectedCategory) {
+          return false;
+        }
+        if (!q) return true;
+        const desc = (e.description || "").toLowerCase();
+        const cat = getCategoryLabel(e.category).toLowerCase();
+        const voucher = formatVoucherId(e.id).toLowerCase();
+        return desc.includes(q) || cat.includes(q) || voucher.includes(q);
+      })
+      .slice(0, 6);
+  }, [periodExpenses, selectedCategory, search]);
 
-    const [currY, currM] = todayStr.split("-").map(Number);
-    const months = [];
-
-    for (let i = 5; i >= 0; i--) {
-      let targetM = currM - i;
-      let targetY = currY;
-      while (targetM <= 0) {
-        targetM += 12;
-        targetY -= 1;
-      }
-
-      const monthKey = `${targetY}-${String(targetM).padStart(2, "0")}`;
-      const monthDate = new Date(Date.UTC(targetY, targetM - 1, 1));
-      const label = new Intl.DateTimeFormat("en-IN", {
-        timeZone: "Asia/Kolkata",
-        month: "short",
-      }).format(monthDate);
-
-      const monthSpend = branchFilteredExpenses
-        .filter((e) => e.expense_date.startsWith(monthKey))
-        .reduce((sum, e) => sum + Number(e.amount), 0);
-
-      months.push({
-        key: monthKey,
-        label,
-        amount: monthSpend,
-        isCurrent: i === 0,
-      });
-    }
-
-    const maxSpend = Math.max(...months.map((m) => m.amount), 1);
-    return { months, maxSpend };
-  }, [branchFilteredExpenses]);
-
-  // Latest 5 expenses
-  const recentExpenses = useMemo(() => {
-    return branchFilteredExpenses.slice(0, 5);
-  }, [branchFilteredExpenses]);
+  const periodLabel =
+    period === "today"
+      ? "Today"
+      : period === "week"
+      ? "This Week"
+      : period === "month"
+      ? "This Month"
+      : period === "year"
+      ? "This Year"
+      : "All Time";
 
   return (
-    <div className="space-y-6 text-foreground">
-      {/* 1. Header & Period Switcher */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-black text-foreground tracking-tight">
+    <div className="space-y-5 text-foreground">
+      {/* Page Header */}
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center gap-2.5 min-w-0">
+          <div className="h-9 w-9 rounded-xl bg-primary/10 text-primary border border-primary/20 flex items-center justify-center shrink-0">
+            <Wallet className="w-5 h-5" />
+          </div>
+          <h1 className="text-xl sm:text-2xl font-black tracking-tight text-foreground truncate">
             Expenses
           </h1>
-          <p className="text-sm text-muted-foreground mt-0.5">
-            Track and analyze gym spending
-          </p>
         </div>
 
-        <div className="flex items-center gap-2 flex-wrap self-start sm:self-auto">
-          {branches.length > 1 && (
-            <select
-              value={selectedBranchId}
-              onChange={(e) => setSelectedBranchId(e.target.value)}
-              className="h-9 px-3 bg-card border border-border rounded-xl text-xs font-semibold text-foreground focus:outline-hidden focus:ring-2 focus:ring-primary/40 cursor-pointer shadow-2xs"
-            >
-              <option value="all">All Branches</option>
-              {branches.map((b) => (
-                <option key={b.id} value={b.id}>
-                  {b.name}
-                </option>
-              ))}
-            </select>
-          )}
+        {canManage && (
+          <button
+            type="button"
+            onClick={() => setIsRecordOpen(true)}
+            className="inline-flex items-center gap-1.5 h-9 sm:h-10 px-3.5 sm:px-4 rounded-xl bg-primary text-primary-foreground text-xs font-bold shadow-sm hover:opacity-95 transition-opacity shrink-0 cursor-pointer"
+          >
+            <Plus className="w-4 h-4" />
+            Add Expense
+          </button>
+        )}
+      </div>
 
-          {/* Period Switcher Pills (Grid on mobile, inline on desktop) */}
-          <div className="grid grid-cols-5 sm:flex items-center bg-card p-1 rounded-xl border border-border shadow-2xs gap-0.5 w-full sm:w-auto">
-            {(["today", "week", "month", "year", "all"] as Period[]).map((p) => (
-              <button
-                key={p}
-                type="button"
-                onClick={() => setPeriod(p)}
-                className={`px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer capitalize text-center ${
-                  period === p
-                    ? "bg-primary text-primary-foreground shadow-2xs"
-                    : "text-muted-foreground hover:text-foreground"
+      {/* 2 KPI Cards */}
+      <div className="grid grid-cols-2 gap-3 sm:gap-4">
+        <KpiCard
+          label="This Month"
+          value={`₹${thisMonthTotal.toLocaleString("en-IN")}`}
+          variant="purple"
+          icon={<Wallet className="w-4 h-4" />}
+          trend={
+            monthTrend ? (
+              <span
+                className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold ${
+                  monthTrend.isDecrease
+                    ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400"
+                    : "bg-rose-500/15 text-rose-700 dark:text-rose-400"
                 }`}
               >
-                {p}
-              </button>
-            ))}
+                {monthTrend.value} vs last month
+              </span>
+            ) : undefined
+          }
+          subtext={!monthTrend ? "Current month total" : undefined}
+        />
+
+        <KpiCard
+          label="Today"
+          value={`₹${todayTotal.toLocaleString("en-IN")}`}
+          variant="amber"
+          icon={<Calendar className="w-4 h-4" />}
+          trend={
+            todayTrend ? (
+              <span
+                className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold ${
+                  todayTrend.isDecrease
+                    ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400"
+                    : "bg-rose-500/15 text-rose-700 dark:text-rose-400"
+                }`}
+              >
+                {todayTrend.value} vs yesterday
+              </span>
+            ) : undefined
+          }
+          subtext={!todayTrend ? "Today's spend" : undefined}
+        />
+      </div>
+
+      {/* Category Chart + Quick Actions */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
+        {/* Expenses by Category Donut Chart */}
+        <div className="lg:col-span-8 bg-card rounded-3xl border border-border shadow-xs p-5 sm:p-6">
+          <div className="flex items-center justify-between gap-2 mb-4">
+            <div>
+              <h2 className="text-sm sm:text-base font-black text-foreground">
+                Expenses by Category
+              </h2>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                {periodLabel}
+              </p>
+            </div>
           </div>
 
-          {canManage && (
-            <RecordExpenseModal
-              gymId={gymId}
-              branches={branches}
-              trigger={
-                <button
-                  type="button"
-                  className="h-9 px-3.5 bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-xs active:scale-[0.98]"
-                >
-                  <Plus className="w-4 h-4" />
-                  <span>Record Expense</span>
-                </button>
-              }
-            />
+          {categoryBreakdown.length === 0 ? (
+            <div className="py-10 text-center text-xs text-muted-foreground">
+              No expenses recorded for {periodLabel.toLowerCase()}.
+            </div>
+          ) : (
+            <div className="flex flex-col sm:flex-row items-center gap-6">
+              {/* Donut SVG */}
+              <div className="relative w-44 h-44 shrink-0">
+                <svg viewBox="0 0 160 160" className="w-full h-full -rotate-90">
+                  <circle
+                    cx="80"
+                    cy="80"
+                    r="58"
+                    fill="none"
+                    stroke="currentColor"
+                    className="text-muted/40"
+                    strokeWidth="22"
+                  />
+                  {donutSegments.map((seg) => (
+                    <circle
+                      key={seg.category}
+                      cx="80"
+                      cy="80"
+                      r="58"
+                      fill="none"
+                      stroke={seg.stroke}
+                      strokeWidth="22"
+                      strokeDasharray={seg.dasharray}
+                      strokeDashoffset={seg.dashoffset}
+                    />
+                  ))}
+                </svg>
+                <div className="absolute inset-0 flex flex-col items-center justify-center text-center px-3">
+                  <span className="text-base font-black text-foreground">
+                    ₹{periodTotal.toLocaleString("en-IN")}
+                  </span>
+                  <span className="text-[10px] font-semibold text-muted-foreground leading-tight mt-0.5">
+                    Total Expenses
+                  </span>
+                </div>
+              </div>
+
+              {/* Legend */}
+              <div className="flex-1 w-full space-y-2">
+                {categoryBreakdown.map((item) => (
+                  <div
+                    key={item.category}
+                    className="flex items-center justify-between gap-3 px-3 py-2 rounded-xl bg-muted/35 border border-border/50 text-xs"
+                  >
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <span
+                        className={`w-2.5 h-2.5 rounded-full shrink-0 ${item.dot}`}
+                      />
+                      <span className="font-bold text-foreground truncate">
+                        {item.label}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-3 shrink-0">
+                      <span className="font-black text-foreground">
+                        ₹{item.amount.toLocaleString("en-IN")}
+                      </span>
+                      <span className="w-9 text-right text-muted-foreground font-semibold">
+                        {item.pct}%
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Desktop Quick Actions */}
+        <div className="lg:col-span-4 flex flex-col gap-3">
+          <Link
+            href={`/app/${gymId}/reports/financial`}
+            className="flex items-center justify-between gap-3 p-4 sm:p-5 rounded-2xl sm:rounded-3xl border border-purple-500/20 bg-purple-500/8 hover:bg-purple-500/14 transition-colors"
+          >
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="h-10 w-10 rounded-xl bg-purple-500/15 text-purple-600 dark:text-purple-400 flex items-center justify-center shrink-0">
+                <FileBarChart2 className="w-5 h-5" />
+              </div>
+              <div className="min-w-0">
+                <div className="text-xs sm:text-sm font-black text-foreground">
+                  Expense Reports
+                </div>
+                <div className="text-[11px] text-muted-foreground truncate">
+                  View &amp; analyze expenses
+                </div>
+              </div>
+            </div>
+            <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" />
+          </Link>
+
+          <button
+            type="button"
+            onClick={() => setIsCategoriesModalOpen(true)}
+            className="flex items-center justify-between gap-3 p-4 sm:p-5 rounded-2xl sm:rounded-3xl border border-blue-500/20 bg-blue-500/8 hover:bg-blue-500/14 text-left transition-colors cursor-pointer"
+          >
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="h-10 w-10 rounded-xl bg-blue-500/15 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0">
+                <Bookmark className="w-5 h-5" />
+              </div>
+              <div className="min-w-0">
+                <div className="text-xs sm:text-sm font-black text-foreground">
+                  Manage Categories
+                </div>
+                <div className="text-[11px] text-muted-foreground truncate">
+                  View built-in expense categories
+                </div>
+              </div>
+            </div>
+            <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" />
+          </button>
+        </div>
+      </div>
+
+      {/* Search & Filters (applies to Chart + Recent Expenses) */}
+      <div className="flex flex-col sm:flex-row sm:items-center gap-2.5">
+        <div className="relative flex-1 min-w-0">
+          <Search className="w-4 h-4 text-muted-foreground absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+          <input
+            type="text"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search expenses by title or note..."
+            className="w-full h-10 pl-10 pr-4 rounded-xl bg-card border border-border text-xs sm:text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
+          />
+        </div>
+
+        <div className="flex items-center gap-2 flex-wrap">
+          <select
+            value={selectedCategory}
+            onChange={(e) => setSelectedCategory(e.target.value)}
+            aria-label="Filter by category"
+            className="h-10 px-3 rounded-xl bg-card border border-border text-xs font-semibold text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
+          >
+            <option value="all">All Categories</option>
+            {EXPENSE_CATEGORIES.map((c) => (
+              <option key={c.value} value={c.value}>
+                {c.label}
+              </option>
+            ))}
+          </select>
+
+          <select
+            value={period}
+            onChange={(e) => setPeriod(e.target.value as Period)}
+            aria-label="Filter chart and recent expenses by period"
+            className="h-10 px-3 rounded-xl bg-card border border-border text-xs font-semibold text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
+          >
+            <option value="month">This Month</option>
+            <option value="today">Today</option>
+            <option value="week">This Week</option>
+            <option value="year">This Year</option>
+            <option value="all">All Time</option>
+          </select>
+
+          {branches.length > 1 && (
+            <div className="relative flex items-center">
+              <Building2 className="w-3.5 h-3.5 text-muted-foreground absolute left-3 pointer-events-none" />
+              <select
+                value={selectedBranchId}
+                onChange={(e) => setSelectedBranchId(e.target.value)}
+                aria-label="Filter by branch"
+                className="h-10 pl-8 pr-3 rounded-xl bg-card border border-border text-xs font-semibold text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
+              >
+                <option value="all">All Branches</option>
+                {branches.map((b) => (
+                  <option key={b.id} value={b.id}>
+                    {b.name}
+                  </option>
+                ))}
+              </select>
+            </div>
           )}
         </div>
       </div>
 
-      {/* 2. Four Financial KPI Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4">
-        {/* KPI 1: Total Expenses */}
-        <div className="bg-card p-3.5 sm:p-5 rounded-2xl border border-border shadow-xs flex flex-col justify-between text-card-foreground">
-          <div className="flex items-center justify-between">
-            <span className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-muted-foreground truncate">
-              Total Expenses
-            </span>
-            <div className="h-7 w-7 rounded-lg bg-rose-500/10 text-rose-600 hidden sm:flex items-center justify-center shrink-0">
-              <TrendingDown className="w-3.5 h-3.5" />
-            </div>
-          </div>
-          <div className="mt-2">
-            <div className="text-xl sm:text-3xl font-black tracking-tight text-foreground tabular-nums truncate">
-              ₹{totalAmount.toLocaleString("en-IN", { minimumFractionDigits: 0, maximumFractionDigits: 2 })}
-            </div>
-            <div className="flex items-center gap-1 text-[11px] sm:text-xs font-medium mt-0.5 truncate">
-              {delta ? (
-                <>
-                  {delta.isUp ? (
-                    <TrendingUp className="w-3 h-3 text-rose-600 shrink-0" />
-                  ) : (
-                    <TrendingDown className="w-3 h-3 text-emerald-600 shrink-0" />
-                  )}
-                  <span
-                    className={
-                      delta.isUp
-                        ? "text-rose-600 font-semibold truncate"
-                        : "text-emerald-600 font-semibold truncate"
-                    }
-                  >
-                    {delta.text}
-                  </span>
-                </>
-              ) : (
-                <span className="text-muted-foreground truncate capitalize">
-                  {period} spend total
-                </span>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* KPI 2: Expense Vouchers */}
-        <div className="bg-card p-3.5 sm:p-5 rounded-2xl border border-border shadow-xs flex flex-col justify-between text-card-foreground">
-          <div className="flex items-center justify-between">
-            <span className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-muted-foreground truncate">
-              Expense Vouchers
-            </span>
-            <div className="h-7 w-7 rounded-lg bg-primary/10 text-primary hidden sm:flex items-center justify-center shrink-0">
-              <Receipt className="w-3.5 h-3.5" />
-            </div>
-          </div>
-          <div className="mt-2">
-            <div className="text-xl sm:text-3xl font-black tracking-tight text-foreground tabular-nums truncate">
-              {voucherCount}
-            </div>
-            <div className="text-[11px] sm:text-xs text-muted-foreground mt-0.5 truncate font-medium">
-              Transactions logged
-            </div>
-          </div>
-        </div>
-
-        {/* KPI 3: Top Category */}
-        <div className="bg-card p-3.5 sm:p-5 rounded-2xl border border-border shadow-xs flex flex-col justify-between text-card-foreground">
-          <div className="flex items-center justify-between">
-            <span className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-muted-foreground truncate">
-              Top Category
-            </span>
-            <div className="h-7 w-7 rounded-lg bg-amber-500/10 text-amber-600 hidden sm:flex items-center justify-center shrink-0">
-              <Tag className="w-3.5 h-3.5" />
-            </div>
-          </div>
-          <div className="mt-2">
-            <div className="text-xl sm:text-3xl font-black tracking-tight text-foreground capitalize truncate">
-              {topCategory ? topCategory.label : "None"}
-            </div>
-            <div className="text-[11px] sm:text-xs text-muted-foreground mt-0.5 truncate font-medium">
-              {topCategory
-                ? `₹${topCategory.amount.toLocaleString("en-IN")} (${topCategory.pct}%)`
-                : "No expenses in period"}
-            </div>
-          </div>
-        </div>
-
-        {/* KPI 4: Average Expense */}
-        <div className="bg-card p-3.5 sm:p-5 rounded-2xl border border-border shadow-xs flex flex-col justify-between text-card-foreground">
-          <div className="flex items-center justify-between">
-            <span className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-muted-foreground truncate">
-              Average Expense
-            </span>
-            <div className="h-7 w-7 rounded-lg bg-blue-500/10 text-blue-600 hidden sm:flex items-center justify-center shrink-0">
-              <Layers className="w-3.5 h-3.5" />
-            </div>
-          </div>
-          <div className="mt-2">
-            <div className="text-xl sm:text-3xl font-black tracking-tight text-foreground tabular-nums truncate">
-              ₹{Math.round(avgVoucher).toLocaleString("en-IN")}
-            </div>
-            <div className="text-[11px] sm:text-xs text-muted-foreground mt-0.5 truncate font-medium">
-              Per voucher avg
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* 3. Two-Column Analytics */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
-        {/* Left Column: Category Breakdown */}
-        <div className="lg:col-span-6 bg-card rounded-2xl sm:rounded-3xl border border-border shadow-xs p-4 sm:p-5 flex flex-col gap-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-base sm:text-lg font-bold text-card-foreground tracking-tight">
-                Expense Breakdown by Category
-              </h2>
-              <p className="text-xs text-muted-foreground mt-0.5">
-                Spend distribution for selected period
-              </p>
-            </div>
-            <span className="text-xs font-semibold text-muted-foreground px-2 py-0.5 rounded-full bg-muted border border-border/60">
-              {categoryBreakdown.length} Categories
-            </span>
-          </div>
-
-          <div className="space-y-3 pt-1">
-            {categoryBreakdown.length === 0 ? (
-              <div className="py-12 text-center text-xs text-muted-foreground">
-                No expenses recorded for this period.
-              </div>
-            ) : (
-              categoryBreakdown.map((item) => (
-                <Link
-                  key={item.category}
-                  href={`/app/${gymId}/expenses/all?category=${encodeURIComponent(item.category)}`}
-                  className="block p-2.5 rounded-xl hover:bg-muted/40 transition-colors border border-transparent hover:border-border/60 group"
-                  title={`View all ${item.label} expenses`}
-                >
-                  <div className="flex items-center justify-between text-xs mb-1.5">
-                    <div className="flex items-center gap-2">
-                      <span
-                        className={`px-2 py-0.5 rounded-md text-[10px] font-bold border capitalize ${getCategoryBadgeClass(
-                          item.category
-                        )}`}
-                      >
-                        {item.label}
-                      </span>
-                      <ArrowRight className="w-3 h-3 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
-                    </div>
-                    <div className="font-semibold text-foreground tabular-nums">
-                      ₹{item.amount.toLocaleString("en-IN")}
-                      <span className="text-muted-foreground font-normal ml-1.5">
-                        ({item.pct}%)
-                      </span>
-                    </div>
-                  </div>
-                  {/* Progress Bar Track */}
-                  <div className="h-2 w-full bg-muted rounded-full overflow-hidden">
-                    <div
-                      className="h-full rounded-full bg-primary transition-all duration-300"
-                      style={{ width: `${Math.max(item.pct, 3)}%` }}
-                    />
-                  </div>
-                </Link>
-              ))
-            )}
-          </div>
-        </div>
-
-        {/* Right Column: 6-Month Trend Chart */}
-        <div className="lg:col-span-6 bg-card rounded-2xl sm:rounded-3xl border border-border shadow-xs p-4 sm:p-5 flex flex-col gap-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-base sm:text-lg font-bold text-card-foreground tracking-tight">
-                Monthly Expense Trends
-              </h2>
-              <p className="text-xs text-muted-foreground mt-0.5">
-                Last 6 months spending history
-              </p>
-            </div>
-            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-              <span className="w-2.5 h-2.5 rounded-full bg-primary shrink-0" />
-              <span>Current Month</span>
-            </div>
-          </div>
-
-          {/* SVG / Pure Tailwind Vertical Bar Chart */}
-          <div className="pt-4 flex flex-col justify-end min-h-[220px]">
-            {monthlyTrends.months.every((m) => m.amount === 0) ? (
-              <div className="py-14 text-center text-xs text-muted-foreground">
-                No spending history in the last 6 months.
-              </div>
-            ) : (
-              <div className="grid grid-cols-6 gap-2 sm:gap-4 items-end h-44 px-2 border-b border-border">
-                {monthlyTrends.months.map((item) => {
-                  const heightPercent =
-                    item.amount > 0
-                      ? Math.max(Math.round((item.amount / monthlyTrends.maxSpend) * 100), 8)
-                      : 4;
-
-                  return (
-                    <div
-                      key={item.key}
-                      className="flex flex-col items-center gap-1.5 h-full justify-end group"
-                    >
-                      {/* Hover Tooltip Value */}
-                      <span className="text-[10px] font-bold text-muted-foreground group-hover:text-foreground tabular-nums transition-colors whitespace-nowrap">
-                        {item.amount > 0
-                          ? item.amount >= 100000
-                            ? `₹${(item.amount / 100000).toFixed(1)}L`
-                            : item.amount >= 1000
-                            ? `₹${Math.round(item.amount / 1000)}k`
-                            : `₹${item.amount}`
-                          : "₹0"}
-                      </span>
-
-                      {/* Bar */}
-                      <div className="w-full max-w-[40px] bg-muted/60 rounded-t-lg overflow-hidden flex flex-col justify-end h-32">
-                        <div
-                          className={`w-full rounded-t-lg transition-all duration-300 ${
-                            item.isCurrent
-                              ? "bg-primary shadow-xs"
-                              : "bg-primary/50 group-hover:bg-primary/80"
-                          }`}
-                          style={{ height: `${heightPercent}%` }}
-                        />
-                      </div>
-
-                      {/* X-axis Label */}
-                      <span
-                        className={`text-[11px] font-bold uppercase tracking-wider ${
-                          item.isCurrent ? "text-primary" : "text-muted-foreground"
-                        }`}
-                      >
-                        {item.label}
-                      </span>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* 4. Recent Expenses Preview */}
-      <div className="bg-card rounded-2xl sm:rounded-3xl border border-border shadow-xs p-4 sm:p-5 flex flex-col gap-4">
-        <div className="flex items-center justify-between">
+      {/* Recent Expenses */}
+      <div className="bg-card rounded-3xl border border-border shadow-xs p-4 sm:p-5 space-y-3">
+        <div className="flex items-center justify-between gap-2">
           <div>
-            <h2 className="text-base sm:text-lg font-bold text-card-foreground tracking-tight">
+            <h2 className="text-sm sm:text-base font-black text-foreground">
               Recent Expenses
             </h2>
-            <p className="text-xs text-muted-foreground mt-0.5">
-              Latest transactions logged in gym ledger
+            <p className="text-[11px] text-muted-foreground">
+              Showing {periodLabel.toLowerCase()} records
             </p>
           </div>
           <Link
             href={`/app/${gymId}/expenses/all`}
-            className="text-xs font-bold text-primary hover:underline flex items-center gap-1"
+            className="text-xs font-bold text-primary hover:underline"
           >
-            <span>View All</span>
-            <ArrowRight className="w-3.5 h-3.5" />
+            View All →
           </Link>
         </div>
 
-        {/* Desktop Table View */}
-        <div className="hidden md:block overflow-x-auto">
-          <table className="w-full text-left text-xs">
-            <thead className="bg-muted/40 text-muted-foreground font-bold uppercase tracking-wider text-[11px] border-b border-border">
-              <tr>
-                <th className="py-2.5 px-3">Voucher</th>
-                <th className="py-2.5 px-3">Date</th>
-                <th className="py-2.5 px-3">Category</th>
-                <th className="py-2.5 px-3">Description / Notes</th>
-                <th className="py-2.5 px-3">Payment Method</th>
-                <th className="py-2.5 px-3 text-right">Amount</th>
-                <th className="py-2.5 px-3 text-right">Action</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-border text-foreground">
-              {recentExpenses.length === 0 ? (
-                <tr>
-                  <td colSpan={7} className="py-10 text-center text-muted-foreground font-medium">
-                    No expenses recorded yet. Click &quot;Record Expense&quot; above to log your first operational cost.
-                  </td>
-                </tr>
-              ) : (
-                recentExpenses.map((expense) => (
-                  <tr key={expense.id} className="hover:bg-muted/30 transition-colors">
-                    <td className="py-3 px-3 font-mono font-bold text-muted-foreground">
-                      {formatVoucherId(expense.id)}
-                    </td>
-                    <td className="py-3 px-3 font-semibold text-foreground whitespace-nowrap">
-                      {expense.expense_date}
-                    </td>
-                    <td className="py-3 px-3">
-                      <span
-                        className={`px-2.5 py-0.5 rounded-full font-bold text-[10px] border capitalize ${getCategoryBadgeClass(
-                          expense.category
-                        )}`}
-                      >
-                        {expense.category}
-                      </span>
-                    </td>
-                    <td className="py-3 px-3 max-w-xs truncate text-muted-foreground">
-                      {expense.description || "—"}
-                    </td>
-                    <td className="py-3 px-3 uppercase font-medium text-muted-foreground">
-                      {expense.payment_method}
-                    </td>
-                    <td className="py-3 px-3 text-right font-black text-foreground whitespace-nowrap text-sm tabular-nums">
-                      ₹{Number(expense.amount).toFixed(2)}
-                    </td>
-                    <td className="py-3 px-3 text-right">
-                      <button
-                        type="button"
-                        onClick={() => setViewingExpense(expense)}
-                        className="p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition-colors cursor-pointer"
-                        title="View Voucher Details"
-                      >
-                        <Eye className="w-3.5 h-3.5" />
-                      </button>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
+        {filteredRecent.length === 0 ? (
+          <div className="py-10 text-center text-xs text-muted-foreground">
+            No expenses match the selected filters.
+          </div>
+        ) : (
+          <div className="space-y-2.5">
+            {filteredRecent.map((exp) => {
+              const Icon = getCategoryIcon(exp.category);
+              const colors =
+                CATEGORY_COLORS[exp.category] || CATEGORY_COLORS.other;
+              const label = getCategoryLabel(exp.category);
 
-        {/* Mobile 2-Row Card View */}
-        <div className="md:hidden divide-y divide-border/60">
-          {recentExpenses.length === 0 ? (
-            <div className="py-8 text-center text-xs text-muted-foreground">
-              No expenses recorded yet.
-            </div>
-          ) : (
-            recentExpenses.map((expense) => (
-              <div
-                key={expense.id}
-                onClick={() => setViewingExpense(expense)}
-                className="py-3 flex items-center justify-between gap-3 cursor-pointer hover:bg-muted/20 px-1 rounded-lg transition-colors"
-              >
-                <div className="min-w-0">
-                  <div className="flex items-center gap-1.5 flex-wrap">
+              return (
+                <div
+                  key={exp.id}
+                  className="flex items-center justify-between gap-3 p-3 sm:p-3.5 rounded-2xl bg-muted/25 hover:bg-muted/45 border border-border/60 transition-colors"
+                >
+                  {/* Left: Icon + Title/Note */}
+                  <div className="flex items-center gap-3 min-w-0 flex-1">
+                    <div
+                      className={`h-10 w-10 rounded-xl flex items-center justify-center shrink-0 ${colors.iconBg}`}
+                    >
+                      <Icon className="w-4 h-4" />
+                    </div>
+                    <div className="min-w-0">
+                      <div className="text-xs sm:text-sm font-bold text-foreground truncate">
+                        {exp.description || label}
+                      </div>
+                      <div className="text-[11px] text-muted-foreground truncate">
+                        {label} • {formatPaymentMethod(exp.payment_method)}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Desktop middle columns */}
+                  <div className="hidden md:flex items-center gap-6 shrink-0 text-xs">
                     <span
-                      className={`px-2 py-0.5 rounded-md font-bold text-[10px] border capitalize ${getCategoryBadgeClass(
-                        expense.category
+                      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-bold border ${getCategoryBadgeClass(
+                        exp.category
                       )}`}
                     >
-                      {expense.category}
+                      {label}
                     </span>
-                    <span className="text-[11px] font-semibold text-foreground">
-                      {expense.expense_date}
+                    <span className="inline-flex items-center gap-1.5 text-muted-foreground font-medium w-28">
+                      <CreditCard className="w-3.5 h-3.5" />
+                      {formatPaymentMethod(exp.payment_method)}
                     </span>
-                    <span className="text-[10px] text-muted-foreground uppercase">
-                      • {expense.payment_method}
+                    <span className="inline-flex items-center gap-1.5 text-muted-foreground font-medium w-24">
+                      <Calendar className="w-3.5 h-3.5" />
+                      {formatDate(exp.expense_date)}
                     </span>
                   </div>
-                  <div className="text-xs text-muted-foreground truncate mt-1">
-                    {expense.description || "No description"}
+
+                  {/* Right: Amount + Date (mobile) + Menu */}
+                  <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+                    <div className="text-right">
+                      <div className="text-xs sm:text-sm font-black text-foreground">
+                        ₹{Number(exp.amount).toLocaleString("en-IN")}
+                      </div>
+                      <div className="md:hidden text-[10px] text-muted-foreground">
+                        {formatDate(exp.expense_date)}
+                      </div>
+                    </div>
+
+                    <div className="relative">
+                      <button
+                        type="button"
+                        aria-label="Expense actions"
+                        onClick={() =>
+                          setOpenMenuId((prev) =>
+                            prev === exp.id ? null : exp.id
+                          )
+                        }
+                        className="h-8 w-8 inline-flex items-center justify-center rounded-xl hover:bg-muted text-muted-foreground cursor-pointer"
+                      >
+                        <MoreVertical className="w-4 h-4" />
+                      </button>
+
+                      {openMenuId === exp.id && (
+                        <>
+                          <div
+                            className="fixed inset-0 z-20"
+                            onClick={() => setOpenMenuId(null)}
+                          />
+                          <div className="absolute right-0 top-9 w-40 bg-popover text-popover-foreground border border-border rounded-2xl shadow-lg p-1.5 z-30 text-xs font-semibold">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setOpenMenuId(null);
+                                setViewingExpense(exp);
+                              }}
+                              className="w-full flex items-center gap-2 px-3 py-2 rounded-xl hover:bg-muted cursor-pointer"
+                            >
+                              <Eye className="w-3.5 h-3.5 text-primary" />
+                              View
+                            </button>
+                            {canManage && (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setOpenMenuId(null);
+                                  setEditingExpense(exp);
+                                }}
+                                className="w-full flex items-center gap-2 px-3 py-2 rounded-xl hover:bg-muted cursor-pointer"
+                              >
+                                <Edit2 className="w-3.5 h-3.5 text-amber-600" />
+                                Edit
+                              </button>
+                            )}
+                            {canDelete && (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setOpenMenuId(null);
+                                  setDeletingExpense(exp);
+                                }}
+                                className="w-full flex items-center gap-2 px-3 py-2 rounded-xl hover:bg-rose-500/10 text-rose-600 cursor-pointer"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                                Delete
+                              </button>
+                            )}
+                          </div>
+                        </>
+                      )}
+                    </div>
                   </div>
                 </div>
-
-                <div className="text-right shrink-0">
-                  <div className="text-sm font-black text-foreground tabular-nums">
-                    ₹{Number(expense.amount).toFixed(2)}
-                  </div>
-                  <div className="text-[10px] font-mono text-muted-foreground">
-                    {formatVoucherId(expense.id)}
-                  </div>
-                </div>
-              </div>
-            ))
-          )}
-
-          <div className="pt-3">
-            <Link
-              href={`/app/${gymId}/expenses/all`}
-              className="w-full h-10 rounded-xl bg-muted/60 hover:bg-muted text-foreground text-xs font-bold flex items-center justify-center gap-1.5 border border-border transition-colors"
-            >
-              <span>View All Expenses</span>
-              <ArrowRight className="w-3.5 h-3.5" />
-            </Link>
+              );
+            })}
           </div>
-        </div>
+        )}
       </div>
 
-      {/* View Expense Modal */}
-      <ViewExpenseModal
-        expense={viewingExpense}
-        isOpen={!!viewingExpense}
-        onClose={() => setViewingExpense(null)}
+      {/* Categories Info Modal (honest gap notice) */}
+      {isCategoriesModalOpen && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-card text-card-foreground rounded-3xl max-w-md w-full p-6 shadow-2xl border border-border">
+            <div className="flex items-center justify-between pb-3.5 border-b border-border">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2 rounded-xl bg-blue-500/12 text-blue-600 dark:text-blue-400">
+                  <Bookmark className="w-4 h-4" />
+                </div>
+                <h3 className="text-sm font-black text-foreground">
+                  Expense Categories
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsCategoriesModalOpen(false)}
+                className="p-1.5 rounded-xl hover:bg-muted text-muted-foreground cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            <p className="text-xs text-muted-foreground mt-3 leading-relaxed">
+              Expense categories are currently system-defined across GymApra.
+              Custom category creation is not yet supported.
+            </p>
+            <div className="mt-3 flex flex-wrap gap-1.5">
+              {EXPENSE_CATEGORIES.map((c) => (
+                <span
+                  key={c.value}
+                  className={`inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-bold border ${getCategoryBadgeClass(
+                    c.value
+                  )}`}
+                >
+                  {c.label}
+                </span>
+              ))}
+            </div>
+            <div className="mt-5 flex justify-end">
+              <button
+                type="button"
+                onClick={() => setIsCategoriesModalOpen(false)}
+                className="h-9 px-4 rounded-xl bg-primary text-primary-foreground text-xs font-bold cursor-pointer"
+              >
+                Got it
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Existing Modals */}
+      <RecordExpenseModal
+        gymId={gymId}
+        branches={branches}
+        isOpen={isRecordOpen}
+        onClose={() => setIsRecordOpen(false)}
       />
+
+      {viewingExpense && (
+        <ViewExpenseModal
+          expense={viewingExpense}
+          isOpen={true}
+          onClose={() => setViewingExpense(null)}
+        />
+      )}
+
+      {editingExpense && (
+        <EditExpenseModal
+          gymId={gymId}
+          branches={branches}
+          expense={editingExpense}
+          isOpen={true}
+          onClose={() => setEditingExpense(null)}
+        />
+      )}
+
+      {deletingExpense && (
+        <DeleteExpenseModal
+          gymId={gymId}
+          expense={deletingExpense}
+          canDelete={canDelete}
+          isOpen={true}
+          onClose={() => setDeletingExpense(null)}
+        />
+      )}
     </div>
   );
 }

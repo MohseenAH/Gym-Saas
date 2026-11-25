@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import {
@@ -15,9 +15,9 @@ import {
   ChevronRight,
   Plus,
   ArrowLeft,
-  Filter,
   X,
 } from "lucide-react";
+import { KpiCard } from "@/components/ui/kpi-card";
 import {
   RecordExpenseModal,
   ViewExpenseModal,
@@ -66,15 +66,6 @@ export function ExpenseLedgerClient({
   const [viewingExpense, setViewingExpense] = useState<ExpenseItem | null>(null);
   const [editingExpense, setEditingExpense] = useState<ExpenseItem | null>(null);
   const [deletingExpense, setDeletingExpense] = useState<ExpenseItem | null>(null);
-
-  // Sync if URL search param changes
-  useEffect(() => {
-    const cat = searchParams.get("category");
-    if (cat) {
-      setSelectedCategory(cat);
-      setCurrentPage(1);
-    }
-  }, [searchParams]);
 
   // Reset to page 1 on filter changes
   function handleCategoryChange(cat: string) {
@@ -209,91 +200,60 @@ export function ExpenseLedgerClient({
           <span className="text-foreground">All Expenses</span>
         </div>
 
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mt-1">
-          <div>
-            <h1 className="text-2xl sm:text-3xl font-black text-foreground tracking-tight">
+        <div className="flex items-center justify-between gap-4 mt-1">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div className="h-9 w-9 rounded-xl bg-primary/10 text-primary border border-primary/20 flex items-center justify-center shrink-0">
+              <Receipt className="w-5 h-5" />
+            </div>
+            <h1 className="text-xl sm:text-2xl font-black text-foreground tracking-tight truncate">
               All Expenses
             </h1>
-            <p className="text-sm text-muted-foreground mt-0.5">
-              Search, filter, and audit complete branch expense records.
-            </p>
           </div>
 
           {canManage && (
             <button
               type="button"
               onClick={() => setIsRecordOpen(true)}
-              className="h-10 px-4 bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl text-xs sm:text-sm font-bold shadow-xs transition-all active:scale-[0.98] flex items-center gap-1.5 self-start sm:self-auto cursor-pointer"
+              className="h-9 sm:h-10 px-3.5 sm:px-4 bg-primary hover:opacity-95 text-primary-foreground rounded-xl text-xs font-bold shadow-xs transition-all flex items-center gap-1.5 shrink-0 cursor-pointer"
             >
               <Plus className="w-4 h-4" />
-              <span>Record Expense</span>
+              <span>Add Expense</span>
             </button>
           )}
         </div>
       </div>
 
       {/* 2. Filtered Summary Strip (Computed from ALL filtered items) */}
-      <div className="grid grid-cols-3 gap-2 sm:gap-4">
-        {/* Card 1: Filtered Total */}
-        <div className="bg-card p-3 sm:p-5 rounded-xl border border-border shadow-xs flex flex-col justify-between text-card-foreground">
-          <div className="flex items-center justify-between">
-            <span className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-muted-foreground truncate">
-              Filtered Total
-            </span>
-            <div className="h-7 w-7 rounded-lg bg-rose-500/10 text-rose-600 hidden sm:flex items-center justify-center shrink-0">
-              <Receipt className="w-3.5 h-3.5" />
-            </div>
-          </div>
-          <div className="mt-2">
-            <div className="text-lg sm:text-2xl font-black tracking-tight text-foreground tabular-nums truncate">
-              ₹{filteredTotal.toLocaleString("en-IN", { minimumFractionDigits: 0, maximumFractionDigits: 2 })}
-            </div>
-            <div className="text-[11px] sm:text-xs text-muted-foreground mt-0.5 truncate font-medium">
-              Total spend
-            </div>
-          </div>
-        </div>
-
-        {/* Card 2: Expense Vouchers */}
-        <div className="bg-card p-3 sm:p-5 rounded-xl border border-border shadow-xs flex flex-col justify-between text-card-foreground">
-          <div className="flex items-center justify-between">
-            <span className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-muted-foreground truncate">
-              Expense Vouchers
-            </span>
-            <div className="h-7 w-7 rounded-lg bg-primary/10 text-primary hidden sm:flex items-center justify-center shrink-0">
-              <Layers className="w-3.5 h-3.5" />
-            </div>
-          </div>
-          <div className="mt-2">
-            <div className="text-lg sm:text-2xl font-black tracking-tight text-foreground tabular-nums truncate">
-              {filteredCount}
-            </div>
-            <div className="text-[11px] sm:text-xs text-muted-foreground mt-0.5 truncate font-medium">
-              Matching records
-            </div>
-          </div>
-        </div>
-
-        {/* Card 3: Largest Category */}
-        <div className="bg-card p-3 sm:p-5 rounded-xl border border-border shadow-xs flex flex-col justify-between text-card-foreground">
-          <div className="flex items-center justify-between">
-            <span className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-muted-foreground truncate">
-              Largest Category
-            </span>
-            <div className="h-7 w-7 rounded-lg bg-amber-500/10 text-amber-600 hidden sm:flex items-center justify-center shrink-0">
-              <Tag className="w-3.5 h-3.5" />
-            </div>
-          </div>
-          <div className="mt-2">
-            <div className="text-lg sm:text-2xl font-black tracking-tight text-foreground capitalize truncate">
-              {largestCategory.label}
-            </div>
-            <div className="text-[11px] sm:text-xs text-muted-foreground mt-0.5 truncate font-medium">
-              {largestCategory.amount > 0
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 sm:gap-4">
+        <KpiCard
+          compact
+          label="Filtered Total"
+          value={`₹${filteredTotal.toLocaleString("en-IN", { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`}
+          variant="red"
+          icon={<Receipt className="w-4 h-4" />}
+          subtext="Total spend"
+        />
+        <KpiCard
+          compact
+          label="Expense Vouchers"
+          value={filteredCount}
+          variant="purple"
+          icon={<Layers className="w-4 h-4" />}
+          subtext="Matching records"
+        />
+        <div className="col-span-2 sm:col-span-1">
+          <KpiCard
+            compact
+            label="Largest Category"
+            value={largestCategory.label}
+            variant="amber"
+            icon={<Tag className="w-4 h-4" />}
+            subtext={
+              largestCategory.amount > 0
                 ? `₹${largestCategory.amount.toLocaleString("en-IN")}`
-                : "No vouchers"}
-            </div>
-          </div>
+                : "No vouchers"
+            }
+          />
         </div>
       </div>
 

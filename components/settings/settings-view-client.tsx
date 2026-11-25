@@ -202,53 +202,58 @@ export function SettingsViewClient({
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5 max-w-6xl mx-auto">
       {/* Top Header */}
-      <div className="bg-card p-6 rounded-3xl border border-border shadow-xs flex items-center justify-between">
-        <div>
-          <div className="flex items-center gap-3">
-            <div className="p-2.5 bg-primary/10 text-primary rounded-xl">
-              <Settings className="w-5 h-5" />
-            </div>
-            <h1 className="text-xl sm:text-2xl font-black text-foreground tracking-tight">Gym & System Settings</h1>
-          </div>
-          <p className="text-sm text-muted-foreground mt-1">
-            Configure gym business details, membership pricing, themes, receipt templates, and subscription access
-          </p>
+      <div className="flex items-center gap-3">
+        <div className="w-9 h-9 rounded-xl bg-primary/10 text-primary border border-primary/15 flex items-center justify-center shrink-0">
+          <Settings className="w-5 h-5" />
         </div>
+        <h1 className="text-xl sm:text-2xl font-black text-foreground tracking-tight">Settings</h1>
       </div>
 
-      {/* Settings Navigation Tabs */}
-      <div className="flex items-center gap-2 border-b border-border pb-2 overflow-x-auto">
-        {(
-          [
-            { id: "profile", label: "Gym Profile", icon: Building2 },
-            { id: "theme", label: "Appearance & Themes", icon: Palette },
-            { id: "branches", label: `Branches (${branches.length})`, icon: Building2 },
-            { id: "plans", label: `Membership Plans (${plans.length})`, icon: Calendar },
-            { id: "receipts", label: "Receipt Settings", icon: Receipt },
-            { id: "pilot", label: "Pilot & Subscription", icon: Sparkles },
-            { id: "account", label: "My Account", icon: User },
-          ] as const
-        ).map((tab) => {
-          const Icon = tab.icon;
-          const isActive = activeTab === tab.id;
-          return (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold whitespace-nowrap transition-all ${
-                isActive
-                  ? "bg-primary text-primary-foreground shadow-xs ring-1 ring-primary/25"
-                  : "text-muted-foreground hover:bg-muted hover:text-foreground"
-              }`}
-            >
-              <Icon className="w-3.5 h-3.5" />
-              <span>{tab.label}</span>
-            </button>
-          );
-        })}
-      </div>
+      {/* Responsive Settings Layout: Left Sidebar Nav (Desktop) + Horizontal Pills (Mobile) */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
+        <nav
+          aria-label="Settings sections"
+          className="lg:col-span-4 xl:col-span-3 flex lg:flex-col gap-1.5 overflow-x-auto lg:overflow-visible pb-1 lg:pb-0 bg-card p-2 rounded-2xl border border-border shadow-xs"
+        >
+          {(
+            [
+              { id: "profile", label: "Gym Profile", sub: "Name & contact details", icon: Building2 },
+              { id: "branches", label: `Branches (${branches.length})`, sub: "Locations & addresses", icon: Building2 },
+              { id: "plans", label: `Membership Plans (${plans.length})`, sub: "Pricing & durations", icon: Calendar },
+              { id: "receipts", label: "Receipt Settings", sub: "Payment & receipt info", icon: Receipt },
+              { id: "theme", label: "Appearance & Themes", sub: "4-theme customization", icon: Palette },
+              { id: "pilot", label: "Subscription & Billing", sub: "Trial & pilot access", icon: Sparkles },
+              { id: "account", label: "My Account", sub: "Role & session details", icon: User },
+            ] as const
+          ).map((tab) => {
+            const Icon = tab.icon;
+            const isActive = activeTab === tab.id;
+            return (
+              <button
+                key={tab.id}
+                type="button"
+                onClick={() => setActiveTab(tab.id)}
+                className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-left whitespace-nowrap lg:whitespace-normal transition-all cursor-pointer shrink-0 lg:w-full ${
+                  isActive
+                    ? "bg-primary/10 text-primary border border-primary/25 font-bold shadow-2xs"
+                    : "text-muted-foreground hover:bg-muted/70 hover:text-foreground border border-transparent font-semibold"
+                }`}
+              >
+                <Icon className="w-4 h-4 shrink-0" />
+                <div className="min-w-0">
+                  <div className="text-xs sm:text-sm leading-tight truncate">{tab.label}</div>
+                  <div className="hidden lg:block text-[11px] text-muted-foreground font-normal truncate mt-0.5">
+                    {tab.sub}
+                  </div>
+                </div>
+              </button>
+            );
+          })}
+        </nav>
+
+        <div className="lg:col-span-8 xl:col-span-9 min-w-0">
 
       {/* Tab 1: Gym Profile */}
       {activeTab === "profile" && (
@@ -699,6 +704,8 @@ export function SettingsViewClient({
           </div>
         </div>
       )}
+        </div>
+      </div>
     </div>
   );
 }

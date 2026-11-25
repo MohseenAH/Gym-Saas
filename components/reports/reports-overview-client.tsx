@@ -29,6 +29,7 @@ import {
   formatDisplayDate,
   getLocalTodayDateString,
 } from "@/lib/reports/report-utils";
+import { KpiCard } from "@/components/ui/kpi-card";
 
 export interface OverviewMember {
   id: string;
@@ -745,119 +746,78 @@ export function ReportsOverviewClient({
 
       {/* 4 RATE & ACTION KPI CARDS */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4">
-        {/* Card 1: Attendance Rate */}
-        <div className="bg-card border border-border rounded-xl p-4 flex flex-col justify-between shadow-xs">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-muted-foreground">Attendance Rate</span>
-            <div className="p-1.5 rounded-lg bg-primary/10 text-primary">
-              <CalendarCheck className="w-4 h-4" />
-            </div>
-          </div>
-          <div className="mt-2.5">
-            <div className="flex items-baseline gap-2">
-              <span className="text-2xl font-bold tabular-nums text-foreground tracking-tight">
-                {attendanceRate}%
+        <KpiCard
+          label="Attendance Rate"
+          value={`${attendanceRate}%`}
+          variant="blue"
+          icon={<CalendarCheck className="w-4 h-4 sm:w-5 sm:h-5" />}
+          trend={
+            dateRange.priorStartDate ? (
+              <span
+                className={`text-[11px] font-medium flex items-center tabular-nums ${
+                  attendanceComparison.isUp
+                    ? "text-emerald-600 [.dark_&]:text-emerald-400"
+                    : attendanceComparison.isDown
+                    ? "text-rose-500"
+                    : "text-muted-foreground"
+                }`}
+              >
+                {attendanceComparison.isUp && <TrendingUp className="w-3 h-3 mr-0.5" />}
+                {attendanceComparison.isDown && <TrendingDown className="w-3 h-3 mr-0.5" />}
+                {attendanceComparison.label}
               </span>
-              {dateRange.priorStartDate && (
-                <span
-                  className={`text-[11px] font-medium flex items-center tabular-nums ${
-                    attendanceComparison.isUp
-                      ? "text-emerald-600 dark:text-emerald-400"
-                      : attendanceComparison.isDown
-                      ? "text-rose-500"
-                      : "text-muted-foreground"
-                  }`}
-                >
-                  {attendanceComparison.isUp && <TrendingUp className="w-3 h-3 mr-0.5" />}
-                  {attendanceComparison.isDown && <TrendingDown className="w-3 h-3 mr-0.5" />}
-                  {attendanceComparison.label}
-                </span>
-              )}
-            </div>
-            <p className="text-[11px] text-muted-foreground mt-1 tabular-nums">
-              {attendedActiveMemberIds.size} / {activeMembers.length} active
-            </p>
-          </div>
-        </div>
+            ) : undefined
+          }
+          subtext={`${attendedActiveMemberIds.size} / ${activeMembers.length} active`}
+        />
 
-        {/* Card 2: Renewal Rate */}
-        <div className="bg-card border border-border rounded-xl p-4 flex flex-col justify-between shadow-xs">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-muted-foreground">Renewal Rate</span>
-            <div className="p-1.5 rounded-lg bg-primary/10 text-primary">
-              <RefreshCw className="w-4 h-4" />
-            </div>
-          </div>
-          <div className="mt-2.5">
-            <div className="flex items-baseline gap-2">
-              <span className="text-2xl font-bold tabular-nums text-foreground tracking-tight">
-                {eligibleRenewals.length > 0 ? `${renewalRate}%` : "—"}
+        <KpiCard
+          label="Renewal Rate"
+          value={eligibleRenewals.length > 0 ? `${renewalRate}%` : "—"}
+          variant="green"
+          icon={<RefreshCw className="w-4 h-4 sm:w-5 sm:h-5" />}
+          trend={
+            dateRange.priorStartDate && eligibleRenewals.length > 0 ? (
+              <span
+                className={`text-[11px] font-medium flex items-center tabular-nums ${
+                  renewalComparison.isUp
+                    ? "text-emerald-600 [.dark_&]:text-emerald-400"
+                    : renewalComparison.isDown
+                    ? "text-rose-500"
+                    : "text-muted-foreground"
+                }`}
+              >
+                {renewalComparison.isUp && <TrendingUp className="w-3 h-3 mr-0.5" />}
+                {renewalComparison.isDown && <TrendingDown className="w-3 h-3 mr-0.5" />}
+                {renewalComparison.label}
               </span>
-              {dateRange.priorStartDate && eligibleRenewals.length > 0 && (
-                <span
-                  className={`text-[11px] font-medium flex items-center tabular-nums ${
-                    renewalComparison.isUp
-                      ? "text-emerald-600 dark:text-emerald-400"
-                      : renewalComparison.isDown
-                      ? "text-rose-500"
-                      : "text-muted-foreground"
-                  }`}
-                >
-                  {renewalComparison.isUp && <TrendingUp className="w-3 h-3 mr-0.5" />}
-                  {renewalComparison.isDown && <TrendingDown className="w-3 h-3 mr-0.5" />}
-                  {renewalComparison.label}
-                </span>
-              )}
-            </div>
-            <p className="text-[11px] text-muted-foreground mt-1 tabular-nums">
-              {renewedCount} / {eligibleRenewals.length} renewed
-            </p>
-          </div>
-        </div>
+            ) : undefined
+          }
+          subtext={`${renewedCount} / ${eligibleRenewals.length} renewed`}
+        />
 
-        {/* Card 3: Inactive Members */}
-        <div className="bg-card border border-border rounded-xl p-4 flex flex-col justify-between shadow-xs">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-muted-foreground">Inactive Members</span>
-            <div className="p-1.5 rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400">
-              <UserX className="w-4 h-4" />
-            </div>
-          </div>
-          <div className="mt-2.5">
-            <div className="flex items-baseline gap-2">
-              <span className="text-2xl font-bold tabular-nums text-foreground tracking-tight">
-                {inactiveMembers.length}
-              </span>
-              <span className="text-[11px] text-muted-foreground tabular-nums">
-                ({activeMembers.length > 0 ? Math.round((inactiveMembers.length / activeMembers.length) * 100) : 0}%)
-              </span>
-            </div>
-            <p className="text-[11px] text-muted-foreground mt-1">
-              0 visits in selected period
-            </p>
-          </div>
-        </div>
+        <KpiCard
+          label="Inactive Members"
+          value={inactiveMembers.length}
+          variant="amber"
+          icon={<UserX className="w-4 h-4 sm:w-5 sm:h-5" />}
+          trend={
+            <span className="text-[11px] text-muted-foreground tabular-nums">
+              ({activeMembers.length > 0 ? Math.round((inactiveMembers.length / activeMembers.length) * 100) : 0}%)
+            </span>
+          }
+          subtext="0 visits in selected period"
+        />
 
-        {/* Card 4: Expiring Soon */}
-        <div className="bg-card border border-border rounded-xl p-4 flex flex-col justify-between shadow-xs">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-muted-foreground">Expiring Soon</span>
-            <div className="p-1.5 rounded-lg bg-rose-500/10 text-rose-600 dark:text-rose-400">
-              <Clock className="w-4 h-4" />
-            </div>
-          </div>
-          <div className="mt-2.5">
-            <div className="flex items-baseline gap-2">
-              <span className="text-2xl font-bold tabular-nums text-foreground tracking-tight">
-                {expiringSoonMemberships.length}
-              </span>
-              <span className="text-[11px] font-medium text-rose-500">Next 7 days</span>
-            </div>
-            <p className="text-[11px] text-muted-foreground mt-1">
-              Active memberships expiring
-            </p>
-          </div>
-        </div>
+        <KpiCard
+          label="Expiring Soon"
+          value={expiringSoonMemberships.length}
+          variant="purple"
+          icon={<Clock className="w-4 h-4 sm:w-5 sm:h-5" />}
+          trend={<span className="text-[11px] font-medium text-rose-500">Next 7 days</span>}
+          subtext="Active memberships expiring"
+          href={`/app/${gymId}/follow-ups`}
+        />
       </div>
 
       {/* 3 VISUAL CHARTS (Pure SVG / Tailwind — Zero External Chart Libraries) */}

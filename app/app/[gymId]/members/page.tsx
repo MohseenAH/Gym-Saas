@@ -2,8 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getAuthorizedActionContext } from "@/lib/auth/guard";
 import { cookies } from "next/headers";
 import { resolveBranchContext } from "@/lib/auth/branch-context";
-import { QuickEnrollModal } from "@/components/members/quick-enroll-modal";
-import { BulkImportModal } from "@/components/members/bulk-import-modal";
+import { Users } from "lucide-react";
 import { MembersTableClient, MemberListItem } from "@/components/members/members-table-client";
 
 interface MembersPageProps {
@@ -47,21 +46,28 @@ export default async function MembersPage({ params, searchParams }: MembersPageP
 
   let membershipsQuery = supabase
     .from("memberships")
-    .select("id, member_id, start_date, end_date, status, membership_plans(name, duration_days)")
+    .select("id, member_id, start_date, end_date, status, membership_plans(name, price, duration_days)")
     .eq("status", "active");
+
+  let paymentsQuery = supabase
+    .from("payments")
+    .select("membership_id, amount, payment_status")
+    .eq("gym_id", gymId);
 
   if (branchContext.selectedBranchId) {
     membersQuery = membersQuery.eq("branch_id", branchContext.selectedBranchId);
     plansQuery = plansQuery.eq("branch_id", branchContext.selectedBranchId);
     membershipsQuery = membershipsQuery.eq("branch_id", branchContext.selectedBranchId);
+    paymentsQuery = paymentsQuery.eq("branch_id", branchContext.selectedBranchId);
   } else if (branchContext.effectiveBranchIds.length > 0) {
     membersQuery = membersQuery.in("branch_id", branchContext.effectiveBranchIds);
     plansQuery = plansQuery.in("branch_id", branchContext.effectiveBranchIds);
     membershipsQuery = membershipsQuery.in("branch_id", branchContext.effectiveBranchIds);
+    paymentsQuery = paymentsQuery.in("branch_id", branchContext.effectiveBranchIds);
   }
 
-  // Fetch plans, invites, members, and memberships in parallel
-  const [plansRes, invitesRes, membersRes, membershipsRes] =
+  // Fetch plans, invites, members, memberships, and payments in parallel
+  const [plansRes, invitesRes, membersRes, membershipsRes, paymentsRes] =
     await Promise.all([
       plansQuery,
       supabase
@@ -72,6 +78,7 @@ export default async function MembersPage({ params, searchParams }: MembersPageP
         .eq("status", "pending"),
       membersQuery,
       membershipsQuery,
+      paymentsQuery,
     ]);
 
   const branches = authContext.branches;
@@ -84,12 +91,26 @@ export default async function MembersPage({ params, searchParams }: MembersPageP
 
   const allMembers = membersRes.data || [];
   const memberships = membershipsRes.data || [];
+  const allPayments = paymentsRes.data || [];
+
+  const paidByMembership = new Map<string, number>();
+  allPayments.forEach((p) => {
+    if (
+      p.membership_id &&
+      (p.payment_status === "paid" || p.payment_status === "partial")
+    ) {
+      paidByMembership.set(
+        p.membership_id,
+        (paidByMembership.get(p.membership_id) || 0) + Number(p.amount || 0)
+      );
+    }
+  });
 
   interface MembershipContract {
     id: string;
     member_id: string;
     end_date: string;
-    membership_plans?: { name?: string } | null;
+    membership_plans?: { name?: string; price?: number | string; duration_days?: number } | null;
   }
 
   const membershipMap = new Map<string, MembershipContract>();
@@ -121,19 +142,28 @@ export default async function MembersPage({ params, searchParams }: MembersPageP
       const daysLeft = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
       const isExpired = daysLeft < 0;
       const isExpiringSoon = daysLeft >= 0 && daysLeft <= 7;
+      const planName = activeContract.membership_plans?.name || "Active Plan";
+      const durationDays = Number(activeContract.membership_plans?.duration_days || 30);
+      const isTrial =
+        durationDays <= 14 || planName.toLowerCase().includes("trial");
 
       if (isExpiringSoon) {
         expiringSoonCount++;
       }
 
       activePlan = {
-        name: activeContract.membership_plans?.name || "Active Plan",
+        name: planName,
         endDate: activeContract.end_date,
         daysLeft,
         isExpired,
         isExpiringSoon,
+        isTrial,
       };
     }
+
+    const planPrice = Number(activeContract?.membership_plans?.price || 0);
+    const totalPaid = activeContract ? paidByMembership.get(activeContract.id) || 0 : 0;
+    const outstandingDues = Math.max(0, Math.round((planPrice - totalPaid) * 100) / 100);
 
     const branch = m.branches as unknown as { name?: string } | null;
 
@@ -148,53 +178,35 @@ export default async function MembersPage({ params, searchParams }: MembersPageP
       branchId: (m as unknown as { branch_id?: string }).branch_id || branchId,
       branchName: branch?.name || "Main Branch",
       activePlan,
+      outstandingDues,
       hasPendingInvite: inviteMap.has(m.id),
     };
   });
 
   return (
-    <div className="space-y-6 max-w-7xl mx-auto text-foreground">
-      {/* 1. Top Header & Primary Actions */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
-        <div>
-          <div className="flex items-center gap-2.5">
-            <h1 className="text-2xl sm:text-3xl font-black text-foreground tracking-tight">Members</h1>
-            <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-indigo-500/10 text-indigo-700 dark:text-indigo-400 border border-indigo-500/20 tabular-nums">
-              {allMembers.length} Total
-            </span>
-          </div>
-          <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
-            Add individual members, import bulk rosters, and track plan health
-          </p>
+    <div className="space-y-4 sm:space-y-5 max-w-7xl mx-auto text-foreground">
+      {/* 1. Simple Page Header */}
+      <div className="flex items-center gap-2.5">
+        <div className="w-8 h-8 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
+          <Users className="w-4 h-4" />
         </div>
-        <div className="grid grid-cols-2 gap-2 sm:flex sm:items-center sm:gap-2.5 w-full sm:w-auto">
-          <BulkImportModal
-            gymId={gymId}
-            branchId={branchId}
-            branches={(branches || []).map((b) => ({ id: b.id, name: b.name }))}
-            triggerLabel="Import CSV"
-            triggerClassName="h-11 min-h-[44px] px-4 inline-flex items-center justify-center gap-2 rounded-xl bg-card/85 backdrop-blur-md hover:bg-muted text-foreground text-sm font-bold border border-border shadow-xs hover:shadow-sm transition-all cursor-pointer w-full sm:w-auto"
-          />
-          <QuickEnrollModal
-            gymId={gymId}
-            branchId={branchId}
-            plans={(plans || []).map((p) => ({
-              id: p.id,
-              name: p.name,
-              price: Number(p.price),
-              durationDays: p.duration_days,
-            }))}
-            triggerLabel="+ Add Member"
-            triggerClassName="h-11 min-h-[44px] px-4 inline-flex items-center justify-center gap-2 rounded-xl bg-primary hover:opacity-95 active:scale-[0.99] text-primary-foreground text-sm font-bold shadow-sm hover:shadow-md transition-all cursor-pointer w-full sm:w-auto"
-          />
-        </div>
+        <h1 className="text-xl sm:text-2xl font-extrabold text-foreground tracking-tight">
+          Members
+        </h1>
       </div>
 
-      {/* 2. Interactive Filterable Members Table with 5-Stat Strip */}
+      {/* 2. Interactive Filterable Members View */}
       <MembersTableClient
         gymId={gymId}
+        branchId={branchId}
         members={tableMembers}
         branches={(branches || []).map((b) => ({ id: b.id, name: b.name }))}
+        plans={(plans || []).map((p) => ({
+          id: p.id,
+          name: p.name,
+          price: Number(p.price),
+          durationDays: p.duration_days,
+        }))}
       />
     </div>
   );

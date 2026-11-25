@@ -8,7 +8,13 @@ import {
   ShieldCheck,
   Phone,
   Clock,
+  Users,
+  CheckCircle2,
+  Mail,
+  Layers,
+  Search,
 } from "lucide-react";
+import { KpiCard } from "@/components/ui/kpi-card";
 import { ROLE_LABELS, StaffRole } from "@/lib/auth/roles";
 import { revokeInvitationAction, toggleStaffStatusAction } from "@/lib/actions/invitations";
 import { getStatusBadgeClass, formatDate } from "@/lib/utils";
@@ -61,6 +67,8 @@ export function StaffClientView({
   const router = useRouter();
   const [modalOpen, setModalOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<"team" | "invitations">("team");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState<"all" | "active" | "suspended">("all");
 
   async function handleRevoke(invitationId: string) {
     if (!confirm("Are you sure you want to revoke this invitation?")) return;
@@ -75,55 +83,137 @@ export function StaffClientView({
   }
 
   const pendingInvites = invitations.filter((i) => i.status === "pending");
+  const activeStaffCount = staffList.filter((s) => s.status === "active").length;
+  const distinctRolesCount = new Set(staffList.map((s) => s.role)).size;
+
+  const filteredStaff = staffList.filter((s) => {
+    if (statusFilter !== "all" && s.status !== statusFilter) return false;
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      const nameMatch = s.profiles.full_name.toLowerCase().includes(q);
+      const phoneMatch = (s.profiles.phone || "").toLowerCase().includes(q);
+      const roleMatch = (ROLE_LABELS[s.role] || s.role).toLowerCase().includes(q);
+      if (!nameMatch && !phoneMatch && !roleMatch) return false;
+    }
+    return true;
+  });
 
   return (
-    <div className="space-y-6 max-w-6xl mx-auto">
+    <div className="space-y-5 max-w-6xl mx-auto">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-card p-6 rounded-3xl border border-border shadow-xs">
-        <div>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="flex items-center gap-2.5">
+          <div className="w-9 h-9 rounded-xl bg-primary/10 text-primary border border-primary/15 flex items-center justify-center shrink-0">
+            <Users className="w-5 h-5" />
+          </div>
           <h1 className="text-xl sm:text-2xl font-black text-foreground tracking-tight">
-            Team & Staff Directory
+            Staff &amp; Access
           </h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            Manage your team members, branch authorizations, and staff invitations
-          </p>
         </div>
 
         {canManageStaff && (
           <button
+            type="button"
             onClick={() => setModalOpen(true)}
-            className="h-11 inline-flex items-center gap-2 px-4 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground text-sm font-bold shadow-xs transition-all active:scale-[0.98]"
+            className="h-10 inline-flex items-center justify-center gap-2 px-4 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground text-xs sm:text-sm font-bold shadow-xs transition-all active:scale-[0.98] cursor-pointer"
           >
-            <UserPlus className="w-4 h-4" /> Invite Staff Member
+            <UserPlus className="w-4 h-4" /> Invite Staff
           </button>
         )}
       </div>
 
-      {/* Navigation Tabs */}
-      <div className="flex items-center gap-2 border-b border-border pb-2">
-        <button
-          onClick={() => setActiveTab("team")}
-          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold transition-all ${
-            activeTab === "team"
-              ? "bg-primary text-primary-foreground shadow-xs ring-1 ring-primary/25"
-              : "text-muted-foreground hover:bg-muted hover:text-foreground"
-          }`}
-        >
-          <ShieldCheck className="w-4 h-4" />
-          Active Team ({staffList.length})
-        </button>
+      {/* 4 KPI Cards */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4">
+        <KpiCard
+          label="Total Staff"
+          value={staffList.length}
+          variant="purple"
+          icon={<Users className="w-4 h-4 sm:w-5 sm:h-5" />}
+          subtext="Team members"
+        />
+        <KpiCard
+          label="Active Staff"
+          value={activeStaffCount}
+          variant="green"
+          icon={<CheckCircle2 className="w-4 h-4 sm:w-5 sm:h-5" />}
+          subtext="With active access"
+        />
+        <KpiCard
+          label="Pending Invitations"
+          value={pendingInvites.length}
+          variant="amber"
+          icon={<Mail className="w-4 h-4 sm:w-5 sm:h-5" />}
+          subtext="Awaiting acceptance"
+        />
+        <KpiCard
+          label="Roles Assigned"
+          value={distinctRolesCount}
+          variant="blue"
+          icon={<Layers className="w-4 h-4 sm:w-5 sm:h-5" />}
+          subtext="Distinct access tiers"
+        />
+      </div>
 
-        <button
-          onClick={() => setActiveTab("invitations")}
-          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold transition-all ${
-            activeTab === "invitations"
-              ? "bg-primary text-primary-foreground shadow-xs ring-1 ring-primary/25"
-              : "text-muted-foreground hover:bg-muted hover:text-foreground"
-          }`}
-        >
-          <Clock className="w-4 h-4" />
-          Pending Invitations ({pendingInvites.length})
-        </button>
+      {/* Navigation Tabs + Search/Filter Bar */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setActiveTab("team")}
+            className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer ${
+              activeTab === "team"
+                ? "bg-primary text-primary-foreground shadow-xs"
+                : "bg-card border border-border text-muted-foreground hover:bg-muted hover:text-foreground"
+            }`}
+          >
+            <ShieldCheck className="w-4 h-4" />
+            Active Team ({staffList.length})
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveTab("invitations")}
+            className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer ${
+              activeTab === "invitations"
+                ? "bg-primary text-primary-foreground shadow-xs"
+                : "bg-card border border-border text-muted-foreground hover:bg-muted hover:text-foreground"
+            }`}
+          >
+            <Clock className="w-4 h-4" />
+            Pending Invitations ({pendingInvites.length})
+          </button>
+        </div>
+
+        {activeTab === "team" && (
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="relative flex-1 sm:w-56">
+              <Search className="w-3.5 h-3.5 text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search name, phone, role..."
+                className="w-full h-9 pl-8 pr-3 rounded-xl border border-border bg-card text-xs text-foreground placeholder:text-muted-foreground focus:outline-hidden focus:ring-2 focus:ring-primary/30"
+              />
+            </div>
+            <div className="flex items-center gap-1 bg-card border border-border rounded-xl p-1">
+              {(["all", "active", "suspended"] as const).map((st) => (
+                <button
+                  key={st}
+                  type="button"
+                  onClick={() => setStatusFilter(st)}
+                  className={`px-2.5 py-1 rounded-lg text-xs font-semibold capitalize transition-colors cursor-pointer ${
+                    statusFilter === st
+                      ? "bg-primary text-primary-foreground"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  {st}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Tab 1: Active Team */}
@@ -141,7 +231,7 @@ export function StaffClientView({
                 </tr>
               </thead>
               <tbody className="divide-y divide-border text-foreground">
-                {staffList.map((member) => (
+                {filteredStaff.map((member) => (
                   <tr key={member.id} className="hover:bg-muted/30 transition-colors">
                     <td className="px-6 py-4">
                       <div className="font-bold text-foreground text-base">

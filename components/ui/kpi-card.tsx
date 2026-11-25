@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 import Link from "next/link";
 import { ChevronRight } from "lucide-react";
 
-export type KpiCardVariant = "green" | "blue" | "purple" | "amber";
+export type KpiCardVariant = "green" | "blue" | "purple" | "amber" | "red" | "slate";
 
 interface KpiCardProps {
   label: string;
@@ -13,6 +13,9 @@ interface KpiCardProps {
   trend?: ReactNode;
   href?: string;
   title?: string;
+  compact?: boolean;
+  onClick?: () => void;
+  active?: boolean;
 }
 
 const VARIANT_STYLES: Record<
@@ -48,6 +51,18 @@ const VARIANT_STYLES: Record<
     chevron: "text-amber-700/65 dark:text-amber-400/75 group-hover:text-amber-800 dark:group-hover:text-amber-300",
     focus: "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/60 focus-visible:ring-offset-2 focus-visible:ring-offset-background",
   },
+  red: {
+    card: "bg-card bg-gradient-to-br from-rose-50 via-rose-50/85 to-rose-100/60 border-rose-200/90 hover:border-rose-300 dark:from-rose-500/[0.17] dark:via-rose-500/[0.11] dark:to-rose-500/[0.07] dark:border-rose-500/30 dark:hover:border-rose-400/50",
+    icon: "bg-rose-500/15 text-rose-700 dark:bg-rose-500/20 dark:text-rose-300 border-rose-500/25 dark:border-rose-400/30",
+    chevron: "text-rose-700/65 dark:text-rose-400/75 group-hover:text-rose-800 dark:group-hover:text-rose-300",
+    focus: "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/60 focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+  },
+  slate: {
+    card: "bg-card bg-gradient-to-br from-slate-50 via-slate-50/85 to-slate-100/60 border-slate-200/90 hover:border-slate-300 dark:from-slate-500/[0.17] dark:via-slate-500/[0.11] dark:to-slate-500/[0.07] dark:border-slate-500/30 dark:hover:border-slate-400/50",
+    icon: "bg-slate-500/15 text-slate-700 dark:bg-slate-500/20 dark:text-slate-300 border-slate-500/25 dark:border-slate-400/30",
+    chevron: "text-slate-700/65 dark:text-slate-400/75 group-hover:text-slate-800 dark:group-hover:text-slate-300",
+    focus: "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-500/60 focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+  },
 };
 
 export function KpiCard({
@@ -59,15 +74,23 @@ export function KpiCard({
   trend,
   href,
   title,
+  compact = false,
+  onClick,
+  active = false,
 }: KpiCardProps) {
   const styles = VARIANT_STYLES[variant];
+  const isInteractive = Boolean(href || onClick);
 
   const content = (
     <>
       <div className="flex items-center justify-between gap-2 sm:contents">
         <div className="flex items-center gap-2 sm:contents min-w-0">
           <div
-            className={`w-8 h-8 sm:w-10 sm:h-10 rounded-xl border flex items-center justify-center shrink-0 ${styles.icon}`}
+            className={`${
+              compact
+                ? "w-7 h-7 sm:w-8 sm:h-8 rounded-lg"
+                : "w-8 h-8 sm:w-10 sm:h-10 rounded-xl"
+            } border flex items-center justify-center shrink-0 ${styles.icon}`}
           >
             {icon}
           </div>
@@ -75,7 +98,7 @@ export function KpiCard({
             {label}
           </span>
         </div>
-        {href && (
+        {isInteractive && (
           <ChevronRight
             className={`w-4 h-4 shrink-0 sm:hidden transition-transform group-hover:translate-x-0.5 ${styles.chevron}`}
             aria-hidden="true"
@@ -88,7 +111,7 @@ export function KpiCard({
           <span className="text-xs font-medium text-muted-foreground truncate">
             {label}
           </span>
-          {href && (
+          {isInteractive && (
             <ChevronRight
               className={`w-3.5 h-3.5 shrink-0 transition-transform group-hover:translate-x-0.5 ${styles.chevron}`}
               aria-hidden="true"
@@ -97,7 +120,11 @@ export function KpiCard({
         </div>
 
         <div className="sm:mt-1 flex items-center gap-1.5 sm:gap-2 flex-wrap">
-          <span className="text-xl sm:text-2xl font-extrabold text-foreground tabular-nums tracking-tight leading-none">
+          <span
+            className={`${
+              compact ? "text-lg sm:text-xl" : "text-xl sm:text-2xl"
+            } font-extrabold text-foreground tabular-nums tracking-tight leading-none`}
+          >
             {value}
           </span>
           {trend}
@@ -112,13 +139,31 @@ export function KpiCard({
     </>
   );
 
-  const baseClassName = `group border rounded-2xl p-3 sm:p-4 shadow-xs transition-all flex flex-col sm:flex-row sm:items-start gap-2 sm:gap-3 min-w-0 ${styles.card}`;
+  const baseClassName = `group border rounded-2xl ${
+    compact ? "p-2.5 sm:p-3" : "p-3 sm:p-4"
+  } shadow-xs transition-all flex flex-col sm:flex-row sm:items-start gap-2 sm:gap-2.5 min-w-0 text-left ${
+    styles.card
+  } ${active ? "ring-2 ring-primary/40 border-primary/50" : ""}`;
 
   if (href) {
     return (
       <Link href={href} title={title} className={`${baseClassName} ${styles.focus}`}>
         {content}
       </Link>
+    );
+  }
+
+  if (onClick) {
+    return (
+      <button
+        type="button"
+        onClick={onClick}
+        title={title}
+        aria-pressed={active}
+        className={`w-full cursor-pointer ${baseClassName} ${styles.focus}`}
+      >
+        {content}
+      </button>
     );
   }
 

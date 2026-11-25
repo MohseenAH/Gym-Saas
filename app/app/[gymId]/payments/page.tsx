@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getAuthorizedActionContext } from "@/lib/auth/guard";
 import { cookies } from "next/headers";
 import { resolveBranchContext } from "@/lib/auth/branch-context";
+import { getTodayIST } from "@/lib/utils";
 import { PaymentsLedgerClient, PaymentLedgerItem } from "@/components/payments/payments-ledger-client";
 
 interface PaymentsPageProps {
@@ -129,11 +130,14 @@ export default async function PaymentsPage({ params, searchParams }: PaymentsPag
     name: b.name,
   }));
 
+  const todayStr = getTodayIST();
+
   return (
     <div className="space-y-4 max-w-7xl mx-auto">
       <PaymentsLedgerClient
         gymId={gymId}
         gymName={gym?.name || "Our Gym"}
+        todayStr={todayStr}
         payments={formattedLedger}
         members={modalMembers}
         branches={modalBranches}

@@ -1,8 +1,9 @@
 import { createClient } from "@/lib/supabase/server";
 import { getAuthorizedActionContext } from "@/lib/auth/guard";
+import { hasCapability } from "@/lib/auth/capabilities";
 import { cookies } from "next/headers";
 import { resolveBranchContext } from "@/lib/auth/branch-context";
-import { getTodayIST, getISTDateString, isMembershipValidForAttendance } from "@/lib/utils";
+import { isMembershipValidForAttendance } from "@/lib/utils";
 import {
   StaffCheckInClient,
   AttendanceMember,
@@ -252,14 +253,7 @@ export default async function AttendancePage({ params, searchParams }: Attendanc
     };
   });
 
-  // Calculate Last Hour check-ins
-  const nowMs = Date.now();
-  const oneHourAgoMs = nowMs - 60 * 60 * 1000;
-  const isViewingToday = selectedDateStr === todayStr;
-
-  const lastHourCount = isViewingToday
-    ? liveCheckIns.filter((item) => new Date(item.checkInTime).getTime() >= oneHourAgoMs).length
-    : 0;
+  const lastHourCount = 0;
 
   const overrideCount = liveCheckIns.filter((item) => item.isOverride).length;
   const yesterdayCount = yesterdayRes.count || 0;
@@ -293,6 +287,7 @@ export default async function AttendancePage({ params, searchParams }: Attendanc
         initialLiveCheckIns={liveCheckIns}
         initialKpis={initialKpis}
         canOverride={canOverride}
+        canViewReports={hasCapability(authContext.role, "reports:view")}
         userRole={authContext.role}
         currentUserName={currentUserName}
         selectedDate={selectedDateStr}

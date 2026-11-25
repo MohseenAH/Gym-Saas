@@ -1,9 +1,13 @@
 import { createClient } from "@/lib/supabase/server";
 import { getAuthorizedActionContext } from "@/lib/auth/guard";
+import { hasCapability } from "@/lib/auth/capabilities";
 import { cookies } from "next/headers";
 import { resolveBranchContext } from "@/lib/auth/branch-context";
 import { getTodayIST } from "@/lib/utils";
-import { FollowUpsClient, FollowUpMember } from "@/components/follow-ups/follow-ups-client";
+import {
+  FollowUpsClient,
+  FollowUpMember,
+} from "@/components/follow-ups/follow-ups-client";
 
 interface FollowUpsPageProps {
   params: Promise<{ gymId: string }>;
@@ -12,7 +16,7 @@ interface FollowUpsPageProps {
 
 function formatShortDate(dateStr: string): string {
   if (!dateStr) return "-";
-  const [y, m, d] = dateStr.split("-").map(Number);
+  const [, m, d] = dateStr.split("-").map(Number);
   const months = [
     "Jan",
     "Feb",
@@ -30,15 +34,21 @@ function formatShortDate(dateStr: string): string {
   return `${d} ${months[m - 1]}`;
 }
 
-export default async function FollowUpsPage({ params, searchParams }: FollowUpsPageProps) {
-  const [{ gymId }, resolvedSearchParams, cookieStore, authContext] = await Promise.all([
-    params,
-    searchParams ? searchParams : Promise.resolve({} as { branchId?: string }),
-    cookies(),
-    params.then(({ gymId: id }) =>
-      getAuthorizedActionContext({ gymId: id, capability: "members:view" })
-    ),
-  ]);
+export default async function FollowUpsPage({
+  params,
+  searchParams,
+}: FollowUpsPageProps) {
+  const [{ gymId }, resolvedSearchParams, cookieStore, authContext] =
+    await Promise.all([
+      params,
+      searchParams
+        ? searchParams
+        : Promise.resolve({} as { branchId?: string }),
+      cookies(),
+      params.then(({ gymId: id }) =>
+        getAuthorizedActionContext({ gymId: id, capability: "members:view" })
+      ),
+    ]);
 
   const cookieBranch = cookieStore.get(`gymapra_branch_${gymId}`)?.value;
   const requestedBranchId =
@@ -81,7 +91,7 @@ export default async function FollowUpsPage({ params, searchParams }: FollowUpsP
     .eq("branches.gym_id", gymId)
     .eq("is_active", true);
 
-  // Payments query
+  // Confirmed payments query (only paid / partial reduce dues)
   let paymentsQuery = supabase
     .from("payments")
     .select("id, member_id, membership_id, amount, payment_status, payment_date")
@@ -98,7 +108,6 @@ export default async function FollowUpsPage({ params, searchParams }: FollowUpsP
     paymentsQuery = paymentsQuery.in("branch_id", branchContext.effectiveBranchIds);
   }
 
-  // Fetch active/expired memberships, members, plans, and payments for the gym/branch in parallel
   const [membershipsRes, membersRes, plansRes, paymentsRes] = await Promise.all([
     membershipsQuery,
     membersQuery,
@@ -113,12 +122,9 @@ export default async function FollowUpsPage({ params, searchParams }: FollowUpsP
 
   const todayStr = getTodayIST();
   const todayDate = new Date(todayStr + "T00:00:00+05:30");
-  const currentMonthStart = todayStr.slice(0, 7) + "-01";
 
-  // Map payments by membership and by member
+  // Map confirmed payments by membership_id
   const paymentSumByMembership = new Map<string, number>();
-  const paymentSumByMember = new Map<string, number>();
-
   rawPayments.forEach((p) => {
     const amt = Number(p.amount) || 0;
     if (p.membership_id) {
@@ -127,20 +133,8 @@ export default async function FollowUpsPage({ params, searchParams }: FollowUpsP
         (paymentSumByMembership.get(p.membership_id) || 0) + amt
       );
     }
-    if (p.member_id) {
-      paymentSumByMember.set(
-        p.member_id,
-        (paymentSumByMember.get(p.member_id) || 0) + amt
-      );
-    }
   });
 
-  // Calculate total dues recovered this month
-  const recoveredThisMonth = rawPayments
-    .filter((p) => p.payment_date >= currentMonthStart && p.payment_date <= todayStr)
-    .reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
-
-  // Tenant / branch filtered members
   const membersMap = new Map(rawMembers.map((m) => [m.id, m]));
 
   interface MembershipRow {
@@ -160,7 +154,6 @@ export default async function FollowUpsPage({ params, searchParams }: FollowUpsP
     } | null;
   }
 
-  // Group memberships by member_id
   const membershipsByMember = new Map<string, MembershipRow[]>();
   (rawMemberships as unknown as MembershipRow[]).forEach((m) => {
     if (!membersMap.has(m.member_id)) return;
@@ -177,7 +170,7 @@ export default async function FollowUpsPage({ params, searchParams }: FollowUpsP
       return;
     }
 
-    // Pick most relevant membership: sort active first, then end_date descending
+    // Most relevant contract: active first, then latest end_date
     const sortedMemberships = [...memberMemberships].sort((a, b) => {
       if (a.status === "active" && b.status !== "active") return -1;
       if (b.status === "active" && a.status !== "active") return 1;
@@ -187,10 +180,13 @@ export default async function FollowUpsPage({ params, searchParams }: FollowUpsP
     const m = sortedMemberships[0];
     const planName = m.membership_plans?.name || "Standard Plan";
     const planPrice = Number(m.membership_plans?.price || 0);
+    const isTrial = planName.toLowerCase().includes("trial");
 
-    const paidForMembership =
-      paymentSumByMembership.get(m.id) ?? (paymentSumByMember.get(m.member_id) ?? 0);
-    const unpaidBalance = Math.max(0, planPrice - paidForMembership);
+    const paidForMembership = paymentSumByMembership.get(m.id) || 0;
+    const unpaidBalance = Math.max(
+      0,
+      Math.round((planPrice - paidForMembership) * 100) / 100
+    );
 
     const endDate = m.end_date;
     const startDate = m.start_date;
@@ -201,63 +197,31 @@ export default async function FollowUpsPage({ params, searchParams }: FollowUpsP
     );
 
     const startDateObj = new Date(startDate + "T00:00:00+05:30");
-    const daysSinceStart = Math.round(
-      (todayDate.getTime() - startDateObj.getTime()) / (1000 * 60 * 60 * 24)
+    const daysSinceStart = Math.max(
+      0,
+      Math.round(
+        (todayDate.getTime() - startDateObj.getTime()) / (1000 * 60 * 60 * 24)
+      )
     );
 
-    let dueAmount = 0;
-    let isOverdue = false;
-    let isDueSoon = false;
-    let isUpcoming = false;
-    let daysOverdue = 0;
-    let daysUntilDue = 0;
-    let dueDate = endDate;
+    const isActive = m.status === "active" && diffDays >= 0;
 
-    if (unpaidBalance > 0) {
-      dueAmount = unpaidBalance;
-      if (diffDays < 0) {
-        // Expired with unpaid balance
-        isOverdue = true;
-        daysOverdue = Math.abs(diffDays);
-        dueDate = endDate;
-      } else if (daysSinceStart > 0) {
-        // Active plan, but joined in past and still has partial unpaid balance
-        isOverdue = true;
-        daysOverdue = daysSinceStart;
-        dueDate = startDate;
-      } else if (diffDays <= 7) {
-        isDueSoon = true;
-        daysUntilDue = Math.max(0, diffDays);
-        dueDate = endDate;
-      } else {
-        isUpcoming = true;
-        daysUntilDue = diffDays;
-        dueDate = endDate;
-      }
-    } else {
-      // Fully paid for current term. Renewal fee due on/near expiry
-      dueAmount = planPrice;
-      if (diffDays < 0) {
-        isOverdue = true;
-        daysOverdue = Math.abs(diffDays);
-        dueDate = endDate;
-      } else if (diffDays <= 7) {
-        isDueSoon = true;
-        daysUntilDue = diffDays;
-        dueDate = endDate;
-      } else {
-        isUpcoming = true;
-        daysUntilDue = diffDays;
-        dueDate = endDate;
-      }
+    // Non-mutually-exclusive approved categories (Section 6)
+    const isExpiring = isActive && diffDays >= 0 && diffDays <= 7;
+    const isPending = unpaidBalance > 0;
+    const isOverdue = m.status === "expired" || diffDays < 0;
+    const isTrialEnding = isActive && isTrial && diffDays >= 0 && diffDays <= 3;
+
+    if (!isExpiring && !isPending && !isOverdue && !isTrialEnding) {
+      return;
     }
 
-    if (dueAmount <= 0) return;
+    const daysOverdue =
+      diffDays < 0 ? Math.abs(diffDays) : isPending ? daysSinceStart : 0;
 
     const branchName =
       (member.branches as unknown as { name?: string })?.name || "Main Branch";
-
-    const memberCode = `#${member.id.slice(0, 4).toUpperCase()}`;
+    const memberCode = `#${member.id.slice(0, 8).toUpperCase()}`;
 
     followUpMembers.push({
       id: member.id,
@@ -272,51 +236,35 @@ export default async function FollowUpsPage({ params, searchParams }: FollowUpsP
       planId: m.plan_id,
       planName,
       planPrice,
-      totalPaid: unpaidBalance > 0 ? paidForMembership : planPrice,
-      dueAmount,
-      dueDate,
-      formattedDueDate: formatShortDate(dueDate),
+      totalPaid: paidForMembership,
+      dueAmount: unpaidBalance,
+      endDate,
+      formattedEndDate: formatShortDate(endDate),
+      startDate,
+      formattedStartDate: formatShortDate(startDate),
       daysDiff: diffDays,
       daysOverdue,
-      daysUntilDue,
+      isExpiring,
+      isPending,
       isOverdue,
-      isDueSoon,
-      isUpcoming,
+      isTrialEnding,
+      isTrial,
       membershipStatus: m.status,
     });
   });
 
-  // Calculate overview metrics
-  const overdueMembers = followUpMembers.filter((m) => m.isOverdue);
-  const overdueTotal = overdueMembers.reduce((sum, m) => sum + m.dueAmount, 0);
-  const overdueCount = overdueMembers.length;
-
-  const dueSoonMembers = followUpMembers.filter((m) => m.isDueSoon);
-  const dueSoonTotal = dueSoonMembers.reduce((sum, m) => sum + m.dueAmount, 0);
-  const dueSoonCount = dueSoonMembers.length;
-
-  const upcomingMembers = followUpMembers.filter((m) => m.isUpcoming);
-  const upcomingTotal = upcomingMembers.reduce((sum, m) => sum + m.dueAmount, 0);
-  const upcomingCount = upcomingMembers.length;
-
-  const totalOutstanding = overdueTotal + dueSoonTotal;
-
-  const monthlyTarget = Math.max(50000, Math.round(recoveredThisMonth + totalOutstanding));
-
-  // Serialize active plans for dropdown
   const serializedPlans = rawPlans.map((p) => ({
     id: p.id,
     name: p.name,
     price: Number(p.price) || 0,
+    durationDays: Number(p.duration_days) || 30,
   }));
 
-  // Serialize branches
   const branches = authContext.branches.map((b) => ({
     id: b.id,
     name: b.name,
   }));
 
-  // All gym members for RecordPaymentModal selector
   const allMembersForPayment = rawMembers.map((m) => ({
     id: m.id,
     fullName: m.full_name,
@@ -324,23 +272,22 @@ export default async function FollowUpsPage({ params, searchParams }: FollowUpsP
     branchId: m.branch_id,
   }));
 
+  const canRecordPayments = hasCapability(authContext.role, "payments:record");
+  const canManageMembers = hasCapability(authContext.role, "members:manage");
+
   return (
-    <FollowUpsClient
-      gymId={gymId}
-      gymName={authContext.gym.name || "Gym"}
-      members={followUpMembers}
-      allMembersForPayment={allMembersForPayment}
-      plans={serializedPlans}
-      branches={branches}
-      totalOutstanding={totalOutstanding}
-      overdueTotal={overdueTotal}
-      overdueCount={overdueCount}
-      dueSoonTotal={dueSoonTotal}
-      dueSoonCount={dueSoonCount}
-      upcomingTotal={upcomingTotal}
-      upcomingCount={upcomingCount}
-      recoveredThisMonth={recoveredThisMonth}
-      monthlyTarget={monthlyTarget}
-    />
+    <div className="max-w-7xl mx-auto">
+      <FollowUpsClient
+        gymId={gymId}
+        gymName={authContext.gym.name || "Gym"}
+        todayStr={todayStr}
+        members={followUpMembers}
+        allMembersForPayment={allMembersForPayment}
+        plans={serializedPlans}
+        branches={branches}
+        canRecordPayments={canRecordPayments}
+        canManageMembers={canManageMembers}
+      />
+    </div>
   );
 }

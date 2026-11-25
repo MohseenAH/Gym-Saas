@@ -1,6 +1,8 @@
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getAuthorizedActionContext } from "@/lib/auth/guard";
+import { hasCapability } from "@/lib/auth/capabilities";
+import { getTodayIST } from "@/lib/utils";
 import { MemberProfileClient } from "@/components/members/member-profile-client";
 
 interface MemberDetailPageProps {
@@ -78,8 +80,10 @@ export default async function MemberDetailPage({ params }: MemberDetailPageProps
 
   const formattedMemberships = ((rawMemberships as unknown as RawMemberMembership[]) || []).map((m) => ({
     id: m.id,
+    planId: m.plan_id,
     planName: m.membership_plans?.name || "Standard Membership",
     planPrice: Number(m.membership_plans?.price || 0),
+    durationDays: Number(m.membership_plans?.duration_days || 30),
     startDate: m.start_date,
     endDate: m.end_date,
     status: m.status,
@@ -88,12 +92,12 @@ export default async function MemberDetailPage({ params }: MemberDetailPageProps
   }));
 
   // Find active membership
+  const todayStr = getTodayIST();
   const rawActive = formattedMemberships.find((m) => m.status === "active");
   let activeMembership = null;
   if (rawActive) {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const expDate = new Date(rawActive.endDate);
+    const today = new Date(`${todayStr}T00:00:00`);
+    const expDate = new Date(`${rawActive.endDate}T00:00:00`);
     const diffTime = expDate.getTime() - today.getTime();
     const daysLeft = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
@@ -111,6 +115,7 @@ export default async function MemberDetailPage({ params }: MemberDetailPageProps
     payment_status: string;
     payment_date: string;
     notes?: string | null;
+    created_at?: string;
   }
 
   const formattedPayments = ((rawPayments as unknown as RawMemberPayment[]) || []).map((p) => ({
@@ -121,14 +126,18 @@ export default async function MemberDetailPage({ params }: MemberDetailPageProps
     paymentStatus: p.payment_status,
     paymentDate: p.payment_date,
     notes: p.notes,
+    createdAt: p.created_at,
   }));
 
-  const totalPaid = formattedPayments.reduce((acc, curr) => acc + curr.amount, 0);
+  const confirmedPayments = formattedPayments.filter(
+    (p) => p.paymentStatus === "paid" || p.paymentStatus === "partial"
+  );
+  const totalPaid = confirmedPayments.reduce((acc, curr) => acc + curr.amount, 0);
 
-  // Calculate dues for active contract
+  // Calculate dues for active contract using only confirmed payments
   let outstandingDues = 0;
   if (activeMembership) {
-    const paidForActive = formattedPayments
+    const paidForActive = confirmedPayments
       .filter((p) => p.membershipId === activeMembership.id)
       .reduce((acc, curr) => acc + curr.amount, 0);
     outstandingDues = Math.max(0, activeMembership.planPrice - paidForActive);
@@ -150,6 +159,11 @@ export default async function MemberDetailPage({ params }: MemberDetailPageProps
     branchName: a.branches?.name,
   }));
 
+  const currentMonthPrefix = todayStr.slice(0, 7);
+  const currentMonthAttendance = formattedAttendance.filter((a) =>
+    a.checkInDate.startsWith(currentMonthPrefix)
+  ).length;
+
   const memberBranch = member.branches as unknown as { name?: string } | null;
 
   return (
@@ -157,6 +171,13 @@ export default async function MemberDetailPage({ params }: MemberDetailPageProps
       <MemberProfileClient
         gymId={gymId}
         gymName={gym?.name || "GymApra Fitness Club"}
+        gymPhone={gym?.phone || undefined}
+        todayStr={todayStr}
+        permissions={{
+          canManageMembers: hasCapability(authContext.role, "members:manage"),
+          canRecordPayments: hasCapability(authContext.role, "payments:record"),
+          canRecordAttendance: hasCapability(authContext.role, "attendance:record"),
+        }}
         member={{
           id: member.id,
           fullName: member.full_name,
@@ -183,6 +204,7 @@ export default async function MemberDetailPage({ params }: MemberDetailPageProps
         totalPaid={totalPaid}
         outstandingDues={outstandingDues}
         totalWorkouts={formattedAttendance.length}
+        currentMonthAttendance={currentMonthAttendance}
       />
     </div>
   );

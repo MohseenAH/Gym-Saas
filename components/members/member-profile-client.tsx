@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, startTransition } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import {
   ArrowLeft,
@@ -12,6 +13,7 @@ import {
   FileText,
   IndianRupee,
   MessageSquare,
+  Phone,
   RefreshCw,
   ShieldCheck,
   User,
@@ -19,6 +21,15 @@ import {
   CheckCircle2,
   Clock,
   Building,
+  MoreVertical,
+  CheckSquare,
+  Sparkles,
+  ChevronRight,
+  Activity,
+  X,
+  Loader2,
+  Copy,
+  Check,
 } from "lucide-react";
 import { EditMemberModal } from "@/components/members/edit-member-modal";
 import {
@@ -26,12 +37,20 @@ import {
   MembershipPlanOption,
 } from "@/components/members/renew-membership-modal";
 import { ReceiptModal, ReceiptData } from "@/components/payments/receipt-modal";
+import { staffCheckInAction } from "@/lib/actions/attendance";
+import { recordPaymentAction } from "@/lib/actions/payments";
 import { getStatusBadgeClass, formatDate } from "@/lib/utils";
 
 export interface MemberProfileClientProps {
   gymId: string;
   gymName: string;
   gymPhone?: string;
+  todayStr: string;
+  permissions: {
+    canManageMembers: boolean;
+    canRecordPayments: boolean;
+    canRecordAttendance: boolean;
+  };
   member: {
     id: string;
     fullName: string;
@@ -48,8 +67,10 @@ export interface MemberProfileClientProps {
   plans: MembershipPlanOption[];
   activeMembership: {
     id: string;
+    planId?: string;
     planName: string;
     planPrice: number;
+    durationDays?: number;
     startDate: string;
     endDate: string;
     status: string;
@@ -57,8 +78,10 @@ export interface MemberProfileClientProps {
   } | null;
   memberships: {
     id: string;
+    planId?: string;
     planName: string;
     planPrice: number;
+    durationDays?: number;
     startDate: string;
     endDate: string;
     status: string;
@@ -73,6 +96,7 @@ export interface MemberProfileClientProps {
     paymentStatus: string;
     paymentDate: string;
     notes?: string | null;
+    createdAt?: string;
   }[];
   attendance: {
     id: string;
@@ -84,12 +108,104 @@ export interface MemberProfileClientProps {
   totalPaid: number;
   outstandingDues: number;
   totalWorkouts: number;
+  currentMonthAttendance: number;
+}
+
+type ProfileTab = "overview" | "membership" | "attendance" | "payments" | "activity";
+
+interface ActivityEvent {
+  id: string;
+  type: "attendance" | "payment" | "membership";
+  title: string;
+  subtitle: string;
+  dateStr: string;
+  sortKey: string;
+}
+
+function getMembershipBadgeInfo(
+  memberStatus: string,
+  activeMembership: MemberProfileClientProps["activeMembership"],
+  memberships: MemberProfileClientProps["memberships"]
+): { label: string; className: string; isTrial: boolean; isExpired: boolean; isUnassigned: boolean } {
+  if (memberStatus === "suspended") {
+    return {
+      label: "Suspended",
+      className: "bg-rose-500/10 text-rose-700 dark:text-rose-400 border-rose-500/25",
+      isTrial: false,
+      isExpired: false,
+      isUnassigned: false,
+    };
+  }
+  if (memberStatus === "inactive") {
+    return {
+      label: "Inactive",
+      className: "bg-slate-500/10 text-slate-700 dark:text-slate-400 border-slate-500/25",
+      isTrial: false,
+      isExpired: false,
+      isUnassigned: false,
+    };
+  }
+  if (activeMembership) {
+    const isTrial = activeMembership.planName.toLowerCase().includes("trial");
+    if (activeMembership.daysLeft < 0) {
+      return {
+        label: "Expired",
+        className: "bg-rose-500/10 text-rose-700 dark:text-rose-400 border-rose-500/25",
+        isTrial,
+        isExpired: true,
+        isUnassigned: false,
+      };
+    }
+    if (isTrial) {
+      return {
+        label: "Trial",
+        className: "bg-purple-500/10 text-purple-700 dark:text-purple-400 border-purple-500/25",
+        isTrial: true,
+        isExpired: false,
+        isUnassigned: false,
+      };
+    }
+    if (activeMembership.daysLeft <= 7) {
+      return {
+        label: "Expiring Soon",
+        className: "bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/25",
+        isTrial: false,
+        isExpired: false,
+        isUnassigned: false,
+      };
+    }
+    return {
+      label: "Active",
+      className: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/25",
+      isTrial: false,
+      isExpired: false,
+      isUnassigned: false,
+    };
+  }
+  if (memberships.length > 0) {
+    return {
+      label: "Expired",
+      className: "bg-rose-500/10 text-rose-700 dark:text-rose-400 border-rose-500/25",
+      isTrial: false,
+      isExpired: true,
+      isUnassigned: false,
+    };
+  }
+  return {
+    label: "Unassigned",
+    className: "bg-slate-500/10 text-slate-700 dark:text-slate-400 border-slate-500/25",
+    isTrial: false,
+    isExpired: false,
+    isUnassigned: true,
+  };
 }
 
 export function MemberProfileClient({
   gymId,
   gymName,
   gymPhone,
+  todayStr,
+  permissions,
   member,
   branches,
   plans,
@@ -100,18 +216,185 @@ export function MemberProfileClient({
   totalPaid,
   outstandingDues,
   totalWorkouts,
+  currentMonthAttendance,
 }: MemberProfileClientProps) {
   const router = useRouter();
+  const [activeTab, setActiveTab] = useState<ProfileTab>("overview");
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isRenewOpen, setIsRenewOpen] = useState(false);
+  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   const [selectedReceipt, setSelectedReceipt] = useState<ReceiptData | null>(null);
-  const [activeTab, setActiveTab] = useState<"memberships" | "payments" | "attendance">("memberships");
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [copiedId, setCopiedId] = useState(false);
 
-  const cleanPhone = member.phone.replace(/\D/g, "");
+  // Check-in quick action state
+  const [checkInLoading, setCheckInLoading] = useState(false);
+  const [actionFeedback, setActionFeedback] = useState<{
+    type: "success" | "error";
+    message: string;
+    canOverride?: boolean;
+  } | null>(null);
+
+  // Quick Record Payment Modal state
+  const [payAmount, setPayAmount] = useState(
+    outstandingDues > 0 ? String(outstandingDues) : ""
+  );
+  const [payMethod, setPayMethod] = useState<
+    "cash" | "upi" | "card" | "bank_transfer" | "cheque" | "other"
+  >("upi");
+  const [payDate, setPayDate] = useState(todayStr);
+  const [payNotes, setPayNotes] = useState("");
+  const [payLoading, setPayLoading] = useState(false);
+  const [payError, setPayError] = useState<string | null>(null);
+
+  const cleanPhone = (member.phone || "").replace(/\D/g, "");
+  const hasPhone = cleanPhone.length >= 7;
   const waPhone = cleanPhone.length === 10 ? `91${cleanPhone}` : cleanPhone;
-  const waDirectUrl = `https://wa.me/${waPhone}?text=${encodeURIComponent(
-    `Hello ${member.fullName}! This is ${gymName}. 💪`
-  )}`;
+  const waDirectUrl = hasPhone
+    ? `https://wa.me/${waPhone}?text=${encodeURIComponent(
+        `Hello ${member.fullName}! This is ${gymName}.`
+      )}`
+    : "#";
+  const telUrl = hasPhone ? `tel:${cleanPhone}` : "#";
+  const shortMemberId = `#${member.id.slice(0, 8).toUpperCase()}`;
+
+  const badgeInfo = getMembershipBadgeInfo(member.status, activeMembership, memberships);
+  const showConvertToMembership =
+    permissions.canManageMembers &&
+    (badgeInfo.isTrial || badgeInfo.isUnassigned || badgeInfo.isExpired);
+
+  // Confirmed payments only
+  const confirmedPayments = payments.filter(
+    (p) => p.paymentStatus === "paid" || p.paymentStatus === "partial"
+  );
+  const lastConfirmedPayment = confirmedPayments[0] || null;
+
+  // Membership progress calculation
+  let validityProgress = 0;
+  if (activeMembership) {
+    const startMs = new Date(`${activeMembership.startDate}T00:00:00`).getTime();
+    const endMs = new Date(`${activeMembership.endDate}T00:00:00`).getTime();
+    const todayMs = new Date(`${todayStr}T00:00:00`).getTime();
+    const totalSpan = Math.max(1, endMs - startMs);
+    const elapsed = Math.max(0, Math.min(totalSpan, todayMs - startMs));
+    validityProgress = Math.round((elapsed / totalSpan) * 100);
+  }
+
+  // Real chronological activity events
+  const activityEvents: ActivityEvent[] = [
+    ...attendance.map((att) => ({
+      id: `att-${att.id}`,
+      type: "attendance" as const,
+      title: `Checked in (${att.checkInMethod.replace("_", " ").toUpperCase()})`,
+      subtitle: att.branchName || member.branchName,
+      dateStr: att.checkInDate,
+      sortKey: att.checkInTime || `${att.checkInDate}T00:00:00`,
+    })),
+    ...confirmedPayments.map((p) => ({
+      id: `pay-${p.id}`,
+      type: "payment" as const,
+      title: `Payment of ₹${p.amount.toLocaleString("en-IN")} received`,
+      subtitle: `${p.paymentMethod.toUpperCase()} • ${p.paymentStatus}`,
+      dateStr: p.paymentDate,
+      sortKey: p.createdAt || `${p.paymentDate}T00:00:00`,
+    })),
+    ...memberships.map((m) => ({
+      id: `mem-${m.id}`,
+      type: "membership" as const,
+      title: `${m.planName} (${m.status})`,
+      subtitle: `${formatDate(m.startDate)} – ${formatDate(m.endDate)}`,
+      dateStr: m.startDate,
+      sortKey: m.createdAt || `${m.startDate}T00:00:00`,
+    })),
+  ].sort((a, b) => b.sortKey.localeCompare(a.sortKey));
+
+  const recentActivity = activityEvents.slice(0, 5);
+
+  function copyMemberId() {
+    if (typeof navigator !== "undefined" && navigator.clipboard) {
+      navigator.clipboard.writeText(shortMemberId);
+      setCopiedId(true);
+      setTimeout(() => setCopiedId(false), 1800);
+    }
+    setMenuOpen(false);
+  }
+
+  async function handleMarkAttendance(isOverride = false) {
+    setCheckInLoading(true);
+    setActionFeedback(null);
+    try {
+      const res = await staffCheckInAction({
+        gymId,
+        branchId: member.branchId,
+        memberId: member.id,
+        isOverride,
+        overrideReason: isOverride ? "Staff profile quick check-in override" : undefined,
+      });
+      if (res.success) {
+        setActionFeedback({
+          type: "success",
+          message: "Attendance marked successfully for today.",
+        });
+        startTransition(() => router.refresh());
+      } else {
+        setActionFeedback({
+          type: "error",
+          message: res.error || "Could not mark attendance.",
+          canOverride: Boolean(res.isExpired && !isOverride && permissions.canManageMembers),
+        });
+      }
+    } catch (err) {
+      setActionFeedback({
+        type: "error",
+        message: err instanceof Error ? err.message : "Failed to mark attendance.",
+      });
+    } finally {
+      setCheckInLoading(false);
+    }
+  }
+
+  async function handleQuickPaymentSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setPayError(null);
+    const numAmount = parseFloat(payAmount);
+    if (isNaN(numAmount) || numAmount <= 0) {
+      setPayError("Please enter a valid positive amount.");
+      return;
+    }
+
+    setPayLoading(true);
+    try {
+      const res = await recordPaymentAction({
+        gymId,
+        branchId: member.branchId,
+        memberId: member.id,
+        membershipId: activeMembership?.id || null,
+        amount: numAmount,
+        paymentMethod: payMethod,
+        paymentDate: payDate,
+        paymentStatus: "paid",
+        notes: payNotes.trim() || null,
+      });
+
+      if (!res || !res.success) {
+        setPayError(res?.error || "Failed to record payment.");
+        setPayLoading(false);
+        return;
+      }
+
+      setPayLoading(false);
+      setIsPaymentModalOpen(false);
+      setPayNotes("");
+      setActionFeedback({
+        type: "success",
+        message: `Payment of ₹${numAmount.toLocaleString("en-IN")} recorded.`,
+      });
+      startTransition(() => router.refresh());
+    } catch (err) {
+      setPayError(err instanceof Error ? err.message : "Failed to record payment.");
+      setPayLoading(false);
+    }
+  }
 
   function openReceipt(p: (typeof payments)[0]) {
     const receiptData: ReceiptData = {
@@ -162,268 +445,682 @@ export function MemberProfileClient({
     }
   }
 
+  const latestMembership = memberships[0] || null;
+
   return (
-    <div className="space-y-6 text-foreground">
-      {/* Back Link */}
-      <div>
+    <div className="space-y-5 text-foreground">
+      {/* Back Navigation */}
+      <div className="flex items-center justify-between gap-3">
         <Link
           href={`/app/${gymId}/members`}
           className="inline-flex items-center gap-1.5 text-xs font-bold text-muted-foreground hover:text-foreground transition-colors"
         >
-          <ArrowLeft className="w-3.5 h-3.5" /> Back to Members Roster
+          <ArrowLeft className="w-3.5 h-3.5" />
+          Back to Members
         </Link>
       </div>
 
-      {/* Member Header Card */}
-      <div className="bg-card p-6 rounded-3xl border border-border shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4 text-card-foreground">
-        <div className="flex items-center gap-4">
-          <div className="w-16 h-16 rounded-2xl bg-primary/10 text-primary border border-primary/20 flex items-center justify-center text-2xl font-black shadow-xs shrink-0">
-            {member.fullName.charAt(0).toUpperCase()}
-          </div>
-          <div>
-            <div className="flex items-center gap-2.5 flex-wrap">
-              <h1 className="text-2xl font-black text-foreground tracking-tight">
-                {member.fullName}
-              </h1>
-              <span className={getStatusBadgeClass(member.status)}>
-                {member.status}
-              </span>
-              {member.userId && (
-                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-primary/10 text-primary border border-primary/20">
-                  <ShieldCheck className="w-3 h-3" /> Portal Connected
+      {/* Profile Header Banner */}
+      <div className="relative overflow-hidden bg-card rounded-3xl border border-border shadow-xs p-5 sm:p-6 text-card-foreground">
+        {/* Subtle gym background image on right */}
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-y-0 right-0 w-1/2 sm:w-2/5 overflow-hidden opacity-15 dark:opacity-10"
+        >
+          <Image
+            src="/images/auth-gym-interior.jpg"
+            alt=""
+            fill
+            sizes="40vw"
+            className="object-cover object-center"
+          />
+          <div className="absolute inset-0 bg-gradient-to-r from-card via-card/70 to-transparent" />
+        </div>
+
+        <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+          {/* Identity */}
+          <div className="flex items-start sm:items-center gap-3.5 sm:gap-4 min-w-0">
+            <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-primary/12 text-primary border border-primary/25 flex items-center justify-center text-xl sm:text-2xl font-black shadow-xs shrink-0">
+              {member.fullName.charAt(0).toUpperCase()}
+            </div>
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-2 flex-wrap">
+                <h1 className="text-xl sm:text-2xl font-black text-foreground tracking-tight truncate">
+                  {member.fullName}
+                </h1>
+                <span
+                  className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-bold border ${badgeInfo.className}`}
+                >
+                  {badgeInfo.label}
                 </span>
-              )}
-            </div>
-            <p className="text-xs text-muted-foreground mt-1 flex items-center gap-3 flex-wrap">
-              <span>{member.phone}</span>
-              {member.email && (
-                <>
-                  <span>•</span>
-                  <span>{member.email}</span>
-                </>
-              )}
-              <span>•</span>
-              <span className="inline-flex items-center gap-1 font-semibold text-foreground">
-                <Building className="w-3 h-3 text-muted-foreground" /> {member.branchName}
-              </span>
-            </p>
-          </div>
-        </div>
+                {member.userId && (
+                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-primary/10 text-primary border border-primary/20">
+                    <ShieldCheck className="w-3 h-3" /> Portal
+                  </span>
+                )}
+              </div>
 
-        {/* Action Triggers */}
-        <div className="grid grid-cols-2 sm:flex sm:items-center gap-2 sm:gap-2.5 w-full sm:w-auto">
-          <a
-            href={waDirectUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center justify-center gap-1.5 h-10 px-3.5 bg-[#25D366]/10 hover:bg-[#25D366] text-[#25D366] hover:text-white border border-[#25D366]/30 rounded-xl text-xs font-bold transition-all shadow-2xs cursor-pointer"
-          >
-            <MessageSquare className="w-3.5 h-3.5" />
-            WhatsApp
-          </a>
-          <button
-            onClick={() => setIsEditOpen(true)}
-            className="inline-flex items-center justify-center gap-1.5 h-10 px-3.5 bg-muted hover:bg-muted/80 text-foreground border border-border rounded-xl text-xs font-bold transition-colors cursor-pointer"
-          >
-            <Edit2 className="w-3.5 h-3.5" />
-            Edit Profile
-          </button>
-          <button
-            onClick={() => setIsRenewOpen(true)}
-            className="col-span-2 sm:col-span-1 inline-flex items-center justify-center gap-1.5 h-10 px-4 bg-primary hover:opacity-95 text-primary-foreground rounded-xl text-xs font-bold shadow-md shadow-primary/20 transition-all cursor-pointer"
-          >
-            <RefreshCw className="w-3.5 h-3.5" />
-            Renew / Change Plan
-          </button>
-        </div>
-      </div>
-
-      {/* KPI 4-Grid Cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4">
-        {/* Active Membership Status */}
-        <div className="bg-card p-3 sm:p-5 rounded-2xl sm:rounded-3xl border border-border shadow-xs flex items-center gap-3 sm:gap-4 text-card-foreground">
-          <div
-            className={`h-7 w-7 sm:h-9 sm:w-9 flex items-center justify-center shrink-0 rounded-xl sm:rounded-2xl shadow-2xs ${
-              activeMembership && activeMembership.daysLeft > 0
-                ? "bg-emerald-500/10 text-emerald-600"
-                : "bg-rose-500/10 text-rose-600"
-            }`}
-          >
-            <Calendar className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-          </div>
-          <div className="min-w-0">
-            <div className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-muted-foreground truncate">Active Plan</div>
-            <div className="text-sm sm:text-base font-bold text-foreground truncate mt-0.5">
-              {activeMembership ? activeMembership.planName : "None"}
-            </div>
-            <div className="text-[10px] sm:text-[11px] font-semibold mt-0.5 truncate">
-              {activeMembership ? (
-                activeMembership.daysLeft > 0 ? (
-                  <span className="text-emerald-600 truncate">
-                    {activeMembership.daysLeft}d left
+              <div className="mt-1.5 flex items-center gap-2.5 sm:gap-3 flex-wrap text-xs text-muted-foreground">
+                <span className="font-mono font-bold text-foreground/80">
+                  {shortMemberId}
+                </span>
+                <span>•</span>
+                <span className="inline-flex items-center gap-1 font-semibold text-foreground/90">
+                  <Building className="w-3.5 h-3.5 text-muted-foreground" />
+                  {member.branchName}
+                </span>
+                <span>•</span>
+                {activeMembership ? (
+                  <span
+                    className={`font-semibold ${
+                      activeMembership.daysLeft < 0
+                        ? "text-rose-600 dark:text-rose-400"
+                        : activeMembership.daysLeft <= 7
+                        ? "text-amber-600 dark:text-amber-400"
+                        : "text-emerald-600 dark:text-emerald-400"
+                    }`}
+                  >
+                    {activeMembership.daysLeft < 0
+                      ? `Expired on ${formatDate(activeMembership.endDate)}`
+                      : `Expires in ${activeMembership.daysLeft}d (${formatDate(
+                          activeMembership.endDate
+                        )})`}
+                  </span>
+                ) : latestMembership ? (
+                  <span className="text-rose-600 dark:text-rose-400 font-semibold">
+                    Expired on {formatDate(latestMembership.endDate)}
                   </span>
                 ) : (
-                  <span className="text-rose-600 truncate">
-                    Expired
+                  <span className="text-muted-foreground font-medium">
+                    No active plan
                   </span>
-                )
-              ) : (
-                <span className="text-muted-foreground truncate">No plan</span>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Header Actions */}
+          <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap shrink-0">
+            {hasPhone ? (
+              <a
+                href={telUrl}
+                className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 h-9 sm:h-10 px-3.5 bg-blue-500/10 hover:bg-blue-500/20 text-blue-700 dark:text-blue-400 border border-blue-500/25 rounded-xl text-xs font-bold transition-colors"
+              >
+                <Phone className="w-3.5 h-3.5" />
+                Call
+              </a>
+            ) : (
+              <span
+                aria-disabled="true"
+                className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 h-9 sm:h-10 px-3.5 bg-muted/50 text-muted-foreground border border-border rounded-xl text-xs font-bold opacity-60 cursor-not-allowed"
+              >
+                <Phone className="w-3.5 h-3.5" />
+                No Phone
+              </span>
+            )}
+
+            {hasPhone && (
+              <a
+                href={waDirectUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 h-9 sm:h-10 px-3.5 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 border border-emerald-500/25 rounded-xl text-xs font-bold transition-colors"
+              >
+                <MessageSquare className="w-3.5 h-3.5" />
+                WhatsApp
+              </a>
+            )}
+
+            {permissions.canManageMembers && (
+              <button
+                type="button"
+                onClick={() => setIsEditOpen(true)}
+                className="inline-flex items-center justify-center gap-1.5 h-9 sm:h-10 px-3.5 bg-muted hover:bg-muted/80 text-foreground border border-border rounded-xl text-xs font-bold transition-colors cursor-pointer"
+              >
+                <Edit2 className="w-3.5 h-3.5" />
+                Edit
+              </button>
+            )}
+
+            {/* Contextual Overflow Menu */}
+            <div className="relative">
+              <button
+                type="button"
+                aria-label="More member actions"
+                onClick={() => setMenuOpen((prev) => !prev)}
+                className="inline-flex items-center justify-center h-9 w-9 sm:h-10 sm:w-10 bg-muted/70 hover:bg-muted text-foreground border border-border rounded-xl transition-colors cursor-pointer"
+              >
+                <MoreVertical className="w-4 h-4" />
+              </button>
+
+              {menuOpen && (
+                <>
+                  <div
+                    className="fixed inset-0 z-20"
+                    onClick={() => setMenuOpen(false)}
+                  />
+                  <div className="absolute right-0 mt-1.5 w-48 bg-popover text-popover-foreground border border-border rounded-2xl shadow-lg p-1.5 z-30 text-xs font-semibold">
+                    {permissions.canManageMembers && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setMenuOpen(false);
+                          setIsRenewOpen(true);
+                        }}
+                        className="w-full flex items-center gap-2 px-3 py-2 rounded-xl hover:bg-muted text-left transition-colors cursor-pointer"
+                      >
+                        <RefreshCw className="w-3.5 h-3.5 text-primary" />
+                        Renew / Change Plan
+                      </button>
+                    )}
+                    {permissions.canRecordPayments && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setMenuOpen(false);
+                          setPayAmount(outstandingDues > 0 ? String(outstandingDues) : "");
+                          setIsPaymentModalOpen(true);
+                        }}
+                        className="w-full flex items-center gap-2 px-3 py-2 rounded-xl hover:bg-muted text-left transition-colors cursor-pointer"
+                      >
+                        <IndianRupee className="w-3.5 h-3.5 text-emerald-600" />
+                        Record Payment
+                      </button>
+                    )}
+                    {permissions.canRecordAttendance && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setMenuOpen(false);
+                          handleMarkAttendance(false);
+                        }}
+                        className="w-full flex items-center gap-2 px-3 py-2 rounded-xl hover:bg-muted text-left transition-colors cursor-pointer"
+                      >
+                        <CheckSquare className="w-3.5 h-3.5 text-amber-600" />
+                        Mark Attendance
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      onClick={copyMemberId}
+                      className="w-full flex items-center gap-2 px-3 py-2 rounded-xl hover:bg-muted text-left transition-colors cursor-pointer"
+                    >
+                      {copiedId ? (
+                        <Check className="w-3.5 h-3.5 text-emerald-600" />
+                      ) : (
+                        <Copy className="w-3.5 h-3.5 text-muted-foreground" />
+                      )}
+                      {copiedId ? "Copied ID" : "Copy Member ID"}
+                    </button>
+                  </div>
+                </>
               )}
             </div>
           </div>
         </div>
+      </div>
 
-        {/* Total Payments */}
-        <div className="bg-card p-3 sm:p-5 rounded-2xl sm:rounded-3xl border border-border shadow-xs flex items-center gap-3 sm:gap-4 text-card-foreground">
-          <div className="h-7 w-7 sm:h-9 sm:w-9 flex items-center justify-center shrink-0 bg-primary/10 text-primary rounded-xl sm:rounded-2xl shadow-2xs">
-            <CreditCard className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+      {/* Action Feedback Banner */}
+      {actionFeedback && (
+        <div
+          className={`flex flex-wrap items-center justify-between gap-3 px-4 py-3 rounded-2xl border text-xs font-semibold ${
+            actionFeedback.type === "success"
+              ? "bg-emerald-500/10 border-emerald-500/25 text-emerald-700 dark:text-emerald-400"
+              : "bg-rose-500/10 border-rose-500/25 text-rose-700 dark:text-rose-400"
+          }`}
+        >
+          <div className="flex items-center gap-2">
+            {actionFeedback.type === "success" ? (
+              <CheckCircle2 className="w-4 h-4 shrink-0" />
+            ) : (
+              <AlertTriangle className="w-4 h-4 shrink-0" />
+            )}
+            <span>{actionFeedback.message}</span>
           </div>
-          <div className="min-w-0">
-            <div className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-muted-foreground truncate">Total Paid</div>
-            <div className="text-lg sm:text-2xl font-bold tracking-tight text-foreground truncate mt-0.5">
-              ₹{totalPaid.toLocaleString("en-IN")}
-            </div>
-            <div className="text-[10px] sm:text-[11px] text-muted-foreground mt-0.5 truncate">
-              {payments.length} transactions
-            </div>
-          </div>
-        </div>
-
-        {/* Outstanding Dues */}
-        <div className="bg-card p-3 sm:p-5 rounded-2xl sm:rounded-3xl border border-border shadow-xs flex items-center gap-3 sm:gap-4 text-card-foreground">
-          <div
-            className={`h-7 w-7 sm:h-9 sm:w-9 flex items-center justify-center shrink-0 rounded-xl sm:rounded-2xl shadow-2xs ${
-              outstandingDues > 0
-                ? "bg-amber-500/10 text-amber-600"
-                : "bg-emerald-500/10 text-emerald-600"
-            }`}
-          >
-            <IndianRupee className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-          </div>
-          <div className="min-w-0">
-            <div className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-muted-foreground truncate">Remaining Dues</div>
-            <div
-              className={`text-lg sm:text-2xl font-bold tracking-tight mt-0.5 truncate ${
-                outstandingDues > 0 ? "text-amber-600" : "text-emerald-600"
-              }`}
+          <div className="flex items-center gap-2">
+            {actionFeedback.canOverride && (
+              <button
+                type="button"
+                onClick={() => handleMarkAttendance(true)}
+                disabled={checkInLoading}
+                className="px-3 py-1 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 text-amber-800 dark:text-amber-300 font-bold transition-colors cursor-pointer"
+              >
+                Grace Override Check-in
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={() => setActionFeedback(null)}
+              className="p-1 rounded-lg hover:bg-black/5 dark:hover:bg-white/5 cursor-pointer"
             >
-              ₹{outstandingDues.toLocaleString("en-IN")}
-            </div>
-            <div className="text-[10px] sm:text-[11px] font-semibold mt-0.5 truncate">
-              {outstandingDues > 0 ? (
-                <span className="text-amber-600 flex items-center gap-1 truncate">
-                  <AlertTriangle className="w-3 h-3 shrink-0" /> Pending
-                </span>
-              ) : (
-                <span className="text-emerald-600 flex items-center gap-1 truncate">
-                  <CheckCircle2 className="w-3 h-3 shrink-0" /> All Cleared
-                </span>
-              )}
-            </div>
+              <X className="w-3.5 h-3.5" />
+            </button>
           </div>
         </div>
-
-        {/* Workouts Check-in count */}
-        <div className="bg-card p-3 sm:p-5 rounded-2xl sm:rounded-3xl border border-border shadow-xs flex items-center gap-3 sm:gap-4 text-card-foreground">
-          <div className="h-7 w-7 sm:h-9 sm:w-9 flex items-center justify-center shrink-0 bg-purple-500/10 text-purple-600 rounded-xl sm:rounded-2xl shadow-2xs">
-            <Dumbbell className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-          </div>
-          <div className="min-w-0">
-            <div className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-muted-foreground truncate">Gym Attendance</div>
-            <div className="text-lg sm:text-2xl font-bold tracking-tight text-foreground mt-0.5 truncate">{totalWorkouts} Visits</div>
-            <div className="text-[10px] sm:text-[11px] text-muted-foreground mt-0.5 truncate">
-              {attendance.length > 0
-                ? `${attendance[0].checkInDate}`
-                : "No visits yet"}
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Member Details Summary Card */}
-      <div className="bg-card rounded-3xl border border-border shadow-xs p-6 text-card-foreground">
-        <h3 className="text-sm font-bold text-foreground mb-4 flex items-center gap-2">
-          <User className="w-4 h-4 text-primary" />
-          Member Details & Health Profile
-        </h3>
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 sm:gap-3 text-xs">
-          <div className="p-3 sm:p-3.5 bg-muted/40 rounded-xl sm:rounded-2xl border border-border/60">
-            <span className="text-muted-foreground block font-bold uppercase tracking-wider text-[9px] sm:text-[10px] mb-0.5 sm:mb-1 truncate">Contact Phone</span>
-            <span className="font-bold text-foreground text-xs sm:text-sm truncate block">{member.phone}</span>
-          </div>
-          <div className="p-3 sm:p-3.5 bg-muted/40 rounded-xl sm:rounded-2xl border border-border/60">
-            <span className="text-muted-foreground block font-bold uppercase tracking-wider text-[9px] sm:text-[10px] mb-0.5 sm:mb-1 truncate">Email Address</span>
-            <span className="font-bold text-foreground text-xs sm:text-sm truncate block">{member.email || "—"}</span>
-          </div>
-          <div className="col-span-2 sm:col-span-1 p-3 sm:p-3.5 bg-muted/40 rounded-xl sm:rounded-2xl border border-border/60">
-            <span className="text-muted-foreground block font-bold uppercase tracking-wider text-[9px] sm:text-[10px] mb-0.5 sm:mb-1 truncate">Registration Date</span>
-            <span className="font-bold text-foreground text-xs sm:text-sm truncate block">
-              {formatDate(member.createdAt)}
-            </span>
-          </div>
-        </div>
-
-        {member.notes && (
-          <div className="mt-3.5 p-3.5 bg-primary/5 rounded-2xl border border-primary/20 text-xs text-foreground">
-            <span className="font-bold text-primary block mb-0.5">
-              Trainer & Medical Notes:
-            </span>
-            {member.notes}
-          </div>
-        )}
-      </div>
+      )}
 
       {/* Navigation Tabs */}
-      <div className="flex items-center gap-2 border-b border-border pb-2 overflow-x-auto">
-        <button
-          onClick={() => setActiveTab("memberships")}
-          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-            activeTab === "memberships"
-              ? "bg-primary text-primary-foreground shadow-xs"
-              : "text-muted-foreground hover:text-foreground hover:bg-muted"
-          }`}
-        >
-          <Calendar className="w-4 h-4" />
-          Membership Plans ({memberships.length})
-        </button>
-
-        <button
-          onClick={() => setActiveTab("payments")}
-          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-            activeTab === "payments"
-              ? "bg-primary text-primary-foreground shadow-xs"
-              : "text-muted-foreground hover:text-foreground hover:bg-muted"
-          }`}
-        >
-          <CreditCard className="w-4 h-4" />
-          Payments & Receipts ({payments.length})
-        </button>
-
-        <button
-          onClick={() => setActiveTab("attendance")}
-          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-            activeTab === "attendance"
-              ? "bg-primary text-primary-foreground shadow-xs"
-              : "text-muted-foreground hover:text-foreground hover:bg-muted"
-          }`}
-        >
-          <Clock className="w-4 h-4" />
-          Attendance History ({attendance.length})
-        </button>
+      <div className="flex items-center gap-1.5 border-b border-border pb-2.5 overflow-x-auto no-scrollbar">
+        {[
+          { id: "overview" as const, label: "Overview", icon: User },
+          {
+            id: "membership" as const,
+            label: `Membership (${memberships.length})`,
+            icon: Calendar,
+          },
+          {
+            id: "attendance" as const,
+            label: `Attendance (${attendance.length})`,
+            icon: Clock,
+          },
+          {
+            id: "payments" as const,
+            label: `Payments (${payments.length})`,
+            icon: CreditCard,
+          },
+          {
+            id: "activity" as const,
+            label: `Activity (${activityEvents.length})`,
+            icon: Activity,
+          },
+        ].map((tab) => {
+          const Icon = tab.icon;
+          const isActive = activeTab === tab.id;
+          return (
+            <button
+              key={tab.id}
+              type="button"
+              onClick={() => setActiveTab(tab.id)}
+              className={`shrink-0 inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                isActive
+                  ? "bg-primary text-primary-foreground shadow-xs"
+                  : "text-muted-foreground hover:text-foreground hover:bg-muted"
+              }`}
+            >
+              <Icon className="w-3.5 h-3.5" />
+              {tab.label}
+            </button>
+          );
+        })}
       </div>
 
-      {/* Tab 1: Memberships History */}
-      {activeTab === "memberships" && (
+      {/* TAB: OVERVIEW */}
+      {activeTab === "overview" && (
+        <div className="space-y-5">
+          {/* 3 Overview Summary Cards */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+            {/* 1. Membership Summary Card */}
+            <div className="bg-card rounded-3xl border border-border shadow-xs p-5 flex flex-col justify-between gap-4">
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="h-10 w-10 rounded-2xl bg-purple-500/12 text-purple-600 dark:text-purple-400 border border-purple-500/20 flex items-center justify-center shrink-0">
+                    <Calendar className="w-5 h-5" />
+                  </div>
+                  <div className="min-w-0">
+                    <div className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+                      Membership
+                    </div>
+                    <div className="text-base font-black text-foreground truncate">
+                      {activeMembership
+                        ? activeMembership.planName
+                        : latestMembership
+                        ? latestMembership.planName
+                        : "No Plan Assigned"}
+                    </div>
+                  </div>
+                </div>
+                <span
+                  className={`shrink-0 inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-bold border ${badgeInfo.className}`}
+                >
+                  {badgeInfo.label}
+                </span>
+              </div>
+
+              {activeMembership ? (
+                <div className="space-y-2.5">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-muted-foreground">
+                      {formatDate(activeMembership.startDate)} –{" "}
+                      {formatDate(activeMembership.endDate)}
+                    </span>
+                    <span className="font-bold text-foreground">
+                      {activeMembership.daysLeft >= 0
+                        ? `${activeMembership.daysLeft}d left`
+                        : `${Math.abs(activeMembership.daysLeft)}d overdue`}
+                    </span>
+                  </div>
+                  <div className="h-2 w-full rounded-full bg-muted overflow-hidden">
+                    <div
+                      className={`h-full rounded-full transition-all ${
+                        activeMembership.daysLeft < 0
+                          ? "bg-rose-500"
+                          : activeMembership.daysLeft <= 7
+                          ? "bg-amber-500"
+                          : "bg-primary"
+                      }`}
+                      style={{ width: `${validityProgress}%` }}
+                    />
+                  </div>
+                </div>
+              ) : (
+                <div className="text-xs text-muted-foreground bg-muted/40 rounded-2xl p-3 border border-border/60">
+                  {latestMembership
+                    ? `Last plan ended on ${formatDate(latestMembership.endDate)}.`
+                    : "Assign a membership plan to activate gym access."}
+                </div>
+              )}
+            </div>
+
+            {/* 2. Attendance Summary Card */}
+            <div className="bg-card rounded-3xl border border-border shadow-xs p-5 flex flex-col justify-between gap-4">
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="h-10 w-10 rounded-2xl bg-emerald-500/12 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 flex items-center justify-center shrink-0">
+                    <Dumbbell className="w-5 h-5" />
+                  </div>
+                  <div className="min-w-0">
+                    <div className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+                      Attendance
+                    </div>
+                    <div className="text-base font-black text-foreground">
+                      {currentMonthAttendance} Check-ins This Month
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2.5 text-xs">
+                <div className="bg-muted/40 rounded-2xl p-3 border border-border/60">
+                  <div className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                    Recent Sessions
+                  </div>
+                  <div className="text-sm font-black text-foreground mt-0.5">
+                    {totalWorkouts} Visits
+                  </div>
+                </div>
+                <div className="bg-muted/40 rounded-2xl p-3 border border-border/60">
+                  <div className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                    Last Visit
+                  </div>
+                  <div className="text-sm font-bold text-foreground mt-0.5 truncate">
+                    {attendance.length > 0
+                      ? formatDate(attendance[0].checkInDate)
+                      : "No visits"}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* 3. Payments Summary Card */}
+            <div className="bg-card rounded-3xl border border-border shadow-xs p-5 flex flex-col justify-between gap-4">
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="h-10 w-10 rounded-2xl bg-amber-500/12 text-amber-600 dark:text-amber-400 border border-amber-500/20 flex items-center justify-center shrink-0">
+                    <IndianRupee className="w-5 h-5" />
+                  </div>
+                  <div className="min-w-0">
+                    <div className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+                      Payments
+                    </div>
+                    <div className="text-base font-black text-foreground">
+                      ₹{totalPaid.toLocaleString("en-IN")} Lifetime Paid
+                    </div>
+                  </div>
+                </div>
+                <span
+                  className={`shrink-0 inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-bold border ${
+                    outstandingDues > 0
+                      ? "bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/25"
+                      : "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/25"
+                  }`}
+                >
+                  {outstandingDues > 0 ? "Dues Pending" : "All Cleared"}
+                </span>
+              </div>
+
+              <div className="grid grid-cols-3 gap-2 text-xs">
+                <div className="bg-muted/40 rounded-2xl p-2.5 border border-border/60">
+                  <div className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                    Paid
+                  </div>
+                  <div className="text-xs sm:text-sm font-black text-emerald-600 dark:text-emerald-400 mt-0.5 truncate">
+                    ₹{totalPaid.toLocaleString("en-IN")}
+                  </div>
+                </div>
+                <div className="bg-muted/40 rounded-2xl p-2.5 border border-border/60">
+                  <div className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                    Due
+                  </div>
+                  <div
+                    className={`text-xs sm:text-sm font-black mt-0.5 truncate ${
+                      outstandingDues > 0
+                        ? "text-amber-600 dark:text-amber-400"
+                        : "text-foreground"
+                    }`}
+                  >
+                    ₹{outstandingDues.toLocaleString("en-IN")}
+                  </div>
+                </div>
+                <div className="bg-muted/40 rounded-2xl p-2.5 border border-border/60">
+                  <div className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                    Last Paid
+                  </div>
+                  <div className="text-xs font-bold text-foreground mt-0.5 truncate">
+                    {lastConfirmedPayment
+                      ? formatDate(lastConfirmedPayment.paymentDate)
+                      : "—"}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Member Details + Quick Actions & Recent Activity */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
+            {/* Member Details */}
+            <div className="lg:col-span-7 bg-card rounded-3xl border border-border shadow-xs p-5 sm:p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-sm font-bold text-foreground flex items-center gap-2">
+                  <User className="w-4 h-4 text-primary" />
+                  Member Details
+                </h2>
+                {permissions.canManageMembers && (
+                  <button
+                    type="button"
+                    onClick={() => setIsEditOpen(true)}
+                    className="text-xs font-bold text-primary hover:underline cursor-pointer"
+                  >
+                    Edit Details
+                  </button>
+                )}
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                <div className="p-3.5 bg-muted/40 rounded-2xl border border-border/60">
+                  <span className="text-muted-foreground block font-bold uppercase tracking-wider text-[10px] mb-1">
+                    Phone Number
+                  </span>
+                  <span className="font-bold text-foreground text-sm">
+                    {member.phone || "—"}
+                  </span>
+                </div>
+                <div className="p-3.5 bg-muted/40 rounded-2xl border border-border/60">
+                  <span className="text-muted-foreground block font-bold uppercase tracking-wider text-[10px] mb-1">
+                    Email Address
+                  </span>
+                  <span className="font-bold text-foreground text-sm truncate block">
+                    {member.email || "Not provided"}
+                  </span>
+                </div>
+                <div className="p-3.5 bg-muted/40 rounded-2xl border border-border/60">
+                  <span className="text-muted-foreground block font-bold uppercase tracking-wider text-[10px] mb-1">
+                    Branch
+                  </span>
+                  <span className="font-bold text-foreground text-sm">
+                    {member.branchName}
+                  </span>
+                </div>
+                <div className="p-3.5 bg-muted/40 rounded-2xl border border-border/60">
+                  <span className="text-muted-foreground block font-bold uppercase tracking-wider text-[10px] mb-1">
+                    Joining Date
+                  </span>
+                  <span className="font-bold text-foreground text-sm">
+                    {formatDate(member.createdAt)}
+                  </span>
+                </div>
+              </div>
+
+              {member.notes && (
+                <div className="mt-4 p-3.5 bg-primary/5 rounded-2xl border border-primary/20 text-xs text-foreground">
+                  <span className="font-bold text-primary block mb-1">
+                    Notes
+                  </span>
+                  {member.notes}
+                </div>
+              )}
+            </div>
+
+            {/* Quick Actions & Recent Activity */}
+            <div className="lg:col-span-5 space-y-5">
+              {/* Quick Actions */}
+              <div className="bg-card rounded-3xl border border-border shadow-xs p-5">
+                <h2 className="text-sm font-bold text-foreground mb-3.5 flex items-center gap-2">
+                  <Sparkles className="w-4 h-4 text-primary" />
+                  Quick Actions
+                </h2>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-2.5">
+                  {permissions.canRecordPayments && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setPayAmount(
+                          outstandingDues > 0 ? String(outstandingDues) : ""
+                        );
+                        setIsPaymentModalOpen(true);
+                      }}
+                      className="flex items-center justify-between px-4 py-3 rounded-2xl border border-emerald-500/20 bg-emerald-500/8 hover:bg-emerald-500/14 text-emerald-700 dark:text-emerald-400 text-xs font-bold transition-colors cursor-pointer"
+                    >
+                      <span className="flex items-center gap-2.5">
+                        <IndianRupee className="w-4 h-4" />
+                        Record Payment
+                      </span>
+                      <ChevronRight className="w-4 h-4 opacity-70" />
+                    </button>
+                  )}
+
+                  {permissions.canManageMembers && (
+                    <button
+                      type="button"
+                      onClick={() => setIsRenewOpen(true)}
+                      className="flex items-center justify-between px-4 py-3 rounded-2xl border border-purple-500/20 bg-purple-500/8 hover:bg-purple-500/14 text-purple-700 dark:text-purple-400 text-xs font-bold transition-colors cursor-pointer"
+                    >
+                      <span className="flex items-center gap-2.5">
+                        <RefreshCw className="w-4 h-4" />
+                        Renew / Change Plan
+                      </span>
+                      <ChevronRight className="w-4 h-4 opacity-70" />
+                    </button>
+                  )}
+
+                  {permissions.canRecordAttendance && (
+                    <button
+                      type="button"
+                      disabled={checkInLoading}
+                      onClick={() => handleMarkAttendance(false)}
+                      className="flex items-center justify-between px-4 py-3 rounded-2xl border border-blue-500/20 bg-blue-500/8 hover:bg-blue-500/14 text-blue-700 dark:text-blue-400 text-xs font-bold transition-colors cursor-pointer disabled:opacity-60"
+                    >
+                      <span className="flex items-center gap-2.5">
+                        {checkInLoading ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <CheckSquare className="w-4 h-4" />
+                        )}
+                        Mark Attendance
+                      </span>
+                      <ChevronRight className="w-4 h-4 opacity-70" />
+                    </button>
+                  )}
+
+                  {showConvertToMembership && (
+                    <button
+                      type="button"
+                      onClick={() => setIsRenewOpen(true)}
+                      className="flex items-center justify-between px-4 py-3 rounded-2xl border border-amber-500/20 bg-amber-500/8 hover:bg-amber-500/14 text-amber-700 dark:text-amber-400 text-xs font-bold transition-colors cursor-pointer"
+                    >
+                      <span className="flex items-center gap-2.5">
+                        <Calendar className="w-4 h-4" />
+                        Convert to Membership
+                      </span>
+                      <ChevronRight className="w-4 h-4 opacity-70" />
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {/* Recent Activity */}
+              <div className="bg-card rounded-3xl border border-border shadow-xs p-5">
+                <div className="flex items-center justify-between mb-3.5">
+                  <h2 className="text-sm font-bold text-foreground flex items-center gap-2">
+                    <Activity className="w-4 h-4 text-primary" />
+                    Recent Activity
+                  </h2>
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab("activity")}
+                    className="text-xs font-bold text-primary hover:underline cursor-pointer"
+                  >
+                    View All →
+                  </button>
+                </div>
+
+                {recentActivity.length === 0 ? (
+                  <p className="text-xs text-muted-foreground py-4 text-center">
+                    No recorded activity yet.
+                  </p>
+                ) : (
+                  <div className="space-y-2.5">
+                    {recentActivity.map((ev) => (
+                      <div
+                        key={ev.id}
+                        className="flex items-center justify-between gap-3 p-2.5 rounded-2xl bg-muted/35 border border-border/50 text-xs"
+                      >
+                        <div className="min-w-0">
+                          <div className="font-bold text-foreground truncate">
+                            {ev.title}
+                          </div>
+                          <div className="text-[11px] text-muted-foreground truncate">
+                            {ev.subtitle}
+                          </div>
+                        </div>
+                        <span className="shrink-0 text-[11px] font-medium text-muted-foreground">
+                          {formatDate(ev.dateStr)}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* TAB: MEMBERSHIP */}
+      {activeTab === "membership" && (
         <div className="bg-card rounded-3xl border border-border shadow-xs overflow-hidden text-card-foreground">
           <div className="p-4 sm:p-5 border-b border-border flex items-center justify-between">
-            <div className="text-sm font-bold text-foreground">Subscription History</div>
-            <button
-              onClick={() => setIsRenewOpen(true)}
-              className="text-xs font-bold text-primary hover:underline cursor-pointer"
-            >
-              + New Contract
-            </button>
+            <div className="text-sm font-bold text-foreground">
+              Subscription History
+            </div>
+            {permissions.canManageMembers && (
+              <button
+                type="button"
+                onClick={() => setIsRenewOpen(true)}
+                className="text-xs font-bold text-primary hover:underline cursor-pointer"
+              >
+                + New Contract
+              </button>
+            )}
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
@@ -440,23 +1137,39 @@ export function MemberProfileClient({
               <tbody className="divide-y divide-border text-foreground">
                 {memberships.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="p-8 text-center text-muted-foreground">
-                      No membership contracts found. Click &quot;Renew / Change Plan&quot; to assign a plan.
+                    <td
+                      colSpan={6}
+                      className="p-8 text-center text-muted-foreground"
+                    >
+                      No membership contracts found.
                     </td>
                   </tr>
                 ) : (
                   memberships.map((m) => (
-                    <tr key={m.id} className="hover:bg-muted/30 transition-colors">
-                      <td className="p-4 pl-5 font-bold text-foreground">{m.planName}</td>
-                      <td className="p-4 font-semibold">₹{m.planPrice.toLocaleString("en-IN")}</td>
-                      <td className="p-4 font-medium text-muted-foreground">{m.startDate}</td>
-                      <td className="p-4 font-medium text-muted-foreground">{m.endDate}</td>
+                    <tr
+                      key={m.id}
+                      className="hover:bg-muted/30 transition-colors"
+                    >
+                      <td className="p-4 pl-5 font-bold text-foreground">
+                        {m.planName}
+                      </td>
+                      <td className="p-4 font-semibold">
+                        ₹{m.planPrice.toLocaleString("en-IN")}
+                      </td>
+                      <td className="p-4 font-medium text-muted-foreground">
+                        {formatDate(m.startDate)}
+                      </td>
+                      <td className="p-4 font-medium text-muted-foreground">
+                        {formatDate(m.endDate)}
+                      </td>
                       <td className="p-4">
                         <span className={getStatusBadgeClass(m.status)}>
                           {m.status}
                         </span>
                       </td>
-                      <td className="p-4 pr-5 text-muted-foreground italic">{m.notes || "—"}</td>
+                      <td className="p-4 pr-5 text-muted-foreground italic">
+                        {m.notes || "—"}
+                      </td>
                     </tr>
                   ))
                 )}
@@ -466,12 +1179,16 @@ export function MemberProfileClient({
         </div>
       )}
 
-      {/* Tab 2: Payments Ledger */}
+      {/* TAB: PAYMENTS */}
       {activeTab === "payments" && (
         <div className="bg-card rounded-3xl border border-border shadow-xs overflow-hidden text-card-foreground">
           <div className="p-4 sm:p-5 border-b border-border flex items-center justify-between">
-            <div className="text-sm font-bold text-foreground">Payment Ledger & Invoices</div>
-            <div className="text-xs text-muted-foreground font-medium">{payments.length} entries</div>
+            <div className="text-sm font-bold text-foreground">
+              Payment Ledger & Receipts
+            </div>
+            <div className="text-xs text-muted-foreground font-medium">
+              {payments.length} entries
+            </div>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
@@ -482,26 +1199,36 @@ export function MemberProfileClient({
                   <th className="p-4">Amount</th>
                   <th className="p-4">Method</th>
                   <th className="p-4">Status</th>
-                  <th className="p-4">Notes</th>
                   <th className="p-4 pr-5 text-right">Receipt</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border text-foreground">
                 {payments.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="p-8 text-center text-muted-foreground">
+                    <td
+                      colSpan={6}
+                      className="p-8 text-center text-muted-foreground"
+                    >
                       No payments recorded yet for this member.
                     </td>
                   </tr>
                 ) : (
                   payments.map((p) => (
-                    <tr key={p.id} className="hover:bg-muted/30 transition-colors">
+                    <tr
+                      key={p.id}
+                      className="hover:bg-muted/30 transition-colors"
+                    >
                       <td className="p-4 pl-5 font-mono font-bold text-foreground">
                         #{p.id.slice(0, 8).toUpperCase()}
                       </td>
-                      <td className="p-4 font-medium text-muted-foreground">{p.paymentDate}</td>
+                      <td className="p-4 font-medium text-muted-foreground">
+                        {formatDate(p.paymentDate)}
+                      </td>
                       <td className="p-4 font-black text-foreground">
-                        ₹{p.amount.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+                        ₹
+                        {p.amount.toLocaleString("en-IN", {
+                          minimumFractionDigits: 2,
+                        })}
                       </td>
                       <td className="p-4 uppercase font-bold text-muted-foreground text-[11px]">
                         {p.paymentMethod}
@@ -511,9 +1238,9 @@ export function MemberProfileClient({
                           {p.paymentStatus}
                         </span>
                       </td>
-                      <td className="p-4 text-muted-foreground italic">{p.notes || "—"}</td>
                       <td className="p-4 pr-5 text-right">
                         <button
+                          type="button"
                           onClick={() => openReceipt(p)}
                           className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-primary/10 hover:bg-primary text-primary hover:text-primary-foreground rounded-xl font-bold text-xs transition-colors cursor-pointer"
                         >
@@ -530,12 +1257,16 @@ export function MemberProfileClient({
         </div>
       )}
 
-      {/* Tab 3: Attendance History */}
+      {/* TAB: ATTENDANCE */}
       {activeTab === "attendance" && (
         <div className="bg-card rounded-3xl border border-border shadow-xs overflow-hidden text-card-foreground">
           <div className="p-4 sm:p-5 border-b border-border flex items-center justify-between">
-            <div className="text-sm font-bold text-foreground">Workout & Visit History</div>
-            <div className="text-xs text-muted-foreground font-medium">{attendance.length} check-ins</div>
+            <div className="text-sm font-bold text-foreground">
+              Workout & Visit History
+            </div>
+            <div className="text-xs text-muted-foreground font-medium">
+              {attendance.length} check-ins
+            </div>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
@@ -550,14 +1281,22 @@ export function MemberProfileClient({
               <tbody className="divide-y divide-border text-foreground">
                 {attendance.length === 0 ? (
                   <tr>
-                    <td colSpan={4} className="p-8 text-center text-muted-foreground">
+                    <td
+                      colSpan={4}
+                      className="p-8 text-center text-muted-foreground"
+                    >
                       No check-ins recorded yet for this member.
                     </td>
                   </tr>
                 ) : (
                   attendance.map((att) => (
-                    <tr key={att.id} className="hover:bg-muted/30 transition-colors">
-                      <td className="p-4 pl-5 font-bold text-foreground">{att.checkInDate}</td>
+                    <tr
+                      key={att.id}
+                      className="hover:bg-muted/30 transition-colors"
+                    >
+                      <td className="p-4 pl-5 font-bold text-foreground">
+                        {formatDate(att.checkInDate)}
+                      </td>
                       <td className="p-4 font-medium text-muted-foreground">
                         {new Date(att.checkInTime).toLocaleTimeString("en-IN", {
                           hour: "2-digit",
@@ -581,7 +1320,193 @@ export function MemberProfileClient({
         </div>
       )}
 
-      {/* Modals */}
+      {/* TAB: ACTIVITY */}
+      {activeTab === "activity" && (
+        <div className="bg-card rounded-3xl border border-border shadow-xs overflow-hidden text-card-foreground">
+          <div className="p-4 sm:p-5 border-b border-border flex items-center justify-between">
+            <div className="text-sm font-bold text-foreground">
+              Full Member Activity
+            </div>
+            <div className="text-xs text-muted-foreground font-medium">
+              {activityEvents.length} events
+            </div>
+          </div>
+          <div className="p-4 sm:p-5 space-y-2.5">
+            {activityEvents.length === 0 ? (
+              <div className="p-8 text-center text-xs text-muted-foreground">
+                No activity recorded for this member yet.
+              </div>
+            ) : (
+              activityEvents.map((ev) => (
+                <div
+                  key={ev.id}
+                  className="flex items-center justify-between gap-3 p-3.5 rounded-2xl bg-muted/35 border border-border/60 text-xs"
+                >
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div
+                      className={`h-8 w-8 rounded-xl flex items-center justify-center shrink-0 ${
+                        ev.type === "attendance"
+                          ? "bg-blue-500/12 text-blue-600 dark:text-blue-400"
+                          : ev.type === "payment"
+                          ? "bg-emerald-500/12 text-emerald-600 dark:text-emerald-400"
+                          : "bg-purple-500/12 text-purple-600 dark:text-purple-400"
+                      }`}
+                    >
+                      {ev.type === "attendance" ? (
+                        <Clock className="w-4 h-4" />
+                      ) : ev.type === "payment" ? (
+                        <IndianRupee className="w-4 h-4" />
+                      ) : (
+                        <Calendar className="w-4 h-4" />
+                      )}
+                    </div>
+                    <div className="min-w-0">
+                      <div className="font-bold text-foreground truncate">
+                        {ev.title}
+                      </div>
+                      <div className="text-[11px] text-muted-foreground truncate">
+                        {ev.subtitle}
+                      </div>
+                    </div>
+                  </div>
+                  <span className="shrink-0 text-[11px] font-semibold text-muted-foreground">
+                    {formatDate(ev.dateStr)}
+                  </span>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Quick Record Payment Modal */}
+      {isPaymentModalOpen && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-card text-card-foreground rounded-3xl max-w-md w-full p-6 shadow-2xl border border-border">
+            <div className="flex items-center justify-between pb-4 border-b border-border">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2 bg-emerald-500/12 text-emerald-600 rounded-xl">
+                  <IndianRupee className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-black text-foreground">
+                    Record Payment
+                  </h3>
+                  <p className="text-[11px] text-muted-foreground">
+                    {member.fullName}
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsPaymentModalOpen(false)}
+                className="p-1.5 rounded-xl hover:bg-muted text-muted-foreground cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <form onSubmit={handleQuickPaymentSubmit} className="mt-4 space-y-3.5 text-xs">
+              {payError && (
+                <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/25 text-rose-600 font-semibold">
+                  {payError}
+                </div>
+              )}
+
+              <div>
+                <label className="block font-bold text-foreground mb-1">
+                  Amount (₹)
+                </label>
+                <input
+                  type="number"
+                  min="1"
+                  step="any"
+                  required
+                  value={payAmount}
+                  onChange={(e) => setPayAmount(e.target.value)}
+                  placeholder="Enter amount"
+                  className="w-full h-10 px-3 rounded-xl bg-background border border-border text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-bold text-foreground mb-1">
+                    Method
+                  </label>
+                  <select
+                    value={payMethod}
+                    onChange={(e) =>
+                      setPayMethod(
+                        e.target.value as
+                          | "cash"
+                          | "upi"
+                          | "card"
+                          | "bank_transfer"
+                          | "cheque"
+                          | "other"
+                      )
+                    }
+                    className="w-full h-10 px-3 rounded-xl bg-background border border-border text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40"
+                  >
+                    <option value="upi">UPI</option>
+                    <option value="cash">Cash</option>
+                    <option value="card">Card</option>
+                    <option value="bank_transfer">Bank Transfer</option>
+                    <option value="cheque">Cheque</option>
+                    <option value="other">Other</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block font-bold text-foreground mb-1">
+                    Date
+                  </label>
+                  <input
+                    type="date"
+                    required
+                    value={payDate}
+                    onChange={(e) => setPayDate(e.target.value)}
+                    className="w-full h-10 px-3 rounded-xl bg-background border border-border text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block font-bold text-foreground mb-1">
+                  Notes (Optional)
+                </label>
+                <input
+                  type="text"
+                  value={payNotes}
+                  onChange={(e) => setPayNotes(e.target.value)}
+                  placeholder="Payment reference or note"
+                  className="w-full h-10 px-3 rounded-xl bg-background border border-border text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40"
+                />
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setIsPaymentModalOpen(false)}
+                  className="h-9 px-4 rounded-xl border border-border bg-muted hover:bg-muted/80 font-bold cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={payLoading}
+                  className="h-9 px-4 rounded-xl bg-primary text-primary-foreground font-bold hover:opacity-95 disabled:opacity-60 inline-flex items-center gap-1.5 cursor-pointer"
+                >
+                  {payLoading && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                  Save Payment
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Existing Modals */}
       <EditMemberModal
         gymId={gymId}
         member={{
@@ -604,6 +1529,7 @@ export function MemberProfileClient({
         branchId={member.branchId}
         memberId={member.id}
         memberName={member.fullName}
+        currentPlanId={activeMembership?.planId}
         plans={plans}
         isOpen={isRenewOpen}
         onClose={() => setIsRenewOpen(false)}

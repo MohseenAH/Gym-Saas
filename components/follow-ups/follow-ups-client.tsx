@@ -1,33 +1,44 @@
 "use client";
 
-import { useState, useMemo, useEffect, startTransition } from "react";
+import {
+  useState,
+  useMemo,
+  useSyncExternalStore,
+  startTransition,
+} from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
+  Target,
   Phone,
-  PhoneCall,
   MessageSquare,
-  MessageSquarePlus,
   Mail,
   Calendar,
-  DollarSign,
-  Receipt,
   AlertCircle,
   Clock,
-  TrendingUp,
   Search,
-  SlidersHorizontal,
   Plus,
   X,
-  ChevronRight,
-  ChevronDown,
   CheckCircle2,
   CreditCard,
   Loader2,
-  Sparkles,
+  MoreVertical,
+  RefreshCw,
+  User,
+  Wallet,
+  XCircle,
+  Hourglass,
+  FileEdit,
+  ArrowUpDown,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
+import { KpiCard } from "@/components/ui/kpi-card";
+import {
+  RenewMembershipModal,
+  MembershipPlanOption,
+} from "@/components/members/renew-membership-modal";
 import { recordPaymentAction } from "@/lib/actions/payments";
-import { getTodayIST } from "@/lib/utils";
 
 export interface FollowUpMember {
   id: string;
@@ -44,14 +55,17 @@ export interface FollowUpMember {
   planPrice: number;
   totalPaid: number;
   dueAmount: number;
-  dueDate: string;
-  formattedDueDate: string;
+  endDate: string;
+  formattedEndDate: string;
+  startDate: string;
+  formattedStartDate: string;
   daysDiff: number;
   daysOverdue: number;
-  daysUntilDue: number;
+  isExpiring: boolean;
+  isPending: boolean;
   isOverdue: boolean;
-  isDueSoon: boolean;
-  isUpcoming: boolean;
+  isTrialEnding: boolean;
+  isTrial: boolean;
   membershipStatus: string;
 }
 
@@ -62,12 +76,6 @@ interface MemberForPayment {
   branchId: string;
 }
 
-interface PlanOption {
-  id: string;
-  name: string;
-  price: number;
-}
-
 interface BranchOption {
   id: string;
   name: string;
@@ -76,22 +84,17 @@ interface BranchOption {
 interface FollowUpsClientProps {
   gymId: string;
   gymName: string;
+  todayStr: string;
   members: FollowUpMember[];
   allMembersForPayment: MemberForPayment[];
-  plans: PlanOption[];
+  plans: MembershipPlanOption[];
   branches: BranchOption[];
-  totalOutstanding: number;
-  overdueTotal: number;
-  overdueCount: number;
-  dueSoonTotal: number;
-  dueSoonCount: number;
-  upcomingTotal: number;
-  upcomingCount: number;
-  recoveredThisMonth: number;
-  monthlyTarget: number;
+  canRecordPayments: boolean;
+  canManageMembers: boolean;
 }
 
-type TabType = "all" | "overdue" | "due_soon" | "upcoming";
+type CategoryTab = "all" | "expiring" | "pending" | "overdue" | "trial_ending";
+type SortOption = "urgency" | "balance" | "name";
 
 interface MessageScript {
   key: string;
@@ -102,116 +105,292 @@ interface MessageScript {
 const DEFAULT_SCRIPTS: Record<string, MessageScript> = {
   gentle: {
     key: "gentle",
-    title: "Gentle Reminder",
+    title: "Renewal / Payment Reminder",
     template:
-      "Hi {memberName}, friendly reminder from {gymName} that your {planName} membership dues of ₹{dueAmount} are due on {dueDate}. Kindly clear at the desk or via UPI to keep working out uninterrupted! 💪",
+      "Hi {memberName}, friendly reminder from {gymName} regarding your {planName} membership ({statusInfo}). Please drop by the desk or reach out if you'd like to renew or clear your balance.",
   },
   urgent: {
     key: "urgent",
-    title: "Urgent Overdue",
+    title: "Overdue Renewal",
     template:
-      "URGENT: Hi {memberName}, your {planName} balance of ₹{dueAmount} at {gymName} was due on {dueDate} and is now overdue. Please settle this immediately to prevent membership suspension. ⚠️",
+      "Hi {memberName}, your {planName} membership at {gymName} has expired ({statusInfo}). Renew today to continue uninterrupted gym access!",
   },
   partial: {
     key: "partial",
-    title: "Partial Balance",
+    title: "Pending Balance",
     template:
-      "Hi {memberName}, you have a remaining partial balance of ₹{dueAmount} towards your {planName} membership at {gymName}. Please complete payment on your next gym visit. Thank you!",
-  },
-  promise: {
-    key: "promise",
-    title: "Promise-to-Pay",
-    template:
-      "Hi {memberName}, following up on your promised payment of ₹{dueAmount} for {gymName}. Please confirm when you'll be dropping by today or share the UPI screenshot. Thank you!",
+      "Hi {memberName}, you have a remaining balance of ₹{dueAmount} for your {planName} membership at {gymName}. Kindly settle it at the front desk or via UPI.",
   },
 };
+
+// Lightweight external store for localStorage follow-up notes & scripts (SSR-safe)
+let storageListeners: Array<() => void> = [];
+function subscribeStorage(listener: () => void) {
+  storageListeners.push(listener);
+  if (typeof window !== "undefined") {
+    window.addEventListener("storage", listener);
+  }
+  return () => {
+    storageListeners = storageListeners.filter((l) => l !== listener);
+    if (typeof window !== "undefined") {
+      window.removeEventListener("storage", listener);
+    }
+  };
+}
+function emitStorageChange() {
+  storageListeners.forEach((l) => l());
+}
+
+const EMPTY_STATUSES_JSON = "{}";
+const DEFAULT_SCRIPTS_JSON = JSON.stringify(DEFAULT_SCRIPTS);
+
+function getFollowUpStatusSnapshot(memberId: string): string {
+  if (typeof window === "undefined") return "";
+  try {
+    return localStorage.getItem(`gymapra_followup_${memberId}`) || "";
+  } catch {
+    return "";
+  }
+}
+
+function getAllStatusesSnapshot(): string {
+  if (typeof window === "undefined") return EMPTY_STATUSES_JSON;
+  try {
+    return localStorage.getItem("gymapra_followup_status_map") || EMPTY_STATUSES_JSON;
+  } catch {
+    return EMPTY_STATUSES_JSON;
+  }
+}
+
+function getScriptsSnapshot(): string {
+  if (typeof window === "undefined") return DEFAULT_SCRIPTS_JSON;
+  try {
+    return localStorage.getItem("gymapra_followup_scripts") || DEFAULT_SCRIPTS_JSON;
+  } catch {
+    return DEFAULT_SCRIPTS_JSON;
+  }
+}
 
 export function FollowUpsClient({
   gymId,
   gymName,
+  todayStr,
   members,
   allMembersForPayment,
   plans,
   branches,
-  totalOutstanding,
-  overdueTotal,
-  overdueCount,
-  dueSoonTotal,
-  dueSoonCount,
-  upcomingTotal,
-  upcomingCount,
-  recoveredThisMonth,
-  monthlyTarget,
+  canRecordPayments,
+  canManageMembers,
 }: FollowUpsClientProps) {
   const router = useRouter();
 
-  // Filters & Tabs
-  const [activeTab, setActiveTab] = useState<TabType>("all");
+  const [activeTab, setActiveTab] = useState<CategoryTab>("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedPlanId, setSelectedPlanId] = useState("all");
-  const [selectedDueDateFilter, setSelectedDueDateFilter] = useState("all");
+  const [selectedBranchId, setSelectedBranchId] = useState("all");
+  const [sortBy, setSortBy] = useState<SortOption>("urgency");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [openMenuId, setOpenMenuId] = useState<string | null>(null);
 
-  // Accordion state for upcoming group
-  const [isUpcomingExpanded, setIsUpcomingExpanded] = useState(false);
+  // Synced localStorage stores without setState in useEffect
+  const statusMapRaw = useSyncExternalStore(
+    subscribeStorage,
+    getAllStatusesSnapshot,
+    () => EMPTY_STATUSES_JSON
+  );
+  const scriptsRaw = useSyncExternalStore(
+    subscribeStorage,
+    getScriptsSnapshot,
+    () => DEFAULT_SCRIPTS_JSON
+  );
 
-  // Message scripts state (stored in localStorage)
-  const [scripts, setScripts] = useState<Record<string, MessageScript>>(DEFAULT_SCRIPTS);
+  const followUpStatuses: Record<string, string> = useMemo(() => {
+    try {
+      return JSON.parse(statusMapRaw);
+    } catch {
+      return {};
+    }
+  }, [statusMapRaw]);
+
+  const scripts: Record<string, MessageScript> = useMemo(() => {
+    try {
+      return JSON.parse(scriptsRaw);
+    } catch {
+      return DEFAULT_SCRIPTS;
+    }
+  }, [scriptsRaw]);
+
   const [activeScriptKey, setActiveScriptKey] = useState<string>("gentle");
   const [isScriptModalOpen, setIsScriptModalOpen] = useState(false);
-  const [editingScripts, setEditingScripts] = useState<Record<string, MessageScript>>(DEFAULT_SCRIPTS);
+  const [editingScripts, setEditingScripts] =
+    useState<Record<string, MessageScript>>(DEFAULT_SCRIPTS);
 
-  // Follow-up status tracking from localStorage
-  const [followUpStatuses, setFollowUpStatuses] = useState<Record<string, string>>({});
-
-  // Promise-to-Pay popover state
-  const [promiseModalMember, setPromiseModalMember] = useState<FollowUpMember | null>(null);
+  // Promise-to-Pay modal
+  const [promiseModalMember, setPromiseModalMember] =
+    useState<FollowUpMember | null>(null);
   const [promiseDateInput, setPromiseDateInput] = useState("");
 
-  // Record payment modal state
+  // Renew Membership modal
+  const [renewMember, setRenewMember] = useState<FollowUpMember | null>(null);
+
+  // Record Payment modal
   const [paymentModalOpen, setPaymentModalOpen] = useState(false);
-  const [paymentMemberId, setPaymentMemberId] = useState<string>("");
-  const [paymentAmount, setPaymentAmount] = useState<string>("");
-  const [paymentMethod, setPaymentMethod] = useState<string>("cash");
-  const [paymentDate, setPaymentDate] = useState<string>(getTodayIST());
-  const [paymentNotes, setPaymentNotes] = useState<string>("");
+  const [paymentMemberId, setPaymentMemberId] = useState("");
+  const [paymentMembershipId, setPaymentMembershipId] = useState<string | null>(
+    null
+  );
+  const [paymentAmount, setPaymentAmount] = useState("");
+  const [paymentMethod, setPaymentMethod] = useState<
+    "cash" | "upi" | "card" | "bank_transfer" | "cheque" | "other"
+  >("cash");
+  const [paymentDate, setPaymentDate] = useState(todayStr);
+  const [paymentNotes, setPaymentNotes] = useState("");
   const [paymentLoading, setPaymentLoading] = useState(false);
   const [paymentError, setPaymentError] = useState<string | null>(null);
   const [waReceiptUrl, setWaReceiptUrl] = useState<string | null>(null);
 
-  // Initialize from localStorage on client mount
-  useEffect(() => {
-    try {
-      const savedScripts = localStorage.getItem("gymapra_followup_scripts");
-      if (savedScripts) {
-        const parsed = JSON.parse(savedScripts);
-        setScripts(parsed);
-        setEditingScripts(parsed);
-      }
-    } catch {
-      // ignore JSON parse errors
-    }
+  // Branch-scoped members
+  const branchMembers = useMemo(() => {
+    if (selectedBranchId === "all") return members;
+    return members.filter((m) => m.branchId === selectedBranchId);
+  }, [members, selectedBranchId]);
 
-    try {
-      const loadedStatuses: Record<string, string> = {};
-      members.forEach((m) => {
-        const saved = localStorage.getItem(`gymapra_followup_${m.id}`);
-        if (saved) {
-          loadedStatuses[m.id] = saved;
-        }
-      });
-      setFollowUpStatuses(loadedStatuses);
-    } catch {
-      // ignore
-    }
-  }, [members]);
+  // Approved KPI category counts (non-mutually-exclusive)
+  const expiringMembers = useMemo(
+    () => branchMembers.filter((m) => m.isExpiring),
+    [branchMembers]
+  );
+  const pendingMembers = useMemo(
+    () => branchMembers.filter((m) => m.isPending),
+    [branchMembers]
+  );
+  const overdueMembers = useMemo(
+    () => branchMembers.filter((m) => m.isOverdue),
+    [branchMembers]
+  );
+  const trialEndingMembers = useMemo(
+    () => branchMembers.filter((m) => m.isTrialEnding),
+    [branchMembers]
+  );
+
+  const pendingTotal = useMemo(
+    () => pendingMembers.reduce((sum, m) => sum + m.dueAmount, 0),
+    [pendingMembers]
+  );
+
+  // Filter + Sort according to Section 6 urgency rules
+  const filteredAndSorted = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+
+    const list = branchMembers.filter((m) => {
+      if (activeTab === "expiring" && !m.isExpiring) return false;
+      if (activeTab === "pending" && !m.isPending) return false;
+      if (activeTab === "overdue" && !m.isOverdue) return false;
+      if (activeTab === "trial_ending" && !m.isTrialEnding) return false;
+
+      if (selectedPlanId !== "all" && m.planId !== selectedPlanId) return false;
+
+      if (q) {
+        const matchName = m.fullName.toLowerCase().includes(q);
+        const matchPhone = m.phone.toLowerCase().includes(q);
+        const matchCode = m.code.toLowerCase().includes(q);
+        if (!matchName && !matchPhone && !matchCode) return false;
+      }
+
+      return true;
+    });
+
+    const sorted = [...list];
+    sorted.sort((a, b) => {
+      if (sortBy === "name") {
+        return a.fullName.localeCompare(b.fullName);
+      }
+      if (sortBy === "balance") {
+        return b.dueAmount - a.dueAmount;
+      }
+
+      // Urgency sorting per category (Section 6)
+      if (activeTab === "expiring" || activeTab === "trial_ending") {
+        return a.daysDiff - b.daysDiff;
+      }
+      if (activeTab === "pending") {
+        if (b.daysOverdue !== a.daysOverdue) return b.daysOverdue - a.daysOverdue;
+        return b.dueAmount - a.dueAmount;
+      }
+      if (activeTab === "overdue") {
+        // Most recently expired first (e.g. -1 before -25)
+        return b.daysDiff - a.daysDiff;
+      }
+
+      // Combined "All" urgency: soonest expiring/trial first, then recent overdue, then pending
+      const rank = (m: FollowUpMember) => {
+        if (m.isTrialEnding) return 0;
+        if (m.isExpiring) return 1;
+        if (m.isOverdue) return 2;
+        return 3;
+      };
+      const ra = rank(a);
+      const rb = rank(b);
+      if (ra !== rb) return ra - rb;
+      if (ra === 0 || ra === 1) return a.daysDiff - b.daysDiff;
+      if (ra === 2) return b.daysDiff - a.daysDiff;
+      return b.daysOverdue - a.daysOverdue;
+    });
+
+    return sorted;
+  }, [
+    branchMembers,
+    activeTab,
+    selectedPlanId,
+    searchQuery,
+    sortBy,
+  ]);
+
+  const totalPages = Math.max(
+    1,
+    Math.ceil(filteredAndSorted.length / rowsPerPage)
+  );
+  const safePage = Math.min(currentPage, totalPages);
+  const paginatedMembers = useMemo(() => {
+    const start = (safePage - 1) * rowsPerPage;
+    return filteredAndSorted.slice(start, start + rowsPerPage);
+  }, [filteredAndSorted, safePage, rowsPerPage]);
+
+  function getMemberFollowUpStatus(memberId: string): string {
+    return (
+      followUpStatuses[memberId] ||
+      getFollowUpStatusSnapshot(memberId) ||
+      "Never contacted"
+    );
+  }
 
   function updateFollowUpStatus(memberId: string, status: string) {
-    setFollowUpStatuses((prev) => ({ ...prev, [memberId]: status }));
     try {
+      const nextMap = { ...followUpStatuses, [memberId]: status };
+      localStorage.setItem("gymapra_followup_status_map", JSON.stringify(nextMap));
       localStorage.setItem(`gymapra_followup_${memberId}`, status);
+      emitStorageChange();
     } catch {
-      // ignore
+      // ignore storage failure
     }
+  }
+
+  function getStatusSummaryText(m: FollowUpMember): string {
+    if (m.isOverdue) {
+      return `expired ${Math.abs(m.daysDiff)}d ago on ${m.formattedEndDate}`;
+    }
+    if (m.isTrialEnding) {
+      return m.daysDiff === 0
+        ? "trial ends today"
+        : `trial ends in ${m.daysDiff}d (${m.formattedEndDate})`;
+    }
+    if (m.isExpiring) {
+      return m.daysDiff === 0
+        ? "ends today"
+        : `ends in ${m.daysDiff}d (${m.formattedEndDate})`;
+    }
+    return `₹${m.dueAmount.toLocaleString("en-IN")} balance pending`;
   }
 
   function interpolateScript(template: string, member: FollowUpMember): string {
@@ -219,56 +398,50 @@ export function FollowUpsClient({
       .replace(/{memberName}/g, member.fullName)
       .replace(/{planName}/g, member.planName)
       .replace(/{dueAmount}/g, member.dueAmount.toLocaleString("en-IN"))
-      .replace(/{dueDate}/g, member.formattedDueDate)
+      .replace(/{dueDate}/g, member.formattedEndDate)
+      .replace(/{statusInfo}/g, getStatusSummaryText(member))
       .replace(/{gymName}/g, gymName);
   }
 
   function handleWhatsApp(member: FollowUpMember) {
+    const cleanPhone = (member.phone || "").replace(/\D/g, "");
+    if (cleanPhone.length < 7) return;
+    const waPhone = cleanPhone.length === 10 ? `91${cleanPhone}` : cleanPhone;
+
+    const scriptKey = member.isPending
+      ? "partial"
+      : member.isOverdue
+      ? "urgent"
+      : activeScriptKey;
     const template =
-      scripts[activeScriptKey]?.template || DEFAULT_SCRIPTS.gentle.template;
+      scripts[scriptKey]?.template ||
+      scripts.gentle?.template ||
+      DEFAULT_SCRIPTS.gentle.template;
     const message = interpolateScript(template, member);
 
-    let cleanPhone = member.phone.replace(/\D/g, "");
-    if (cleanPhone.length === 10) {
-      cleanPhone = "91" + cleanPhone;
-    }
-
-    const waUrl = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(message)}`;
+    const waUrl = `https://wa.me/${waPhone}?text=${encodeURIComponent(message)}`;
     window.open(waUrl, "_blank", "noopener,noreferrer");
-
-    updateFollowUpStatus(member.id, "WhatsApp Sent");
+    // Per Section 8: Do NOT automatically mark a reminder as delivered merely because a WhatsApp link was opened.
   }
 
   function handleEmail(member: FollowUpMember) {
-    if (!member.email) {
-      alert(`No email address recorded for ${member.fullName}`);
-      return;
-    }
+    if (!member.email) return;
     const template =
       scripts[activeScriptKey]?.template || DEFAULT_SCRIPTS.gentle.template;
     const body = interpolateScript(template, member);
-    const subject = `Payment Reminder: ${gymName} Membership Dues`;
-    const mailtoUrl = `mailto:${member.email}?subject=${encodeURIComponent(
+    const subject = `Membership Follow-up — ${gymName}`;
+    window.location.href = `mailto:${member.email}?subject=${encodeURIComponent(
       subject
     )}&body=${encodeURIComponent(body)}`;
-    window.location.href = mailtoUrl;
   }
 
   function handleSaveScripts() {
-    setScripts(editingScripts);
     try {
-      localStorage.setItem("gymapra_followup_scripts", JSON.stringify(editingScripts));
-    } catch {
-      // ignore
-    }
-    setIsScriptModalOpen(false);
-  }
-
-  function handleResetScripts() {
-    setEditingScripts(DEFAULT_SCRIPTS);
-    setScripts(DEFAULT_SCRIPTS);
-    try {
-      localStorage.removeItem("gymapra_followup_scripts");
+      localStorage.setItem(
+        "gymapra_followup_scripts",
+        JSON.stringify(editingScripts)
+      );
+      emitStorageChange();
     } catch {
       // ignore
     }
@@ -276,12 +449,8 @@ export function FollowUpsClient({
   }
 
   function handleSavePromise() {
-    if (!promiseModalMember) return;
-    if (!promiseDateInput) {
-      alert("Please select a promise-to-pay date");
-      return;
-    }
-    const [y, m, d] = promiseDateInput.split("-").map(Number);
+    if (!promiseModalMember || !promiseDateInput) return;
+    const [, m, d] = promiseDateInput.split("-").map(Number);
     const months = [
       "Jan",
       "Feb",
@@ -302,24 +471,19 @@ export function FollowUpsClient({
     setPromiseDateInput("");
   }
 
-  function setQuickPromiseDate(daysFromNow: number) {
-    const today = new Date();
-    today.setDate(today.getDate() + daysFromNow);
-    const yyyy = today.getFullYear();
-    const mm = String(today.getMonth() + 1).padStart(2, "0");
-    const dd = String(today.getDate()).padStart(2, "0");
-    setPromiseDateInput(`${yyyy}-${mm}-${dd}`);
-  }
-
   function openPaymentModal(member?: FollowUpMember) {
     if (member) {
       setPaymentMemberId(member.id);
-      setPaymentAmount(member.dueAmount.toString());
+      setPaymentMembershipId(member.membershipId);
+      setPaymentAmount(
+        member.dueAmount > 0 ? String(member.dueAmount) : String(member.planPrice)
+      );
     } else {
       setPaymentMemberId(allMembersForPayment[0]?.id || "");
+      setPaymentMembershipId(null);
       setPaymentAmount("");
     }
-    setPaymentDate(getTodayIST());
+    setPaymentDate(todayStr);
     setPaymentMethod("cash");
     setPaymentNotes("");
     setPaymentError(null);
@@ -343,1116 +507,820 @@ export function FollowUpsClient({
       return;
     }
 
-    const memberObj = allMembersForPayment.find((m) => m.id === paymentMemberId);
+    const memberObj = allMembersForPayment.find(
+      (m) => m.id === paymentMemberId
+    );
     const targetBranchId = memberObj?.branchId || branches[0]?.id || "";
 
     setPaymentLoading(true);
-
-    let res;
     try {
-      res = await recordPaymentAction({
+      const res = await recordPaymentAction({
         gymId,
         branchId: targetBranchId,
         memberId: paymentMemberId,
+        membershipId: paymentMembershipId,
         amount: numAmount,
-        paymentMethod: paymentMethod as
-          | "cash"
-          | "upi"
-          | "card"
-          | "bank_transfer"
-          | "cheque"
-          | "other",
+        paymentMethod,
         paymentDate,
-        notes: paymentNotes || null,
+        notes: paymentNotes.trim() || null,
         paymentStatus: "paid",
       });
-    } catch (err: unknown) {
-      setPaymentError(err instanceof Error ? err.message : "Failed to record payment");
+
+      if (!res || !res.success) {
+        setPaymentError(res?.error || "Failed to record payment");
+        setPaymentLoading(false);
+        return;
+      }
+
       setPaymentLoading(false);
-      return;
-    }
+      updateFollowUpStatus(
+        paymentMemberId,
+        `Paid ₹${numAmount.toLocaleString("en-IN")}`
+      );
 
-    if (!res || !res.success) {
-      setPaymentError(res?.error || "Failed to record payment");
+      if (res.receiptUrl) {
+        setWaReceiptUrl(res.receiptUrl);
+      } else {
+        setPaymentModalOpen(false);
+        setPaymentAmount("");
+        setPaymentNotes("");
+      }
+      startTransition(() => router.refresh());
+    } catch (err) {
+      setPaymentError(
+        err instanceof Error ? err.message : "Failed to record payment"
+      );
       setPaymentLoading(false);
-      return;
-    }
-
-    setPaymentLoading(false);
-
-    // Update follow-up status locally
-    updateFollowUpStatus(paymentMemberId, `Paid ₹${numAmount.toLocaleString("en-IN")}`);
-
-    if (res.receiptUrl) {
-      setWaReceiptUrl(res.receiptUrl);
-    } else {
-      setPaymentModalOpen(false);
-      setPaymentAmount("");
-      setPaymentNotes("");
-      startTransition(() => {
-        router.refresh();
-      });
     }
   }
 
-  function handleClosePaymentModal() {
-    setPaymentModalOpen(false);
-    setWaReceiptUrl(null);
-    setPaymentAmount("");
-    setPaymentNotes("");
-    startTransition(() => {
-      router.refresh();
-    });
-  }
-
-  // Filter members based on search, plan, and due date
-  const filteredMembers = useMemo(() => {
-    return members.filter((member) => {
-      if (searchQuery.trim()) {
-        const q = searchQuery.toLowerCase();
-        const matchName = member.fullName.toLowerCase().includes(q);
-        const matchPhone = member.phone.toLowerCase().includes(q);
-        const matchCode = member.code.toLowerCase().includes(q);
-        if (!matchName && !matchPhone && !matchCode) return false;
-      }
-
-      if (selectedPlanId !== "all") {
-        if (member.planId !== selectedPlanId) return false;
-      }
-
-      if (selectedDueDateFilter === "overdue") {
-        if (!member.isOverdue) return false;
-      } else if (selectedDueDateFilter === "7days") {
-        if (!member.isDueSoon && !member.isOverdue) return false;
-      } else if (selectedDueDateFilter === "30days") {
-        if (member.daysUntilDue > 30 && !member.isOverdue) return false;
-      }
-
-      return true;
-    });
-  }, [members, searchQuery, selectedPlanId, selectedDueDateFilter]);
-
-  const overdueMembersList = useMemo(
-    () => filteredMembers.filter((m) => m.isOverdue),
-    [filteredMembers]
-  );
-  const dueSoonMembersList = useMemo(
-    () => filteredMembers.filter((m) => m.isDueSoon),
-    [filteredMembers]
-  );
-  const upcomingMembersList = useMemo(
-    () => filteredMembers.filter((m) => m.isUpcoming),
-    [filteredMembers]
-  );
-
-  const filteredOverdueAmount = overdueMembersList.reduce(
-    (sum, m) => sum + m.dueAmount,
-    0
-  );
-  const filteredDueSoonAmount = dueSoonMembersList.reduce(
-    (sum, m) => sum + m.dueAmount,
-    0
-  );
-  const filteredUpcomingAmount = upcomingMembersList.reduce(
-    (sum, m) => sum + m.dueAmount,
-    0
-  );
-
-  const recoveryPercent = Math.min(
-    100,
-    Math.round((recoveredThisMonth / (monthlyTarget || 1)) * 100)
-  );
-
-  const activeScript = scripts[activeScriptKey] || DEFAULT_SCRIPTS.gentle;
-
-  function getFollowUpStatusBadge(memberId: string) {
-    const status = followUpStatuses[memberId] || "Never Contacted";
-    if (status.startsWith("WhatsApp")) {
+  function renderUrgencyPill(member: FollowUpMember) {
+    if (member.isTrialEnding) {
       return (
-        <span className="text-emerald-400 font-medium inline-flex items-center gap-1">
-          <MessageSquare className="w-3 h-3 text-emerald-500 shrink-0" />
-          {status}
+        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-purple-500/12 text-purple-700 dark:text-purple-400 border border-purple-500/25">
+          <Hourglass className="w-3 h-3" />
+          {member.daysDiff === 0
+            ? "Trial ends today"
+            : `Trial ${member.daysDiff}d left`}
+        </span>
+      );
+    }
+    if (member.isExpiring) {
+      return (
+        <span
+          className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold border ${
+            member.daysDiff <= 1
+              ? "bg-rose-500/12 text-rose-700 dark:text-rose-400 border-rose-500/25"
+              : "bg-amber-500/12 text-amber-700 dark:text-amber-400 border-amber-500/25"
+          }`}
+        >
+          <Clock className="w-3 h-3" />
+          {member.daysDiff === 0 ? "Ends today" : `${member.daysDiff}d left`}
+        </span>
+      );
+    }
+    if (member.isOverdue) {
+      return (
+        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-rose-500/12 text-rose-700 dark:text-rose-400 border border-rose-500/25">
+          <XCircle className="w-3 h-3" />
+          Expired {Math.abs(member.daysDiff)}d ago
+        </span>
+      );
+    }
+    return (
+      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-amber-500/12 text-amber-700 dark:text-amber-400 border border-amber-500/25">
+        <AlertCircle className="w-3 h-3" />
+        ₹{member.dueAmount.toLocaleString("en-IN")} Due
+      </span>
+    );
+  }
+
+  function renderFollowUpStatusChip(memberId: string) {
+    const status = getMemberFollowUpStatus(memberId);
+    if (status === "Never contacted") {
+      return (
+        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-muted text-muted-foreground border border-border">
+          Never contacted
         </span>
       );
     }
     if (status.startsWith("Promised")) {
       return (
-        <span className="text-amber-400 font-medium inline-flex items-center gap-1">
-          <Calendar className="w-3 h-3 text-amber-500 shrink-0" />
+        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-blue-500/12 text-blue-700 dark:text-blue-400 border border-blue-500/25">
           {status}
         </span>
       );
     }
-    if (status.startsWith("Paid")) {
-      return (
-        <span className="text-emerald-400 font-bold inline-flex items-center gap-1">
-          <CheckCircle2 className="w-3 h-3 text-emerald-500 shrink-0" />
-          {status}
-        </span>
-      );
-    }
-    return <span className="text-muted-foreground">{status}</span>;
-  }
-
-  // Row Component for desktop and mobile
-  function renderMemberRow(member: FollowUpMember) {
-    const paidPercent = Math.min(
-      100,
-      Math.max(
-        0,
-        Math.round((member.totalPaid / (member.planPrice || 1)) * 100)
-      )
-    );
-
     return (
-      <div key={member.id} className="group">
-        {/* Desktop 4-column row */}
-        <div className="hidden sm:grid grid-cols-12 items-center gap-4 px-4 py-3.5 border-b border-border/50 hover:bg-muted/20 transition-colors text-sm">
-          {/* Col 1: Member Name (#code) + phone subtext */}
-          <div className="col-span-3 min-w-0">
-            <div className="flex items-center gap-1.5">
-              <span className="font-bold text-foreground truncate">
-                {member.fullName}
-              </span>
-              <span className="text-xs text-muted-foreground font-mono">
-                {member.code}
-              </span>
-            </div>
-            <div className="text-xs text-muted-foreground mt-0.5 flex items-center gap-1.5 truncate">
-              <Phone className="w-3 h-3 text-muted-foreground/70 shrink-0" />
-              <span>{member.phone || "No phone"}</span>
-              {branches.length > 1 && (
-                <span className="text-[10px] text-muted-foreground/70 border border-border/50 px-1 py-0.2 rounded-sm shrink-0">
-                  {member.branchName}
-                </span>
-              )}
-            </div>
-          </div>
-
-          {/* Col 2: Plan Name + Plan ₹price · Paid ₹paid + slim emerald progress bar */}
-          <div className="col-span-3 min-w-0">
-            <div className="text-xs font-semibold text-foreground truncate">
-              {member.planName}
-            </div>
-            <div className="text-[11px] text-muted-foreground mt-0.5">
-              Plan ₹{member.planPrice.toLocaleString("en-IN")} · Paid ₹
-              {member.totalPaid.toLocaleString("en-IN")}
-            </div>
-            <div className="w-full bg-muted/60 rounded-full h-1 mt-1 overflow-hidden">
-              <div
-                className="bg-emerald-500 h-1 rounded-full transition-all duration-300"
-                style={{ width: `${paidPercent}%` }}
-              />
-            </div>
-          </div>
-
-          {/* Col 3: Status pill + Follow-up: {status} */}
-          <div className="col-span-3 min-w-0">
-            <div>
-              {member.isOverdue ? (
-                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-rose-500/10 text-rose-400 border border-rose-500/20">
-                  <span className="w-1.5 h-1.5 rounded-full bg-rose-500 shrink-0" />
-                  ₹{member.dueAmount.toLocaleString("en-IN")} Due (Overdue{" "}
-                  {member.daysOverdue}d · Due {member.formattedDueDate})
-                </span>
-              ) : member.isDueSoon ? (
-                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-500/10 text-amber-400 border border-amber-500/20">
-                  <span className="w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0" />
-                  ₹{member.dueAmount.toLocaleString("en-IN")} Due (
-                  {member.daysUntilDue === 0
-                    ? "Due Today"
-                    : `Due in ${member.daysUntilDue}d`}{" "}
-                  · {member.formattedDueDate})
-                </span>
-              ) : (
-                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-500/10 text-blue-400 border border-blue-500/20">
-                  <span className="w-1.5 h-1.5 rounded-full bg-blue-500 shrink-0" />
-                  ₹{member.dueAmount.toLocaleString("en-IN")} Due (Due in{" "}
-                  {member.daysUntilDue}d · {member.formattedDueDate})
-                </span>
-              )}
-            </div>
-            <div className="text-xs text-muted-foreground mt-1 truncate" suppressHydrationWarning>
-              Follow-up: {getFollowUpStatusBadge(member.id)}
-            </div>
-          </div>
-
-          {/* Col 4: 5 Direct 1-tap buttons */}
-          <div className="col-span-3 flex items-center justify-end gap-1.5">
-            {/* 1. WhatsApp */}
-            <button
-              onClick={() => handleWhatsApp(member)}
-              className="h-8 px-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-semibold inline-flex items-center gap-1 shadow-xs transition-all active:scale-95 cursor-pointer"
-              title="Send WhatsApp message"
-            >
-              <MessageSquare className="w-3.5 h-3.5" />
-              <span>WhatsApp</span>
-            </button>
-
-            {/* 2. Call */}
-            <a
-              href={`tel:${member.phone}`}
-              className="h-8 px-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-semibold inline-flex items-center gap-1 shadow-xs transition-all active:scale-95 cursor-pointer"
-              title="Call phone"
-            >
-              <Phone className="w-3.5 h-3.5" />
-              <span>Call</span>
-            </a>
-
-            {/* 3. Email */}
-            <button
-              onClick={() => handleEmail(member)}
-              className="h-8 px-2 border border-border hover:bg-muted text-foreground rounded-lg text-xs font-medium inline-flex items-center gap-1 transition-all active:scale-95 cursor-pointer"
-              title="Send Email"
-            >
-              <Mail className="w-3.5 h-3.5 text-muted-foreground" />
-              <span>Email</span>
-            </button>
-
-            {/* 4. Promise */}
-            <button
-              onClick={() => {
-                setPromiseModalMember(member);
-                setPromiseDateInput("");
-              }}
-              className="h-8 px-2 border border-border hover:bg-muted text-foreground rounded-lg text-xs font-medium inline-flex items-center gap-1 transition-all active:scale-95 cursor-pointer"
-              title="Log Promise-to-Pay date"
-            >
-              <Calendar className="w-3.5 h-3.5 text-muted-foreground" />
-              <span>Promise</span>
-            </button>
-
-            {/* 5. Collect Due */}
-            <button
-              onClick={() => openPaymentModal(member)}
-              className="h-8 px-2.5 border border-emerald-500/30 hover:bg-emerald-500/10 text-emerald-400 rounded-lg text-xs font-semibold inline-flex items-center gap-1 transition-all active:scale-95 cursor-pointer"
-              title="Collect this due"
-            >
-              <Receipt className="w-3.5 h-3.5 text-emerald-500" />
-              <span>Collect Due</span>
-            </button>
-          </div>
-        </div>
-
-        {/* Mobile Compact Card */}
-        <div className="sm:hidden p-4 rounded-xl border border-border bg-card space-y-3 mb-2.5">
-          {/* Top row: Name (#code), Due Status pill */}
-          <div className="flex items-start justify-between gap-2">
-            <div>
-              <div className="font-bold text-foreground text-sm flex items-center gap-1.5">
-                <span>{member.fullName}</span>
-                <span className="text-xs text-muted-foreground font-mono">
-                  {member.code}
-                </span>
-              </div>
-              <div className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
-                <Phone className="w-3 h-3 text-muted-foreground/70" />
-                <span>{member.phone || "No phone"}</span>
-              </div>
-            </div>
-            <div>
-              {member.isOverdue ? (
-                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-rose-500/10 text-rose-400 border border-rose-500/20">
-                  ₹{member.dueAmount.toLocaleString("en-IN")} Due
-                </span>
-              ) : member.isDueSoon ? (
-                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-amber-500/10 text-amber-400 border border-amber-500/20">
-                  ₹{member.dueAmount.toLocaleString("en-IN")} Due
-                </span>
-              ) : (
-                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-blue-500/10 text-blue-400 border border-blue-500/20">
-                  ₹{member.dueAmount.toLocaleString("en-IN")} Due
-                </span>
-              )}
-            </div>
-          </div>
-
-          {/* Middle: Plan info, progress bar, follow-up subtext */}
-          <div className="bg-muted/30 p-2.5 rounded-lg border border-border/40 space-y-1.5">
-            <div className="flex justify-between text-xs">
-              <span className="font-semibold text-foreground truncate max-w-[60%]">
-                {member.planName}
-              </span>
-              <span className="text-muted-foreground text-[11px]">
-                Paid ₹{member.totalPaid.toLocaleString("en-IN")} / ₹
-                {member.planPrice.toLocaleString("en-IN")}
-              </span>
-            </div>
-            <div className="w-full bg-muted/60 rounded-full h-1 overflow-hidden">
-              <div
-                className="bg-emerald-500 h-1 rounded-full"
-                style={{ width: `${paidPercent}%` }}
-              />
-            </div>
-            <div className="flex justify-between items-center text-[11px] text-muted-foreground pt-0.5">
-              <span>
-                {member.isOverdue
-                  ? `Overdue ${member.daysOverdue}d (Due ${member.formattedDueDate})`
-                  : `Due in ${member.daysUntilDue}d (${member.formattedDueDate})`}
-              </span>
-              <span suppressHydrationWarning>
-                Follow-up: {getFollowUpStatusBadge(member.id)}
-              </span>
-            </div>
-          </div>
-
-          {/* Bottom: 5 Action Buttons in Grid */}
-          <div className="grid grid-cols-5 gap-1.5 pt-1">
-            <button
-              onClick={() => handleWhatsApp(member)}
-              className="h-9 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-semibold flex flex-col items-center justify-center gap-0.5 active:scale-95 transition-all cursor-pointer"
-            >
-              <MessageSquare className="w-3.5 h-3.5" />
-              <span className="text-[10px]">WhatsApp</span>
-            </button>
-            <a
-              href={`tel:${member.phone}`}
-              className="h-9 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-semibold flex flex-col items-center justify-center gap-0.5 active:scale-95 transition-all cursor-pointer"
-            >
-              <Phone className="w-3.5 h-3.5" />
-              <span className="text-[10px]">Call</span>
-            </a>
-            <button
-              onClick={() => handleEmail(member)}
-              className="h-9 border border-border hover:bg-muted text-foreground rounded-lg text-xs font-medium flex flex-col items-center justify-center gap-0.5 active:scale-95 transition-all cursor-pointer"
-            >
-              <Mail className="w-3.5 h-3.5 text-muted-foreground" />
-              <span className="text-[10px]">Email</span>
-            </button>
-            <button
-              onClick={() => {
-                setPromiseModalMember(member);
-                setPromiseDateInput("");
-              }}
-              className="h-9 border border-border hover:bg-muted text-foreground rounded-lg text-xs font-medium flex flex-col items-center justify-center gap-0.5 active:scale-95 transition-all cursor-pointer"
-            >
-              <Calendar className="w-3.5 h-3.5 text-muted-foreground" />
-              <span className="text-[10px]">Promise</span>
-            </button>
-            <button
-              onClick={() => openPaymentModal(member)}
-              className="h-9 border border-emerald-500/30 hover:bg-emerald-500/10 text-emerald-400 rounded-lg text-xs font-semibold flex flex-col items-center justify-center gap-0.5 active:scale-95 transition-all cursor-pointer"
-            >
-              <Receipt className="w-3.5 h-3.5 text-emerald-500" />
-              <span className="text-[10px]">Collect</span>
-            </button>
-          </div>
-        </div>
-      </div>
+      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-500/12 text-emerald-700 dark:text-emerald-400 border border-emerald-500/25">
+        {status}
+      </span>
     );
   }
+
+  const showTrialCard = trialEndingMembers.length > 0;
+  const startIndex =
+    filteredAndSorted.length === 0 ? 0 : (safePage - 1) * rowsPerPage + 1;
+  const endIndex = Math.min(safePage * rowsPerPage, filteredAndSorted.length);
 
   return (
-    <div className="space-y-6 pb-12">
-      {/* 1. Header */}
-      <div className="space-y-4">
-        {/* Desktop Header */}
-        <div className="hidden sm:flex items-center justify-between">
-          <div>
-            <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
-              <Link
-                href={`/app/${gymId}/staff`}
-                className="hover:text-foreground transition-colors"
-              >
-                Gym Management
-              </Link>
-              <span>/</span>
-              <span className="text-foreground">Follow-Ups & Dues</span>
-            </div>
-            <h1 className="text-2xl font-bold tracking-tight text-foreground mt-1">
-              Follow-Ups & Dues
-            </h1>
-            <p className="text-sm text-muted-foreground mt-0.5">
-              Track outstanding plan balances, prioritize overdue dues, and log follow-ups.
-            </p>
+    <div className="space-y-5 text-foreground">
+      {/* Page Header */}
+      <div className="flex items-center justify-between gap-3 flex-wrap">
+        <div className="flex items-center gap-2.5 min-w-0">
+          <div className="h-9 w-9 rounded-xl bg-primary/10 text-primary border border-primary/20 flex items-center justify-center shrink-0">
+            <Target className="w-5 h-5" />
           </div>
-
-          <div className="flex items-center gap-3">
-            <button
-              onClick={() => {
-                setEditingScripts(scripts);
-                setIsScriptModalOpen(true);
-              }}
-              className="h-10 px-4 rounded-xl border border-border bg-card hover:bg-muted text-foreground text-sm font-semibold flex items-center gap-2 shadow-xs transition-colors cursor-pointer"
-            >
-              <SlidersHorizontal className="w-4 h-4 text-muted-foreground" />
-              Manage Scripts
-            </button>
-
-            <button
-              onClick={() => {
-                setEditingScripts(scripts);
-                setIsScriptModalOpen(true);
-              }}
-              className="h-10 px-4 rounded-xl bg-primary hover:opacity-95 text-primary-foreground text-sm font-bold flex items-center gap-2 shadow-xs transition-all active:scale-[0.98] cursor-pointer"
-            >
-              <MessageSquarePlus className="w-4 h-4" />
-              <span>+ Create Script</span>
-            </button>
-          </div>
+          <h1 className="text-xl sm:text-2xl font-black tracking-tight text-foreground truncate">
+            Follow-ups &amp; Collections
+          </h1>
         </div>
 
-        {/* Mobile Header */}
-        <div className="sm:hidden space-y-3">
-          <div className="flex items-center justify-between">
-            <div>
-              <div className="text-xs text-muted-foreground">Gym Management</div>
-              <h1 className="text-xl font-bold tracking-tight text-foreground">
-                Follow-Ups & Dues
-              </h1>
-            </div>
-            <button
-              onClick={() => {
-                setEditingScripts(scripts);
-                setIsScriptModalOpen(true);
-              }}
-              className="p-2 rounded-xl border border-border bg-card text-muted-foreground hover:text-foreground"
-              title="Manage Message Scripts"
-            >
-              <SlidersHorizontal className="w-4 h-4" />
-            </button>
-          </div>
-
-          {/* Full-width primary + Create Script button */}
+        <div className="flex items-center gap-2">
           <button
+            type="button"
             onClick={() => {
               setEditingScripts(scripts);
               setIsScriptModalOpen(true);
             }}
-            className="w-full h-11 bg-primary hover:opacity-95 text-primary-foreground rounded-xl text-sm font-bold flex items-center justify-center gap-2 shadow-xs transition-all active:scale-[0.98] cursor-pointer"
+            className="h-9 sm:h-10 px-3 rounded-xl border border-border bg-card hover:bg-muted text-foreground text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer"
           >
-            <MessageSquarePlus className="w-4 h-4" />
-            <span>+ Create Script</span>
+            <FileEdit className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline">Scripts</span>
           </button>
+
+          {canRecordPayments && (
+            <button
+              type="button"
+              onClick={() => openPaymentModal()}
+              className="h-9 sm:h-10 px-3.5 sm:px-4 rounded-xl bg-primary text-primary-foreground text-xs font-bold shadow-sm hover:opacity-95 inline-flex items-center gap-1.5 cursor-pointer"
+            >
+              <Plus className="w-4 h-4" />
+              Record Payment
+            </button>
+          )}
         </div>
       </div>
 
-      {/* 2. Unified 4-Metric Dues Overview Bar */}
-      {/* Desktop: Single 4-column divided card */}
-      <div className="hidden sm:grid grid-cols-4 divide-x divide-border rounded-xl border border-border bg-card shadow-xs">
-        {/* Metric 1: Total Outstanding Dues */}
-        <div className="p-4 sm:p-5">
-          <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center justify-between">
-            <span>Total Outstanding Dues</span>
-            <DollarSign className="w-4 h-4 text-muted-foreground" />
-          </div>
-          <div className="mt-2 text-2xl font-bold text-foreground">
-            ₹{totalOutstanding.toLocaleString("en-IN")}
-          </div>
-          <div className="mt-1 text-xs text-muted-foreground">
-            ({overdueCount + dueSoonCount} members)
-          </div>
-        </div>
+      {/* Approved KPI Cards (3 permanent + conditional Trial Ending) */}
+      <div
+        className={`grid grid-cols-2 gap-2.5 sm:gap-4 ${
+          showTrialCard ? "lg:grid-cols-4" : "lg:grid-cols-3"
+        }`}
+      >
+        <KpiCard
+          compact
+          label="Expiring"
+          value={`${expiringMembers.length} Members`}
+          variant="amber"
+          icon={<Calendar className="w-4 h-4" />}
+          subtext="Ends in 1–7 days"
+          onClick={() => {
+            setActiveTab((prev) => (prev === "expiring" ? "all" : "expiring"));
+            setCurrentPage(1);
+          }}
+          active={activeTab === "expiring"}
+        />
 
-        {/* Metric 2: Overdue Dues */}
-        <div className="p-4 sm:p-5">
-          <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center justify-between">
-            <span>Overdue Dues</span>
-            <AlertCircle className="w-4 h-4 text-rose-500" />
-          </div>
-          <div className="mt-2 text-2xl font-bold text-rose-500">
-            ₹{overdueTotal.toLocaleString("en-IN")}
-          </div>
-          <div className="mt-1 text-xs text-rose-400 font-medium">
-            ({overdueCount} members)
-          </div>
-        </div>
+        <KpiCard
+          compact
+          label="Pending"
+          value={`₹${pendingTotal.toLocaleString("en-IN")}`}
+          variant="red"
+          icon={<Wallet className="w-4 h-4" />}
+          subtext={`${pendingMembers.length} Members`}
+          onClick={() => {
+            setActiveTab((prev) => (prev === "pending" ? "all" : "pending"));
+            setCurrentPage(1);
+          }}
+          active={activeTab === "pending"}
+        />
 
-        {/* Metric 3: Due Within 7 Days */}
-        <div className="p-4 sm:p-5">
-          <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center justify-between">
-            <span>Due Within 7 Days</span>
-            <Clock className="w-4 h-4 text-amber-500" />
-          </div>
-          <div className="mt-2 text-2xl font-bold text-amber-500">
-            ₹{dueSoonTotal.toLocaleString("en-IN")}
-          </div>
-          <div className="mt-1 text-xs text-amber-400 font-medium">
-            ({dueSoonCount} members)
-          </div>
-        </div>
+        <KpiCard
+          compact
+          label="Overdue"
+          value={`${overdueMembers.length} Members`}
+          variant="red"
+          icon={<XCircle className="w-4 h-4" />}
+          subtext="Expired without renewal"
+          onClick={() => {
+            setActiveTab((prev) => (prev === "overdue" ? "all" : "overdue"));
+            setCurrentPage(1);
+          }}
+          active={activeTab === "overdue"}
+        />
 
-        {/* Metric 4: Dues Recovered This Month */}
-        <div className="p-4 sm:p-5">
-          <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center justify-between">
-            <span>Dues Recovered This Month</span>
-            <TrendingUp className="w-4 h-4 text-emerald-500" />
+        {showTrialCard && (
+          <KpiCard
+            compact
+            label="Trial Ending"
+            value={`${trialEndingMembers.length} Members`}
+            variant="purple"
+            icon={<Hourglass className="w-4 h-4" />}
+            subtext="Ends in 0–3 days"
+            onClick={() => {
+              setActiveTab((prev) =>
+                prev === "trial_ending" ? "all" : "trial_ending"
+              );
+              setCurrentPage(1);
+            }}
+            active={activeTab === "trial_ending"}
+          />
+        )}
+      </div>
+
+      {/* Category Pills + Search + Sort + Filters */}
+      <div className="flex flex-col gap-3">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-2.5">
+          {/* Category Filter Pills */}
+          <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-0.5">
+            {(
+              [
+                { id: "all" as const, label: `All (${branchMembers.length})` },
+                {
+                  id: "expiring" as const,
+                  label: `Expiring (${expiringMembers.length})`,
+                },
+                {
+                  id: "pending" as const,
+                  label: `Pending (${pendingMembers.length})`,
+                },
+                {
+                  id: "overdue" as const,
+                  label: `Overdue (${overdueMembers.length})`,
+                },
+                ...(showTrialCard
+                  ? [
+                      {
+                        id: "trial_ending" as const,
+                        label: `Trial Ending (${trialEndingMembers.length})`,
+                      },
+                    ]
+                  : []),
+              ]
+            ).map((pill) => {
+              const active = activeTab === pill.id;
+              return (
+                <button
+                  key={pill.id}
+                  type="button"
+                  onClick={() => {
+                    setActiveTab(pill.id);
+                    setCurrentPage(1);
+                  }}
+                  className={`shrink-0 h-9 px-3.5 rounded-full text-xs font-bold border transition-colors cursor-pointer ${
+                    active
+                      ? "bg-primary text-primary-foreground border-primary shadow-xs"
+                      : "bg-card text-muted-foreground border-border hover:text-foreground"
+                  }`}
+                >
+                  {pill.label}
+                </button>
+              );
+            })}
           </div>
-          <div className="mt-2 text-2xl font-bold text-emerald-500">
-            ₹{recoveredThisMonth.toLocaleString("en-IN")}
-          </div>
-          <div className="mt-2 space-y-1">
-            <div className="w-full bg-muted/60 rounded-full h-1.5 overflow-hidden">
-              <div
-                className="bg-emerald-500 h-1.5 rounded-full transition-all duration-500"
-                style={{ width: `${recoveryPercent}%` }}
+
+          {/* Search, Sort, Plan, Branch */}
+          <div className="flex items-center gap-2 flex-wrap">
+            <div className="relative flex-1 sm:w-60 min-w-[180px]">
+              <Search className="w-4 h-4 text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => {
+                  setSearchQuery(e.target.value);
+                  setCurrentPage(1);
+                }}
+                placeholder="Search member, phone, ID..."
+                className="w-full h-9 pl-9 pr-3 rounded-xl bg-card border border-border text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
               />
             </div>
-            <div className="text-[11px] text-muted-foreground flex justify-between">
-              <span>{recoveryPercent}% of target</span>
-              <span>Target: ₹{monthlyTarget.toLocaleString("en-IN")}</span>
-            </div>
-          </div>
-        </div>
-      </div>
 
-      {/* Mobile: 2x2 grid of compact metric cards */}
-      <div className="grid grid-cols-2 gap-2.5 sm:hidden">
-        <div className="p-3 rounded-xl border border-border bg-card">
-          <div className="text-[11px] font-semibold uppercase tracking-normal leading-tight text-muted-foreground">
-            Total Outstanding
-          </div>
-          <div className="mt-1 text-lg font-bold text-foreground">
-            ₹{totalOutstanding.toLocaleString("en-IN")}
-          </div>
-          <div className="text-[11px] text-muted-foreground">
-            {overdueCount + dueSoonCount} members
-          </div>
-        </div>
-
-        <div className="p-3 rounded-xl border border-rose-500/20 bg-rose-500/10">
-          <div className="text-[11px] font-semibold uppercase tracking-normal leading-tight text-rose-400">
-            Overdue Dues
-          </div>
-          <div className="mt-1 text-lg font-bold text-rose-500">
-            ₹{overdueTotal.toLocaleString("en-IN")}
-          </div>
-          <div className="text-[11px] text-rose-400 font-medium">
-            {overdueCount} members
-          </div>
-        </div>
-
-        <div className="p-3 rounded-xl border border-amber-500/20 bg-amber-500/10">
-          <div className="text-[11px] font-semibold uppercase tracking-normal leading-tight text-amber-400">
-            Due in 7 Days
-          </div>
-          <div className="mt-1 text-lg font-bold text-amber-500">
-            ₹{dueSoonTotal.toLocaleString("en-IN")}
-          </div>
-          <div className="text-[11px] text-amber-400 font-medium">
-            {dueSoonCount} members
-          </div>
-        </div>
-
-        <div className="p-3 rounded-xl border border-emerald-500/20 bg-emerald-500/10">
-          <div className="text-[11px] font-semibold uppercase tracking-normal leading-tight text-emerald-400">
-            Recovered MTD
-          </div>
-          <div className="mt-1 text-lg font-bold text-emerald-500">
-            ₹{recoveredThisMonth.toLocaleString("en-IN")}
-          </div>
-          <div className="w-full bg-muted/60 rounded-full h-1 mt-1.5 overflow-hidden">
-            <div
-              className="bg-emerald-500 h-1 rounded-full transition-all"
-              style={{ width: `${recoveryPercent}%` }}
-            />
-          </div>
-          <div className="text-[10px] text-muted-foreground mt-0.5">
-            {recoveryPercent}% of target
-          </div>
-        </div>
-      </div>
-
-      {/* 3. Filter Tabs, Script Selector & Search Bar */}
-      <div className="space-y-3">
-        {/* Desktop Row 1: Filter tabs on left + active script preview pill on right */}
-        <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
-          {/* Filter Tabs */}
-          <div className="flex items-center gap-1.5 p-1 bg-muted/40 border border-border rounded-xl overflow-x-auto">
-            <button
-              onClick={() => setActiveTab("all")}
-              className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-colors cursor-pointer ${
-                activeTab === "all"
-                  ? "bg-card text-foreground shadow-2xs border border-border"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              All Dues ({overdueCount + dueSoonCount + upcomingCount})
-            </button>
-            <button
-              onClick={() => setActiveTab("overdue")}
-              className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-colors cursor-pointer ${
-                activeTab === "overdue"
-                  ? "bg-rose-500/10 text-rose-400 border border-rose-500/20 shadow-2xs"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              Overdue ({overdueCount})
-            </button>
-            <button
-              onClick={() => setActiveTab("due_soon")}
-              className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-colors cursor-pointer ${
-                activeTab === "due_soon"
-                  ? "bg-amber-500/10 text-amber-400 border border-amber-500/20 shadow-2xs"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              Due Within 7d ({dueSoonCount})
-            </button>
-            <button
-              onClick={() => setActiveTab("upcoming")}
-              className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-colors cursor-pointer ${
-                activeTab === "upcoming"
-                  ? "bg-blue-500/10 text-blue-400 border border-blue-500/20 shadow-2xs"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              Upcoming &gt;7d ({upcomingCount})
-            </button>
-          </div>
-
-          {/* Desktop inline active script preview pill */}
-          <div className="hidden lg:flex items-center gap-2 px-3 py-1.5 rounded-full border border-border bg-muted/30 text-xs text-muted-foreground max-w-lg truncate">
-            <Sparkles className="w-3.5 h-3.5 text-primary shrink-0" />
-            <span className="font-semibold text-foreground shrink-0">
-              {activeScript.title}:
-            </span>
-            <span className="truncate italic">
-              &quot;{activeScript.template.slice(0, 75)}...&quot;
-            </span>
-          </div>
-        </div>
-
-        {/* Mobile script bar: Compact Active Message Script selector + 1-line preview */}
-        <div className="sm:hidden space-y-2 p-3 rounded-xl border border-border bg-card">
-          <div className="text-xs font-semibold text-foreground flex items-center justify-between">
-            <span>Active Message Script:</span>
-            <button
-              onClick={() => {
-                setEditingScripts(scripts);
-                setIsScriptModalOpen(true);
-              }}
-              className="text-primary text-[11px] font-semibold hover:underline"
-            >
-              Edit Templates
-            </button>
-          </div>
-
-          {/* Script Pills */}
-          <div className="flex items-center gap-1.5 overflow-x-auto pb-1">
-            {Object.values(scripts).map((s) => (
-              <button
-                key={s.key}
-                onClick={() => setActiveScriptKey(s.key)}
-                className={`px-2.5 py-1 rounded-full text-xs font-semibold whitespace-nowrap transition-all cursor-pointer ${
-                  activeScriptKey === s.key
-                    ? "bg-primary text-primary-foreground shadow-2xs"
-                    : "bg-muted text-muted-foreground hover:text-foreground border border-border/50"
-                }`}
+            <div className="relative flex items-center">
+              <ArrowUpDown className="w-3.5 h-3.5 text-muted-foreground absolute left-2.5 pointer-events-none" />
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value as SortOption)}
+                aria-label="Sort follow-ups"
+                className="h-9 pl-8 pr-3 rounded-xl bg-card border border-border text-xs font-semibold text-foreground"
               >
-                {s.title}
-              </button>
-            ))}
-          </div>
-
-          {/* 1-line live template preview */}
-          <div className="text-xs text-muted-foreground italic truncate bg-muted/30 px-2 py-1.5 rounded-md border border-border/40">
-            &quot;{activeScript.template}&quot;
-          </div>
-        </div>
-
-        {/* Desktop Script Selector Row */}
-        <div className="hidden sm:flex items-center justify-between gap-3 p-2.5 rounded-xl border border-border bg-card">
-          <div className="flex items-center gap-2 text-xs">
-            <span className="font-semibold text-foreground shrink-0">
-              Active Script:
-            </span>
-            <div className="flex items-center gap-1.5">
-              {Object.values(scripts).map((s) => (
-                <button
-                  key={s.key}
-                  onClick={() => setActiveScriptKey(s.key)}
-                  className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
-                    activeScriptKey === s.key
-                      ? "bg-primary text-primary-foreground shadow-2xs"
-                      : "bg-muted/60 text-muted-foreground hover:text-foreground border border-border/40"
-                  }`}
-                >
-                  {s.title}
-                </button>
-              ))}
+                <option value="urgency">Sort: Urgency</option>
+                <option value="balance">Sort: Balance</option>
+                <option value="name">Sort: Name</option>
+              </select>
             </div>
-          </div>
 
-          <div className="text-xs text-muted-foreground italic truncate max-w-md">
-            Preview: &quot;{activeScript.template}&quot;
-          </div>
-        </div>
-
-        {/* Search & Filter row */}
-        <div className="grid grid-cols-1 sm:grid-cols-12 gap-2.5">
-          {/* Search Input */}
-          <div className="sm:col-span-6 relative">
-            <Search className="w-4 h-4 text-muted-foreground absolute left-3 top-3 pointer-events-none" />
-            <input
-              type="text"
-              placeholder="Search member or phone..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full h-10 pl-9 pr-3 bg-card border border-border rounded-xl text-sm text-foreground placeholder:text-muted-foreground focus:outline-hidden focus:ring-2 focus:ring-primary/20 transition-all"
-            />
-            {searchQuery && (
-              <button
-                onClick={() => setSearchQuery("")}
-                className="absolute right-2.5 top-2.5 p-1 rounded-md text-muted-foreground hover:text-foreground"
+            {plans.length > 0 && (
+              <select
+                value={selectedPlanId}
+                onChange={(e) => {
+                  setSelectedPlanId(e.target.value);
+                  setCurrentPage(1);
+                }}
+                aria-label="Filter by plan"
+                className="h-9 px-3 rounded-xl bg-card border border-border text-xs font-semibold text-foreground"
               >
-                <X className="w-3.5 h-3.5" />
-              </button>
+                <option value="all">All Plans</option>
+                {plans.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.name}
+                  </option>
+                ))}
+              </select>
             )}
-          </div>
 
-          {/* Plan Dropdown */}
-          <div className="sm:col-span-3">
-            <select
-              value={selectedPlanId}
-              onChange={(e) => setSelectedPlanId(e.target.value)}
-              className="w-full h-10 px-3 bg-card border border-border rounded-xl text-sm text-foreground focus:outline-hidden focus:ring-2 focus:ring-primary/20 transition-all cursor-pointer"
-            >
-              <option value="all">Plan: All Plans</option>
-              {plans.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.name}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* Due Date Dropdown */}
-          <div className="sm:col-span-3">
-            <select
-              value={selectedDueDateFilter}
-              onChange={(e) => setSelectedDueDateFilter(e.target.value)}
-              className="w-full h-10 px-3 bg-card border border-border rounded-xl text-sm text-foreground focus:outline-hidden focus:ring-2 focus:ring-primary/20 transition-all cursor-pointer"
-            >
-              <option value="all">Due Date: All</option>
-              <option value="overdue">Overdue Only</option>
-              <option value="7days">Due Within 7 Days</option>
-              <option value="30days">Due Within 30 Days</option>
-            </select>
+            {branches.length > 1 && (
+              <select
+                value={selectedBranchId}
+                onChange={(e) => {
+                  setSelectedBranchId(e.target.value);
+                  setCurrentPage(1);
+                }}
+                aria-label="Filter by branch"
+                className="h-9 px-3 rounded-xl bg-card border border-border text-xs font-semibold text-foreground"
+              >
+                <option value="all">All Branches</option>
+                {branches.map((b) => (
+                  <option key={b.id} value={b.id}>
+                    {b.name}
+                  </option>
+                ))}
+              </select>
+            )}
           </div>
         </div>
       </div>
 
-      {/* 4. Grouped Priority Containers */}
-      <div className="space-y-6">
-        {/* GROUP 1: Overdue — Action Today */}
-        {(activeTab === "all" || activeTab === "overdue") && (
-          <div className="rounded-2xl border border-rose-500/30 bg-card overflow-hidden shadow-xs">
-            {/* Header */}
-            <div className="bg-rose-500/10 text-rose-400 px-4 py-3 flex items-center justify-between border-b border-rose-500/20 font-semibold text-sm">
-              <div className="flex items-center gap-2">
-                <AlertCircle className="w-4 h-4 text-rose-500" />
-                <span>
-                  Overdue — Action Today ({overdueMembersList.length} Members • ₹
-                  {filteredOverdueAmount.toLocaleString("en-IN")})
-                </span>
-              </div>
-              <span className="text-xs bg-rose-500/20 text-rose-400 px-2 py-0.5 rounded-full font-bold">
-                High Priority
-              </span>
-            </div>
+      {/* Desktop Follow-ups Table */}
+      <div className="hidden md:block bg-card rounded-3xl border border-border shadow-xs overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-xs">
+            <thead className="bg-muted/40 text-muted-foreground font-bold border-b border-border text-[11px]">
+              <tr>
+                <th className="py-3.5 pl-5 pr-3">Member</th>
+                <th className="py-3.5 px-3">Plan &amp; Details</th>
+                <th className="py-3.5 px-3">Status</th>
+                <th className="py-3.5 px-3">Last Follow-up</th>
+                <th className="py-3.5 pl-3 pr-5 text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-border">
+              {paginatedMembers.length === 0 ? (
+                <tr>
+                  <td
+                    colSpan={5}
+                    className="py-12 text-center text-muted-foreground"
+                  >
+                    No follow-up records match the current selection.
+                  </td>
+                </tr>
+              ) : (
+                paginatedMembers.map((member) => {
+                  const cleanPhone = (member.phone || "").replace(/\D/g, "");
+                  const hasPhone = cleanPhone.length >= 7;
 
-            {/* Content */}
-            {overdueMembersList.length === 0 ? (
-              <div className="p-8 text-center space-y-2">
-                <div className="w-10 h-10 rounded-full bg-emerald-500/10 text-emerald-500 mx-auto flex items-center justify-center">
-                  <CheckCircle2 className="w-5 h-5" />
-                </div>
-                <p className="text-sm font-semibold text-foreground">
-                  No overdue dues!
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  All member accounts are currently up to date.
-                </p>
-              </div>
-            ) : (
-              <div>
-                {/* Desktop column header */}
-                <div className="hidden sm:grid grid-cols-12 gap-4 px-4 py-2.5 text-xs font-semibold text-muted-foreground uppercase tracking-wider border-b border-border bg-muted/20">
-                  <div className="col-span-3">MEMBER</div>
-                  <div className="col-span-3">PLAN & PAYMENT</div>
-                  <div className="col-span-3">DUE STATUS & FOLLOW-UP</div>
-                  <div className="col-span-3 text-right">ACTIONS</div>
-                </div>
+                  return (
+                    <tr
+                      key={member.id}
+                      className="hover:bg-muted/30 transition-colors"
+                    >
+                      <td className="py-3.5 pl-5 pr-3">
+                        <div className="flex items-center gap-3">
+                          <div className="h-9 w-9 rounded-full bg-amber-500/12 text-amber-700 dark:text-amber-300 border border-amber-500/25 flex items-center justify-center font-black text-xs shrink-0">
+                            {member.fullName.charAt(0).toUpperCase()}
+                          </div>
+                          <div className="min-w-0">
+                            <Link
+                              href={`/app/${gymId}/members/${member.id}`}
+                              className="font-bold text-foreground hover:underline truncate block"
+                            >
+                              {member.fullName}
+                            </Link>
+                            <div className="text-[11px] text-muted-foreground font-mono truncate">
+                              {member.code} • {member.phone || "No phone"}
+                            </div>
+                          </div>
+                        </div>
+                      </td>
 
-                {overdueMembersList.map(renderMemberRow)}
-              </div>
-            )}
+                      <td className="py-3.5 px-3">
+                        <div className="font-bold text-foreground">
+                          {member.planName}
+                        </div>
+                        <div className="text-[11px] text-muted-foreground mt-0.5">
+                          {member.isOverdue
+                            ? `Ended ${member.formattedEndDate}`
+                            : `Ends on ${member.formattedEndDate}`}
+                          {member.dueAmount > 0 && (
+                            <span className="ml-1.5 font-bold text-rose-600 dark:text-rose-400">
+                              • ₹{member.dueAmount.toLocaleString("en-IN")} due
+                            </span>
+                          )}
+                        </div>
+                      </td>
+
+                      <td className="py-3.5 px-3">
+                        {renderUrgencyPill(member)}
+                      </td>
+
+                      <td className="py-3.5 px-3">
+                        {renderFollowUpStatusChip(member.id)}
+                      </td>
+
+                      <td className="py-3.5 pl-3 pr-5 text-right">
+                        <div className="inline-flex items-center gap-1.5 relative">
+                          {/* Primary Direct Contact: Call */}
+                          {hasPhone ? (
+                            <a
+                              href={`tel:${cleanPhone}`}
+                              className="h-8 px-3 rounded-xl bg-primary text-primary-foreground font-bold text-xs inline-flex items-center gap-1.5 hover:opacity-95 transition-opacity"
+                            >
+                              <Phone className="w-3.5 h-3.5" />
+                              Call
+                            </a>
+                          ) : (
+                            <span className="h-8 px-3 rounded-xl bg-muted text-muted-foreground font-bold text-xs inline-flex items-center gap-1.5 opacity-60 cursor-not-allowed">
+                              <Phone className="w-3.5 h-3.5" />
+                              No Phone
+                            </span>
+                          )}
+
+                          {/* Secondary: WhatsApp */}
+                          <button
+                            type="button"
+                            disabled={!hasPhone}
+                            onClick={() => handleWhatsApp(member)}
+                            title="Open WhatsApp reminder"
+                            aria-label={`Send WhatsApp reminder to ${member.fullName}`}
+                            className="h-8 w-8 rounded-xl bg-emerald-500/12 hover:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 border border-emerald-500/25 inline-flex items-center justify-center disabled:opacity-40 cursor-pointer"
+                          >
+                            <MessageSquare className="w-3.5 h-3.5" />
+                          </button>
+
+                          {/* Overflow Menu */}
+                          <button
+                            type="button"
+                            aria-label="More follow-up actions"
+                            onClick={() =>
+                              setOpenMenuId((prev) =>
+                                prev === member.id ? null : member.id
+                              )
+                            }
+                            className="h-8 w-8 rounded-xl hover:bg-muted text-muted-foreground inline-flex items-center justify-center cursor-pointer"
+                          >
+                            <MoreVertical className="w-4 h-4" />
+                          </button>
+
+                          {openMenuId === member.id && (
+                            <>
+                              <div
+                                className="fixed inset-0 z-20"
+                                onClick={() => setOpenMenuId(null)}
+                              />
+                              <div className="absolute right-0 top-9 w-48 bg-popover text-popover-foreground border border-border rounded-2xl shadow-lg p-1.5 z-30 text-left text-xs font-semibold">
+                                {canRecordPayments && member.dueAmount > 0 && (
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setOpenMenuId(null);
+                                      openPaymentModal(member);
+                                    }}
+                                    className="w-full flex items-center gap-2 px-3 py-2 rounded-xl hover:bg-muted cursor-pointer"
+                                  >
+                                    <CreditCard className="w-3.5 h-3.5 text-emerald-600" />
+                                    Record Payment
+                                  </button>
+                                )}
+                                {canManageMembers && (
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setOpenMenuId(null);
+                                      setRenewMember(member);
+                                    }}
+                                    className="w-full flex items-center gap-2 px-3 py-2 rounded-xl hover:bg-muted cursor-pointer"
+                                  >
+                                    <RefreshCw className="w-3.5 h-3.5 text-primary" />
+                                    Renew Membership
+                                  </button>
+                                )}
+                                <Link
+                                  href={`/app/${gymId}/members/${member.id}`}
+                                  className="flex items-center gap-2 px-3 py-2 rounded-xl hover:bg-muted"
+                                  onClick={() => setOpenMenuId(null)}
+                                >
+                                  <User className="w-3.5 h-3.5 text-blue-600" />
+                                  View Member Profile
+                                </Link>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setOpenMenuId(null);
+                                    setPromiseModalMember(member);
+                                    setPromiseDateInput(todayStr);
+                                  }}
+                                  className="w-full flex items-center gap-2 px-3 py-2 rounded-xl hover:bg-muted cursor-pointer"
+                                >
+                                  <Calendar className="w-3.5 h-3.5 text-amber-600" />
+                                  Log Promise Date
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setOpenMenuId(null);
+                                    updateFollowUpStatus(member.id, "Contacted");
+                                  }}
+                                  className="w-full flex items-center gap-2 px-3 py-2 rounded-xl hover:bg-muted cursor-pointer"
+                                >
+                                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                                  Mark Contacted
+                                </button>
+                                {member.email && (
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setOpenMenuId(null);
+                                      handleEmail(member);
+                                    }}
+                                    className="w-full flex items-center gap-2 px-3 py-2 rounded-xl hover:bg-muted cursor-pointer"
+                                  >
+                                    <Mail className="w-3.5 h-3.5 text-muted-foreground" />
+                                    Send Email
+                                  </button>
+                                )}
+                              </div>
+                            </>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* Mobile Follow-up Cards */}
+      <div className="md:hidden space-y-2.5">
+        {paginatedMembers.length === 0 ? (
+          <div className="bg-card rounded-2xl border border-border p-8 text-center text-xs text-muted-foreground">
+            No follow-up records match the current selection.
           </div>
-        )}
+        ) : (
+          paginatedMembers.map((member) => {
+            const cleanPhone = (member.phone || "").replace(/\D/g, "");
+            const hasPhone = cleanPhone.length >= 7;
 
-        {/* GROUP 2: Due Within 7 Days */}
-        {(activeTab === "all" || activeTab === "due_soon") && (
-          <div className="rounded-2xl border border-amber-500/30 bg-card overflow-hidden shadow-xs">
-            {/* Header */}
-            <div className="bg-amber-500/10 text-amber-400 px-4 py-3 flex items-center justify-between border-b border-amber-500/20 font-semibold text-sm">
-              <div className="flex items-center gap-2">
-                <Clock className="w-4 h-4 text-amber-500" />
-                <span>
-                  Due Within 7 Days ({dueSoonMembersList.length} Members • ₹
-                  {filteredDueSoonAmount.toLocaleString("en-IN")})
-                </span>
-              </div>
-              <span className="text-xs bg-amber-500/20 text-amber-400 px-2 py-0.5 rounded-full font-bold">
-                Expiring Soon
-              </span>
-            </div>
-
-            {/* Content */}
-            {dueSoonMembersList.length === 0 ? (
-              <div className="p-8 text-center space-y-2">
-                <div className="w-10 h-10 rounded-full bg-muted/40 text-muted-foreground mx-auto flex items-center justify-center">
-                  <Clock className="w-5 h-5" />
-                </div>
-                <p className="text-sm font-semibold text-foreground">
-                  No dues due in the next 7 days
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  No upcoming renewals within this weekly window.
-                </p>
-              </div>
-            ) : (
-              <div>
-                {/* Desktop column header */}
-                <div className="hidden sm:grid grid-cols-12 gap-4 px-4 py-2.5 text-xs font-semibold text-muted-foreground uppercase tracking-wider border-b border-border bg-muted/20">
-                  <div className="col-span-3">MEMBER</div>
-                  <div className="col-span-3">PLAN & PAYMENT</div>
-                  <div className="col-span-3">DUE STATUS & FOLLOW-UP</div>
-                  <div className="col-span-3 text-right">ACTIONS</div>
-                </div>
-
-                {dueSoonMembersList.map(renderMemberRow)}
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* GROUP 3: Collapsible accordion bar at bottom (Upcoming — Later >7 Days) */}
-        {(activeTab === "all" || activeTab === "upcoming") && (
-          <div className="rounded-2xl border border-border bg-card overflow-hidden shadow-xs">
-            {/* Accordion Toggle Bar */}
-            <button
-              onClick={() => setIsUpcomingExpanded(!isUpcomingExpanded)}
-              className="w-full px-4 py-3.5 flex items-center justify-between bg-card hover:bg-muted/30 transition-colors text-sm font-semibold text-foreground cursor-pointer"
-            >
-              <div className="flex items-center gap-2">
-                <ChevronRight
-                  className={`w-4 h-4 text-muted-foreground transition-transform duration-200 ${
-                    isUpcomingExpanded ? "rotate-90 text-foreground" : ""
-                  }`}
-                />
-                <span>
-                  Upcoming — Later (&gt;7 Days) • {upcomingMembersList.length}{" "}
-                  Members (₹{filteredUpcomingAmount.toLocaleString("en-IN")})
-                </span>
-              </div>
-              <span className="text-xs text-muted-foreground">
-                {isUpcomingExpanded ? "Collapse" : "Click to expand"}
-              </span>
-            </button>
-
-            {/* Collapsible Content */}
-            {isUpcomingExpanded && (
-              <div className="border-t border-border">
-                {upcomingMembersList.length === 0 ? (
-                  <div className="p-8 text-center text-xs text-muted-foreground">
-                    No members scheduled with renewals beyond 7 days.
-                  </div>
-                ) : (
-                  <div>
-                    {/* Desktop column header */}
-                    <div className="hidden sm:grid grid-cols-12 gap-4 px-4 py-2.5 text-xs font-semibold text-muted-foreground uppercase tracking-wider border-b border-border bg-muted/20">
-                      <div className="col-span-3">MEMBER</div>
-                      <div className="col-span-3">PLAN & PAYMENT</div>
-                      <div className="col-span-3">DUE STATUS & FOLLOW-UP</div>
-                      <div className="col-span-3 text-right">ACTIONS</div>
+            return (
+              <div
+                key={member.id}
+                className="bg-card rounded-2xl border border-border p-3.5 space-y-3"
+              >
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="h-9 w-9 rounded-full bg-amber-500/12 text-amber-700 dark:text-amber-300 border border-amber-500/25 flex items-center justify-center font-black text-xs shrink-0">
+                      {member.fullName.charAt(0).toUpperCase()}
                     </div>
-
-                    {upcomingMembersList.map(renderMemberRow)}
+                    <div className="min-w-0">
+                      <Link
+                        href={`/app/${gymId}/members/${member.id}`}
+                        className="font-bold text-sm text-foreground truncate block hover:underline"
+                      >
+                        {member.fullName}
+                      </Link>
+                      <div className="text-[11px] text-muted-foreground font-mono truncate">
+                        {member.code} • {member.phone || "No phone"}
+                      </div>
+                    </div>
                   </div>
-                )}
+                  <div className="shrink-0">{renderUrgencyPill(member)}</div>
+                </div>
+
+                <div className="flex items-center justify-between gap-2 text-xs text-muted-foreground">
+                  <div className="truncate">
+                    <span className="font-semibold text-foreground">
+                      {member.planName}
+                    </span>{" "}
+                    • {member.isOverdue ? "Ended" : "Ends"}{" "}
+                    {member.formattedEndDate}
+                    {member.dueAmount > 0 && (
+                      <span className="ml-1 font-bold text-rose-600 dark:text-rose-400">
+                        (₹{member.dueAmount.toLocaleString("en-IN")} due)
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2 pt-1">
+                  {hasPhone ? (
+                    <a
+                      href={`tel:${cleanPhone}`}
+                      className="flex-1 h-9 rounded-xl bg-primary text-primary-foreground font-bold text-xs inline-flex items-center justify-center gap-1.5"
+                    >
+                      <Phone className="w-3.5 h-3.5" />
+                      Call
+                    </a>
+                  ) : (
+                    <span className="flex-1 h-9 rounded-xl bg-muted text-muted-foreground font-bold text-xs inline-flex items-center justify-center gap-1.5 opacity-60">
+                      <Phone className="w-3.5 h-3.5" />
+                      No Phone
+                    </span>
+                  )}
+
+                  <button
+                    type="button"
+                    disabled={!hasPhone}
+                    onClick={() => handleWhatsApp(member)}
+                    aria-label="WhatsApp"
+                    className="h-9 w-10 rounded-xl bg-emerald-500/12 text-emerald-700 dark:text-emerald-400 border border-emerald-500/25 inline-flex items-center justify-center disabled:opacity-40 cursor-pointer"
+                  >
+                    <MessageSquare className="w-4 h-4" />
+                  </button>
+
+                  <div className="relative">
+                    <button
+                      type="button"
+                      aria-label="Mobile follow-up actions"
+                      onClick={() =>
+                        setOpenMenuId((prev) =>
+                          prev === `mob-${member.id}` ? null : `mob-${member.id}`
+                        )
+                      }
+                      className="h-9 w-9 rounded-xl border border-border bg-muted/40 text-foreground inline-flex items-center justify-center cursor-pointer"
+                    >
+                      <MoreVertical className="w-4 h-4" />
+                    </button>
+
+                    {openMenuId === `mob-${member.id}` && (
+                      <>
+                        <div
+                          className="fixed inset-0 z-20"
+                          onClick={() => setOpenMenuId(null)}
+                        />
+                        <div className="absolute right-0 bottom-10 w-48 bg-popover text-popover-foreground border border-border rounded-2xl shadow-lg p-1.5 z-30 text-xs font-semibold">
+                          {canRecordPayments && member.dueAmount > 0 && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setOpenMenuId(null);
+                                openPaymentModal(member);
+                              }}
+                              className="w-full flex items-center gap-2 px-3 py-2 rounded-xl hover:bg-muted cursor-pointer"
+                            >
+                              <CreditCard className="w-3.5 h-3.5 text-emerald-600" />
+                              Record Payment
+                            </button>
+                          )}
+                          {canManageMembers && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setOpenMenuId(null);
+                                setRenewMember(member);
+                              }}
+                              className="w-full flex items-center gap-2 px-3 py-2 rounded-xl hover:bg-muted cursor-pointer"
+                            >
+                              <RefreshCw className="w-3.5 h-3.5 text-primary" />
+                              Renew Membership
+                            </button>
+                          )}
+                          <Link
+                            href={`/app/${gymId}/members/${member.id}`}
+                            className="flex items-center gap-2 px-3 py-2 rounded-xl hover:bg-muted"
+                            onClick={() => setOpenMenuId(null)}
+                          >
+                            <User className="w-3.5 h-3.5 text-blue-600" />
+                            View Profile
+                          </Link>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setOpenMenuId(null);
+                              setPromiseModalMember(member);
+                              setPromiseDateInput(todayStr);
+                            }}
+                            className="w-full flex items-center gap-2 px-3 py-2 rounded-xl hover:bg-muted cursor-pointer"
+                          >
+                            <Calendar className="w-3.5 h-3.5 text-amber-600" />
+                            Log Promise Date
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setOpenMenuId(null);
+                              updateFollowUpStatus(member.id, "Contacted");
+                            }}
+                            className="w-full flex items-center gap-2 px-3 py-2 rounded-xl hover:bg-muted cursor-pointer"
+                          >
+                            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                            Mark Contacted
+                          </button>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                </div>
               </div>
-            )}
-          </div>
+            );
+          })
         )}
       </div>
 
-      {/* 5. Manage Message Scripts Modal */}
-      {isScriptModalOpen && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
-          <div className="bg-card text-foreground rounded-3xl max-w-2xl w-full p-6 shadow-2xl border border-border animate-in fade-in zoom-in-95 duration-150 my-auto space-y-5">
-            <div className="flex items-center justify-between pb-3 border-b border-border">
-              <div className="flex items-center gap-3">
-                <div className="p-2.5 bg-primary/10 text-primary rounded-xl">
-                  <SlidersHorizontal className="w-5 h-5" />
-                </div>
-                <div>
-                  <h3 className="text-lg font-bold text-foreground">
-                    Manage Message Scripts
-                  </h3>
-                  <p className="text-xs text-muted-foreground">
-                    Customize WhatsApp & Email follow-up templates
-                  </p>
-                </div>
-              </div>
-              <button
-                onClick={() => setIsScriptModalOpen(false)}
-                className="p-2 rounded-xl text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-
-            <div className="text-xs text-muted-foreground bg-muted/30 p-3 rounded-xl border border-border/50">
-              <span className="font-semibold text-foreground">
-                Available placeholder tags:
-              </span>{" "}
-              <code className="text-primary font-mono">&#123;memberName&#125;</code>,{" "}
-              <code className="text-primary font-mono">&#123;planName&#125;</code>,{" "}
-              <code className="text-primary font-mono">&#123;dueAmount&#125;</code>,{" "}
-              <code className="text-primary font-mono">&#123;dueDate&#125;</code>,{" "}
-              <code className="text-primary font-mono">&#123;gymName&#125;</code>
-            </div>
-
-            <div className="space-y-4 max-h-[50vh] overflow-y-auto pr-1">
-              {Object.entries(editingScripts).map(([key, script]) => (
-                <div key={key} className="space-y-1.5">
-                  <label className="text-xs font-bold text-foreground uppercase tracking-wide">
-                    {script.title}
-                  </label>
-                  <textarea
-                    rows={3}
-                    value={script.template}
-                    onChange={(e) =>
-                      setEditingScripts((prev) => ({
-                        ...prev,
-                        [key]: { ...prev[key], template: e.target.value },
-                      }))
-                    }
-                    className="w-full p-3 rounded-xl border border-border bg-muted/20 text-sm text-foreground focus:outline-hidden focus:ring-2 focus:ring-primary/20 transition-all font-sans"
-                  />
-                </div>
-              ))}
-            </div>
-
-            <div className="pt-3 border-t border-border flex items-center justify-between gap-3">
-              <button
-                type="button"
-                onClick={handleResetScripts}
-                className="text-xs font-semibold text-rose-400 hover:text-rose-300 transition-colors cursor-pointer"
-              >
-                Reset to Defaults
-              </button>
-
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => setIsScriptModalOpen(false)}
-                  className="px-4 py-2 rounded-xl border border-border hover:bg-muted text-sm font-semibold text-foreground transition-colors cursor-pointer"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="button"
-                  onClick={handleSaveScripts}
-                  className="px-4 py-2 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground text-sm font-bold shadow-xs transition-colors cursor-pointer"
-                >
-                  Save Scripts
-                </button>
-              </div>
-            </div>
-          </div>
+      {/* Pagination Footer */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-1 text-xs text-muted-foreground">
+        <div>
+          Showing{" "}
+          <span className="font-bold text-foreground">
+            {startIndex}–{endIndex}
+          </span>{" "}
+          of{" "}
+          <span className="font-bold text-foreground">
+            {filteredAndSorted.length}
+          </span>{" "}
+          members
         </div>
-      )}
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-1">
+            <button
+              type="button"
+              disabled={safePage <= 1}
+              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+              className="h-8 w-8 inline-flex items-center justify-center rounded-xl border border-border bg-card hover:bg-muted disabled:opacity-40 cursor-pointer"
+            >
+              <ChevronLeft className="w-4 h-4" />
+            </button>
+            <span className="px-2 font-bold text-foreground">
+              {safePage} / {totalPages}
+            </span>
+            <button
+              type="button"
+              disabled={safePage >= totalPages}
+              onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+              className="h-8 w-8 inline-flex items-center justify-center rounded-xl border border-border bg-card hover:bg-muted disabled:opacity-40 cursor-pointer"
+            >
+              <ChevronRight className="w-4 h-4" />
+            </button>
+          </div>
+          <select
+            value={rowsPerPage}
+            onChange={(e) => {
+              setRowsPerPage(Number(e.target.value));
+              setCurrentPage(1);
+            }}
+            aria-label="Rows per page"
+            className="h-8 px-2 rounded-xl border border-border bg-card text-foreground font-bold"
+          >
+            <option value={10}>10</option>
+            <option value={25}>25</option>
+            <option value={50}>50</option>
+          </select>
+        </div>
+      </div>
 
-      {/* 6. Promise-to-Pay Date Popover Modal */}
+      {/* Promise-to-Pay Modal */}
       {promiseModalMember && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
-          <div className="bg-card text-foreground rounded-3xl max-w-md w-full p-6 shadow-2xl border border-border animate-in fade-in zoom-in-95 duration-150 my-auto space-y-4">
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-card text-card-foreground rounded-3xl max-w-sm w-full p-6 shadow-2xl border border-border">
             <div className="flex items-center justify-between pb-3 border-b border-border">
-              <div className="flex items-center gap-3">
-                <div className="p-2.5 bg-amber-500/10 text-amber-500 rounded-xl">
-                  <Calendar className="w-5 h-5" />
-                </div>
-                <div>
-                  <h3 className="text-base font-bold text-foreground">
-                    Log Promise-to-Pay
-                  </h3>
-                  <p className="text-xs text-muted-foreground truncate max-w-[220px]">
-                    {promiseModalMember.fullName} (₹
-                    {promiseModalMember.dueAmount.toLocaleString("en-IN")})
-                  </p>
-                </div>
-              </div>
+              <h3 className="text-sm font-black text-foreground">
+                Log Promise-to-Pay
+              </h3>
               <button
+                type="button"
                 onClick={() => setPromiseModalMember(null)}
-                className="p-2 rounded-xl text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer"
+                className="p-1 rounded-xl hover:bg-muted text-muted-foreground cursor-pointer"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
-
-            <div className="space-y-3">
-              <label className="text-xs font-semibold text-foreground">
-                Quick Select Date:
-              </label>
-              <div className="grid grid-cols-4 gap-2">
-                <button
-                  type="button"
-                  onClick={() => setQuickPromiseDate(0)}
-                  className="py-1.5 rounded-lg border border-border bg-muted/30 hover:bg-muted text-xs font-semibold text-foreground transition-colors"
-                >
-                  Today
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setQuickPromiseDate(1)}
-                  className="py-1.5 rounded-lg border border-border bg-muted/30 hover:bg-muted text-xs font-semibold text-foreground transition-colors"
-                >
-                  Tomorrow
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setQuickPromiseDate(3)}
-                  className="py-1.5 rounded-lg border border-border bg-muted/30 hover:bg-muted text-xs font-semibold text-foreground transition-colors"
-                >
-                  In 3 Days
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setQuickPromiseDate(7)}
-                  className="py-1.5 rounded-lg border border-border bg-muted/30 hover:bg-muted text-xs font-semibold text-foreground transition-colors"
-                >
-                  In 1 Week
-                </button>
-              </div>
-
-              <div className="space-y-1 pt-1">
-                <label className="text-xs font-semibold text-muted-foreground">
-                  Or pick specific date:
-                </label>
-                <input
-                  type="date"
-                  min={getTodayIST()}
-                  value={promiseDateInput}
-                  onChange={(e) => setPromiseDateInput(e.target.value)}
-                  className="w-full h-10 px-3 rounded-xl border border-border bg-card text-sm text-foreground focus:outline-hidden focus:ring-2 focus:ring-amber-500/30 transition-all"
-                />
-              </div>
+            <div className="mt-4 space-y-3 text-xs">
+              <p className="text-muted-foreground">
+                Member:{" "}
+                <strong className="text-foreground">
+                  {promiseModalMember.fullName}
+                </strong>
+              </p>
+              <input
+                type="date"
+                value={promiseDateInput}
+                onChange={(e) => setPromiseDateInput(e.target.value)}
+                className="w-full h-10 px-3 rounded-xl bg-background border border-border text-foreground"
+              />
             </div>
-
-            <div className="pt-3 border-t border-border flex items-center justify-end gap-2">
+            <div className="mt-5 flex justify-end gap-2">
               <button
                 type="button"
                 onClick={() => setPromiseModalMember(null)}
-                className="px-4 py-2 rounded-xl border border-border hover:bg-muted text-xs font-semibold text-foreground transition-colors cursor-pointer"
+                className="h-9 px-4 rounded-xl border border-border bg-muted font-bold text-xs cursor-pointer"
               >
                 Cancel
               </button>
               <button
                 type="button"
                 onClick={handleSavePromise}
-                className="px-4 py-2 rounded-xl bg-amber-600 hover:bg-amber-500 text-white text-xs font-bold shadow-xs transition-colors cursor-pointer"
+                className="h-9 px-4 rounded-xl bg-primary text-primary-foreground font-bold text-xs cursor-pointer"
               >
                 Save Promise
               </button>
@@ -1461,84 +1329,142 @@ export function FollowUpsClient({
         </div>
       )}
 
-      {/* 7. Record Payment Modal (with WhatsApp Digital Receipt support) */}
-      {paymentModalOpen && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
-          <div className="bg-card text-foreground rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-border animate-in fade-in zoom-in-95 duration-150 my-auto">
-            <div className="flex items-center justify-between pb-4 border-b border-border">
-              <div className="flex items-center gap-3">
-                <div className="p-2.5 bg-emerald-500/10 text-emerald-500 rounded-xl">
-                  <CreditCard className="w-5 h-5" />
-                </div>
-                <div>
-                  <h3 className="text-lg font-bold text-foreground">
-                    Record Member Payment
-                  </h3>
-                  <p className="text-xs text-muted-foreground">
-                    Collect dues and send instant WhatsApp receipt
-                  </p>
-                </div>
-              </div>
+      {/* Message Scripts Modal */}
+      {isScriptModalOpen && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-card text-card-foreground rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-border">
+            <div className="flex items-center justify-between pb-3 border-b border-border">
+              <h3 className="text-sm font-black text-foreground">
+                Follow-up Message Scripts
+              </h3>
               <button
-                onClick={handleClosePaymentModal}
-                className="p-2 rounded-xl text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer"
+                type="button"
+                onClick={() => setIsScriptModalOpen(false)}
+                className="p-1 rounded-xl hover:bg-muted text-muted-foreground cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            <div className="mt-4 space-y-3 text-xs">
+              <div className="flex items-center gap-1.5 flex-wrap">
+                {Object.values(editingScripts).map((sc) => (
+                  <button
+                    key={sc.key}
+                    type="button"
+                    onClick={() => setActiveScriptKey(sc.key)}
+                    className={`px-3 py-1.5 rounded-xl font-bold border cursor-pointer ${
+                      activeScriptKey === sc.key
+                        ? "bg-primary text-primary-foreground border-primary"
+                        : "bg-muted text-muted-foreground border-border"
+                    }`}
+                  >
+                    {sc.title}
+                  </button>
+                ))}
+              </div>
+              <textarea
+                rows={4}
+                value={editingScripts[activeScriptKey]?.template || ""}
+                onChange={(e) =>
+                  setEditingScripts((prev) => ({
+                    ...prev,
+                    [activeScriptKey]: {
+                      ...prev[activeScriptKey],
+                      template: e.target.value,
+                    },
+                  }))
+                }
+                className="w-full p-3 rounded-xl bg-background border border-border text-foreground"
+              />
+              <p className="text-[11px] text-muted-foreground">
+                Placeholders: {"{memberName}"}, {"{planName}"}, {"{dueAmount}"},{" "}
+                {"{dueDate}"}, {"{statusInfo}"}, {"{gymName}"}
+              </p>
+            </div>
+            <div className="mt-5 flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setIsScriptModalOpen(false)}
+                className="h-9 px-4 rounded-xl border border-border bg-muted font-bold text-xs cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleSaveScripts}
+                className="h-9 px-4 rounded-xl bg-primary text-primary-foreground font-bold text-xs cursor-pointer"
+              >
+                Save Scripts
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Record Payment Modal */}
+      {paymentModalOpen && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-card text-card-foreground rounded-3xl max-w-md w-full p-6 shadow-2xl border border-border">
+            <div className="flex items-center justify-between pb-3.5 border-b border-border">
+              <h3 className="text-sm font-black text-foreground">
+                Record Payment
+              </h3>
+              <button
+                type="button"
+                onClick={() => setPaymentModalOpen(false)}
+                className="p-1 rounded-xl hover:bg-muted text-muted-foreground cursor-pointer"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
 
             {waReceiptUrl ? (
-              <div className="mt-6 text-center space-y-4">
-                <div className="mx-auto w-14 h-14 bg-emerald-500/10 text-emerald-500 rounded-full flex items-center justify-center">
-                  <CheckCircle2 className="w-8 h-8" />
+              <div className="mt-4 space-y-4 text-xs">
+                <div className="p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/25 text-emerald-700 dark:text-emerald-400 font-semibold">
+                  Payment recorded successfully!
                 </div>
-                <div>
-                  <h4 className="text-lg font-bold text-foreground">
-                    Payment Recorded Successfully!
-                  </h4>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    Send the digital payment receipt directly via WhatsApp.
-                  </p>
-                </div>
-                <div className="pt-2 flex flex-col gap-2.5">
+                <div className="flex items-center justify-end gap-2">
                   <a
                     href={waReceiptUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="h-11 flex items-center justify-center gap-2 w-full px-4 bg-[#25D366] hover:bg-[#20bd5a] text-white rounded-xl text-sm font-bold transition-all shadow-xs cursor-pointer"
+                    className="h-9 px-4 rounded-xl bg-emerald-600 text-white font-bold inline-flex items-center gap-1.5"
                   >
-                    <MessageSquare className="w-4 h-4" />
-                    Send Receipt via WhatsApp
+                    <MessageSquare className="w-3.5 h-3.5" />
+                    Send Receipt on WhatsApp
                   </a>
                   <button
-                    onClick={handleClosePaymentModal}
-                    className="h-10 w-full text-sm font-semibold text-muted-foreground hover:text-foreground cursor-pointer"
+                    type="button"
+                    onClick={() => setPaymentModalOpen(false)}
+                    className="h-9 px-4 rounded-xl bg-primary text-primary-foreground font-bold cursor-pointer"
                   >
-                    Done & Close
+                    Done
                   </button>
                 </div>
               </div>
             ) : (
-              <form onSubmit={handleRecordPayment} className="mt-4 space-y-4">
+              <form
+                onSubmit={handleRecordPayment}
+                className="mt-4 space-y-3 text-xs"
+              >
                 {paymentError && (
-                  <div className="p-3 bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs rounded-xl flex items-center gap-2">
-                    <AlertCircle className="w-4 h-4 shrink-0" />
-                    <span>{paymentError}</span>
+                  <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/25 text-rose-600 font-semibold">
+                    {paymentError}
                   </div>
                 )}
 
-                {/* Member Selector */}
-                <div className="space-y-1">
-                  <label className="text-xs font-semibold text-foreground">
-                    Select Member <span className="text-rose-500">*</span>
+                <div>
+                  <label className="block font-bold text-foreground mb-1">
+                    Member
                   </label>
                   <select
                     value={paymentMemberId}
-                    onChange={(e) => setPaymentMemberId(e.target.value)}
-                    className="w-full h-10 px-3 rounded-xl border border-border bg-muted/20 text-sm text-foreground focus:outline-hidden focus:ring-2 focus:ring-emerald-500/30 cursor-pointer"
-                    required
+                    onChange={(e) => {
+                      setPaymentMemberId(e.target.value);
+                      setPaymentMembershipId(null);
+                    }}
+                    className="w-full h-10 px-3 rounded-xl bg-background border border-border text-foreground"
                   >
-                    <option value="">-- Choose Member --</option>
                     {allMembersForPayment.map((m) => (
                       <option key={m.id} value={m.id}>
                         {m.fullName} ({m.phone})
@@ -1547,100 +1473,117 @@ export function FollowUpsClient({
                   </select>
                 </div>
 
-                {/* Amount */}
-                <div className="space-y-1">
-                  <label className="text-xs font-semibold text-foreground">
-                    Amount Received (₹) <span className="text-rose-500">*</span>
-                  </label>
-                  <div className="relative">
-                    <span className="absolute left-3 top-2.5 text-sm text-muted-foreground font-semibold">
-                      ₹
-                    </span>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block font-bold text-foreground mb-1">
+                      Amount (₹)
+                    </label>
                     <input
                       type="number"
-                      step="any"
                       min="1"
-                      placeholder="e.g. 1500"
+                      step="any"
+                      required
                       value={paymentAmount}
                       onChange={(e) => setPaymentAmount(e.target.value)}
-                      className="w-full h-10 pl-8 pr-3 rounded-xl border border-border bg-muted/20 text-sm text-foreground focus:outline-hidden focus:ring-2 focus:ring-emerald-500/30"
-                      required
+                      className="w-full h-10 px-3 rounded-xl bg-background border border-border text-foreground"
                     />
                   </div>
-                </div>
-
-                {/* Payment Method & Date in 2 columns */}
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-1">
-                    <label className="text-xs font-semibold text-foreground">
-                      Payment Mode
+                  <div>
+                    <label className="block font-bold text-foreground mb-1">
+                      Method
                     </label>
                     <select
                       value={paymentMethod}
-                      onChange={(e) => setPaymentMethod(e.target.value)}
-                      className="w-full h-10 px-3 rounded-xl border border-border bg-muted/20 text-sm text-foreground focus:outline-hidden focus:ring-2 focus:ring-emerald-500/30 cursor-pointer"
+                      onChange={(e) =>
+                        setPaymentMethod(
+                          e.target.value as
+                            | "cash"
+                            | "upi"
+                            | "card"
+                            | "bank_transfer"
+                            | "cheque"
+                            | "other"
+                        )
+                      }
+                      className="w-full h-10 px-3 rounded-xl bg-background border border-border text-foreground"
                     >
                       <option value="cash">Cash</option>
-                      <option value="upi">UPI / QR</option>
-                      <option value="card">Debit / Credit Card</option>
-                      <option value="bank_transfer">Net Banking</option>
+                      <option value="upi">UPI</option>
+                      <option value="bank_transfer">Bank Transfer</option>
+                      <option value="card">Card</option>
                       <option value="cheque">Cheque</option>
                       <option value="other">Other</option>
                     </select>
                   </div>
-
-                  <div className="space-y-1">
-                    <label className="text-xs font-semibold text-foreground">
-                      Payment Date
-                    </label>
-                    <input
-                      type="date"
-                      value={paymentDate}
-                      onChange={(e) => setPaymentDate(e.target.value)}
-                      className="w-full h-10 px-3 rounded-xl border border-border bg-muted/20 text-sm text-foreground focus:outline-hidden focus:ring-2 focus:ring-emerald-500/30"
-                      required
-                    />
-                  </div>
                 </div>
 
-                {/* Notes */}
-                <div className="space-y-1">
-                  <label className="text-xs font-semibold text-muted-foreground">
-                    Notes (Optional)
+                <div>
+                  <label className="block font-bold text-foreground mb-1">
+                    Date
                   </label>
                   <input
-                    type="text"
-                    placeholder="e.g. Partial balance clearance"
-                    value={paymentNotes}
-                    onChange={(e) => setPaymentNotes(e.target.value)}
-                    className="w-full h-10 px-3 rounded-xl border border-border bg-muted/20 text-sm text-foreground focus:outline-hidden focus:ring-2 focus:ring-emerald-500/30"
+                    type="date"
+                    required
+                    value={paymentDate}
+                    onChange={(e) => setPaymentDate(e.target.value)}
+                    className="w-full h-10 px-3 rounded-xl bg-background border border-border text-foreground"
                   />
                 </div>
 
-                {/* Submit button */}
-                <div className="pt-2">
+                <div>
+                  <label className="block font-bold text-foreground mb-1">
+                    Notes
+                  </label>
+                  <input
+                    type="text"
+                    value={paymentNotes}
+                    onChange={(e) => setPaymentNotes(e.target.value)}
+                    placeholder="Optional note or UTR"
+                    className="w-full h-10 px-3 rounded-xl bg-background border border-border text-foreground"
+                  />
+                </div>
+
+                <div className="flex justify-end gap-2 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setPaymentModalOpen(false)}
+                    className="h-9 px-4 rounded-xl border border-border bg-muted font-bold cursor-pointer"
+                  >
+                    Cancel
+                  </button>
                   <button
                     type="submit"
                     disabled={paymentLoading}
-                    className="w-full h-11 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-sm font-bold flex items-center justify-center gap-2 shadow-xs transition-all active:scale-[0.98] disabled:opacity-60 cursor-pointer"
+                    className="h-9 px-4 rounded-xl bg-primary text-primary-foreground font-bold inline-flex items-center gap-1.5 cursor-pointer"
                   >
-                    {paymentLoading ? (
-                      <>
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                        Recording Payment...
-                      </>
-                    ) : (
-                      <>
-                        <CheckCircle2 className="w-4 h-4" />
-                        Confirm & Record Payment
-                      </>
+                    {paymentLoading && (
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
                     )}
+                    Save Payment
                   </button>
                 </div>
               </form>
             )}
           </div>
         </div>
+      )}
+
+      {/* Existing Renew Membership Modal */}
+      {renewMember && (
+        <RenewMembershipModal
+          gymId={gymId}
+          branchId={renewMember.branchId}
+          memberId={renewMember.id}
+          memberName={renewMember.fullName}
+          currentPlanId={renewMember.planId}
+          plans={plans}
+          isOpen={true}
+          onClose={() => setRenewMember(null)}
+          onSuccess={() => {
+            setRenewMember(null);
+            startTransition(() => router.refresh());
+          }}
+        />
       )}
     </div>
   );

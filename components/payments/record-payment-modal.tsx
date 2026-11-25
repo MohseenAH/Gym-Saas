@@ -10,9 +10,15 @@ interface RecordPaymentModalProps {
   gymId: string;
   branches: { id: string; name: string }[];
   members: { id: string; fullName: string; phone: string; branchId: string }[];
+  renderTrigger?: (open: () => void) => React.ReactNode;
 }
 
-export function RecordPaymentModal({ gymId, branches, members }: RecordPaymentModalProps) {
+export function RecordPaymentModal({
+  gymId,
+  branches,
+  members,
+  renderTrigger,
+}: RecordPaymentModalProps) {
   const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -100,13 +106,17 @@ export function RecordPaymentModal({ gymId, branches, members }: RecordPaymentMo
 
   return (
     <>
-      <button
-        onClick={() => setIsOpen(true)}
-        className="h-10 sm:h-11 flex items-center justify-center gap-2 px-4 bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl text-sm font-bold shadow-xs transition-all active:scale-[0.98] w-full sm:w-auto"
-      >
-        <Plus className="w-4 h-4" />
-        Record Payment
-      </button>
+      {renderTrigger ? (
+        renderTrigger(() => setIsOpen(true))
+      ) : (
+        <button
+          onClick={() => setIsOpen(true)}
+          className="h-10 sm:h-11 flex items-center justify-center gap-2 px-4 bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl text-sm font-bold shadow-xs transition-all active:scale-[0.98] w-full sm:w-auto"
+        >
+          <Plus className="w-4 h-4" />
+          Record Payment
+        </button>
+      )}
 
       {isOpen && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 overflow-y-auto">

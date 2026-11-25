@@ -298,47 +298,61 @@ export function MembershipsClient({
         </div>
       )}
 
-      {/* TOP VIEW SWITCHER SEGMENTED BAR */}
-      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pb-2 border-b border-border">
-        <div className="inline-flex p-1 bg-muted/60 rounded-xl border border-border self-start">
+      {/* PAGE HEADER & TAB SWITCHER */}
+      <div className="space-y-3">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2.5">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
+              {viewMode === "plans" ? (
+                <Tag className="w-4 h-4" />
+              ) : (
+                <Layers className="w-4 h-4" />
+              )}
+            </div>
+            <h1 className="text-xl sm:text-2xl font-extrabold text-foreground tracking-tight">
+              {viewMode === "plans" ? "Plans & Offers" : "Memberships"}
+            </h1>
+          </div>
+
+          {unassignedMembers.length > 0 && (
+            <button
+              type="button"
+              onClick={() => setBulkAssignModalOpen(true)}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 text-amber-700 dark:text-amber-300 rounded-xl text-xs font-semibold transition-colors cursor-pointer self-start sm:self-auto"
+            >
+              <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+              <span>{unassignedMembers.length} Unassigned Members</span>
+              <span className="text-[11px] underline ml-1">Bulk Assign &rarr;</span>
+            </button>
+          )}
+        </div>
+
+        <div className="inline-flex p-1 bg-muted/60 rounded-full border border-border">
           <button
             type="button"
             onClick={() => handleSwitchView("all")}
-            className={`flex items-center gap-2 px-4 py-2 text-xs sm:text-sm font-bold rounded-lg transition-all cursor-pointer ${
+            className={`flex items-center gap-2 px-4 py-1.5 text-xs sm:text-sm font-bold rounded-full transition-all cursor-pointer ${
               viewMode === "all"
                 ? "bg-primary text-primary-foreground shadow-xs"
                 : "text-muted-foreground hover:text-foreground"
             }`}
           >
             <IdCard className="w-4 h-4" />
-            <span>All Memberships</span>
+            <span>Memberships</span>
           </button>
           <button
             type="button"
             onClick={() => handleSwitchView("plans")}
-            className={`flex items-center gap-2 px-4 py-2 text-xs sm:text-sm font-bold rounded-lg transition-all cursor-pointer ${
+            className={`flex items-center gap-2 px-4 py-1.5 text-xs sm:text-sm font-bold rounded-full transition-all cursor-pointer ${
               viewMode === "plans"
                 ? "bg-primary text-primary-foreground shadow-xs"
                 : "text-muted-foreground hover:text-foreground"
             }`}
           >
-            <Layers className="w-4 h-4" />
+            <Tag className="w-4 h-4" />
             <span>Plans & Offers</span>
           </button>
         </div>
-
-        {/* Unassigned Quick Access Badge if any unassigned members exist */}
-        {unassignedMembers.length > 0 && (
-          <button
-            type="button"
-            onClick={() => setBulkAssignModalOpen(true)}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 text-amber-600 dark:text-amber-400 rounded-lg text-xs font-semibold transition-colors cursor-pointer"
-          >
-            <Sparkles className="w-3.5 h-3.5 text-amber-500" />
-            <span>{unassignedMembers.length} Unassigned Members</span>
-            <span className="text-[11px] underline ml-1">Bulk Assign &rarr;</span>
-          </button>
-        )}
       </div>
 
       {/* VIEW 2: PLANS & OFFERS */}
@@ -352,9 +366,88 @@ export function MembershipsClient({
         />
       )}
 
-      {/* VIEW 1: ALL MEMBERSHIPS (Blueprint 1000156762.png) */}
+      {/* VIEW 1: ALL MEMBERSHIPS */}
       {viewMode === "all" && (
-        <div className="space-y-6">
+        <div className="space-y-5">
+          {/* Plans in Use Strip */}
+          {detailedPlans && detailedPlans.length > 0 && (
+            <section aria-label="Plans in Use" className="space-y-2.5">
+              <div className="flex items-center justify-between">
+                <h2 className="text-sm font-bold text-foreground">Plans in Use</h2>
+                <button
+                  type="button"
+                  onClick={() => handleSwitchView("plans")}
+                  className="inline-flex items-center gap-1 text-xs font-bold text-primary hover:underline cursor-pointer"
+                >
+                  <span>View All Plans</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </button>
+              </div>
+
+              {/* Desktop Grid */}
+              <div className="hidden sm:grid sm:grid-cols-2 lg:grid-cols-5 gap-3">
+                {detailedPlans.slice(0, 5).map((plan, idx) => {
+                  const tints = [
+                    "bg-card bg-gradient-to-br from-purple-50 via-purple-50/85 to-purple-100/60 border-purple-200/90 dark:from-purple-500/[0.17] dark:via-purple-500/[0.11] dark:to-purple-500/[0.07] dark:border-purple-500/30",
+                    "bg-card bg-gradient-to-br from-amber-50 via-amber-50/85 to-amber-100/60 border-amber-200/90 dark:from-amber-500/[0.17] dark:via-amber-500/[0.11] dark:to-amber-500/[0.07] dark:border-amber-500/30",
+                    "bg-card bg-gradient-to-br from-blue-50 via-blue-50/85 to-blue-100/60 border-blue-200/90 dark:from-blue-500/[0.17] dark:via-blue-500/[0.11] dark:to-blue-500/[0.07] dark:border-blue-500/30",
+                    "bg-card bg-gradient-to-br from-emerald-50 via-emerald-50/85 to-emerald-100/60 border-emerald-200/90 dark:from-emerald-500/[0.17] dark:via-emerald-500/[0.11] dark:to-emerald-500/[0.07] dark:border-emerald-500/30",
+                    "bg-card bg-gradient-to-br from-rose-50 via-rose-50/85 to-rose-100/60 border-rose-200/90 dark:from-rose-500/[0.17] dark:via-rose-500/[0.11] dark:to-rose-500/[0.07] dark:border-rose-500/30",
+                  ];
+                  const tint = tints[idx % tints.length];
+                  return (
+                    <button
+                      key={plan.id}
+                      type="button"
+                      onClick={() => setSearchTerm(plan.name)}
+                      className={`p-3.5 rounded-2xl border text-left shadow-xs hover:shadow-sm transition-all cursor-pointer flex flex-col justify-between gap-2 ${tint}`}
+                    >
+                      <div>
+                        <div className="text-xs font-bold text-foreground truncate">
+                          {plan.name}
+                        </div>
+                        <div className="text-lg font-extrabold text-foreground tabular-nums mt-0.5">
+                          ₹{plan.price.toLocaleString("en-IN")}
+                        </div>
+                        <div className="text-[11px] text-muted-foreground">
+                          {plan.durationDays} Days
+                        </div>
+                      </div>
+                      <div className="pt-2 border-t border-border/50 flex items-center justify-between text-xs font-semibold text-foreground">
+                        <span>{plan.activeSubscribersCount} Members</span>
+                        <ChevronRight className="w-3.5 h-3.5 text-muted-foreground" />
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Mobile Compact List */}
+              <div className="sm:hidden flex flex-col gap-2">
+                {detailedPlans.slice(0, 5).map((plan) => (
+                  <button
+                    key={plan.id}
+                    type="button"
+                    onClick={() => setSearchTerm(plan.name)}
+                    className="p-3 rounded-xl bg-card border border-border flex items-center justify-between gap-3 text-left shadow-xs cursor-pointer"
+                  >
+                    <div className="min-w-0">
+                      <div className="text-sm font-bold text-foreground truncate">
+                        {plan.name}
+                      </div>
+                      <div className="text-xs text-muted-foreground tabular-nums">
+                        ₹{plan.price.toLocaleString("en-IN")} · {plan.durationDays} Days
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-1 text-xs font-semibold text-primary shrink-0">
+                      <span>{plan.activeSubscribersCount} Members</span>
+                      <ChevronRight className="w-3.5 h-3.5" />
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </section>
+          )}
           {/* Header & Primary Action */}
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>

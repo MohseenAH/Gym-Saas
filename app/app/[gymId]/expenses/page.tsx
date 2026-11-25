@@ -4,6 +4,7 @@ import { getCachedGymAuthContext } from "@/lib/auth/guard";
 import { hasCapability } from "@/lib/auth/capabilities";
 import { cookies } from "next/headers";
 import { resolveBranchContext } from "@/lib/auth/branch-context";
+import { getTodayIST } from "@/lib/utils";
 import { ExpenseOverviewClient } from "@/components/expenses/expense-overview-client";
 import { type ExpenseItem } from "@/components/expenses/expense-modals";
 
@@ -73,6 +74,8 @@ export default async function ExpensesPage({ params, searchParams }: ExpensesPag
   });
 
   const canManage = hasCapability(authContext.role, "expenses:manage");
+  const canDelete = ["owner", "partner", "manager"].includes(authContext.role);
+  const todayStr = getTodayIST();
 
   return (
     <div className="max-w-7xl mx-auto">
@@ -81,6 +84,8 @@ export default async function ExpensesPage({ params, searchParams }: ExpensesPag
         branches={branches.map((b) => ({ id: b.id, name: b.name }))}
         initialExpenses={formattedExpenses}
         canManage={canManage}
+        canDelete={canDelete}
+        todayStr={todayStr}
       />
     </div>
   );
