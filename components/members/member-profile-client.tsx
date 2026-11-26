@@ -30,7 +30,12 @@ import {
   Loader2,
   Copy,
   Check,
+  Crown,
+  Mail,
+  Wallet,
+  ChevronDown,
 } from "lucide-react";
+import { GymApraLogo } from "@/components/ui/gymapra-logo";
 import { EditMemberModal } from "@/components/members/edit-member-modal";
 import {
   RenewMembershipModal,
@@ -225,6 +230,8 @@ export function MemberProfileClient({
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   const [selectedReceipt, setSelectedReceipt] = useState<ReceiptData | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [mobileMoreOpen, setMobileMoreOpen] = useState(false);
+  const [detailsExpanded, setDetailsExpanded] = useState(false);
   const [copiedId, setCopiedId] = useState(false);
 
   // Check-in quick action state
@@ -446,9 +453,184 @@ export function MemberProfileClient({
   }
 
   const latestMembership = memberships[0] || null;
+  const initials =
+    member.fullName
+      .split(/\s+/)
+      .filter(Boolean)
+      .map((part) => part[0])
+      .join("")
+      .slice(0, 2)
+      .toUpperCase() || "M";
+  const mobileHeroBadgeClass = badgeInfo.isUnassigned
+    ? "bg-slate-600/90 text-white border-white/25"
+    : badgeInfo.isExpired
+    ? "bg-rose-500/90 text-white border-rose-300/40"
+    : badgeInfo.isTrial
+    ? "bg-purple-500/90 text-white border-purple-300/40"
+    : activeMembership && activeMembership.daysLeft <= 7
+    ? "bg-amber-500/90 text-white border-amber-300/40"
+    : "bg-emerald-600/90 text-white border-emerald-300/40";
+  const latestPlanRecord = activeMembership || latestMembership;
+  const totalBilled = totalPaid + outstandingDues;
 
   return (
-    <div className="space-y-5 text-foreground">
+    <div className="space-y-3 md:space-y-5 text-foreground">
+      {/* Mobile Contextual Header & Hero Banner */}
+      <div className="md:hidden space-y-3">
+        <div className="relative flex items-center justify-between gap-2">
+          <Link
+            href={`/app/${gymId}/members`}
+            aria-label="Back to Members"
+            className="h-9 w-9 rounded-full bg-card border border-border shadow-2xs flex items-center justify-center text-foreground hover:bg-muted transition-colors shrink-0"
+          >
+            <ArrowLeft className="w-4 h-4" />
+          </Link>
+
+          <Link
+            href={`/app/${gymId}/dashboard`}
+            className="inline-flex items-center gap-1.5 min-w-0"
+          >
+            <GymApraLogo variant="symbol" size="sm" />
+            <span className="text-base font-black tracking-tight text-foreground truncate">
+              GymApra
+            </span>
+          </Link>
+
+          <div className="relative shrink-0">
+            <button
+              type="button"
+              onClick={() => setMobileMoreOpen((v) => !v)}
+              aria-label="Member actions menu"
+              className="h-9 w-9 rounded-full bg-card border border-border shadow-2xs flex items-center justify-center text-foreground hover:bg-muted transition-colors cursor-pointer"
+            >
+              <MoreVertical className="w-4 h-4" />
+            </button>
+
+            {mobileMoreOpen && (
+              <>
+                <div
+                  className="fixed inset-0 z-20"
+                  onClick={() => setMobileMoreOpen(false)}
+                />
+                <div className="absolute right-0 top-11 z-30 w-48 bg-popover text-popover-foreground border border-border rounded-2xl shadow-xl p-1.5 text-xs font-semibold">
+                  {hasPhone && (
+                    <a
+                      href={telUrl}
+                      onClick={() => setMobileMoreOpen(false)}
+                      className="w-full flex items-center gap-2 px-3 py-2 rounded-xl hover:bg-muted transition-colors"
+                    >
+                      <Phone className="w-3.5 h-3.5 text-blue-600" />
+                      Call Member
+                    </a>
+                  )}
+                  {hasPhone && (
+                    <a
+                      href={waDirectUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={() => setMobileMoreOpen(false)}
+                      className="w-full flex items-center gap-2 px-3 py-2 rounded-xl hover:bg-muted transition-colors"
+                    >
+                      <MessageSquare className="w-3.5 h-3.5 text-emerald-600" />
+                      WhatsApp Member
+                    </a>
+                  )}
+                  {permissions.canManageMembers && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setMobileMoreOpen(false);
+                        setIsEditOpen(true);
+                      }}
+                      className="w-full flex items-center gap-2 px-3 py-2 rounded-xl hover:bg-muted text-left transition-colors cursor-pointer"
+                    >
+                      <Edit2 className="w-3.5 h-3.5 text-primary" />
+                      Edit Member
+                    </button>
+                  )}
+                  {permissions.canManageMembers && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setMobileMoreOpen(false);
+                        setIsRenewOpen(true);
+                      }}
+                      className="w-full flex items-center gap-2 px-3 py-2 rounded-xl hover:bg-muted text-left transition-colors cursor-pointer"
+                    >
+                      <RefreshCw className="w-3.5 h-3.5 text-primary" />
+                      Renew / Change Plan
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setMobileMoreOpen(false);
+                      copyMemberId();
+                    }}
+                    className="w-full flex items-center gap-2 px-3 py-2 rounded-xl hover:bg-muted text-left transition-colors cursor-pointer"
+                  >
+                    {copiedId ? (
+                      <Check className="w-3.5 h-3.5 text-emerald-600" />
+                    ) : (
+                      <Copy className="w-3.5 h-3.5 text-muted-foreground" />
+                    )}
+                    {copiedId ? "Copied ID" : "Copy Member ID"}
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+
+        {/* Mobile Photo Hero Banner */}
+        <div className="relative overflow-hidden rounded-2xl border border-border bg-zinc-900 p-4 text-white shadow-sm">
+          <Image
+            src="/images/auth-gym-dumbbells.jpg"
+            alt=""
+            fill
+            sizes="100vw"
+            className="object-cover object-right opacity-55"
+          />
+          <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-black/85 via-black/70 to-black/45" />
+
+          <div className="relative z-10 flex items-center gap-3.5">
+            <div className="w-16 h-16 rounded-2xl bg-white/15 backdrop-blur-xs border-2 border-white/40 flex items-center justify-center text-2xl font-black text-white shrink-0 shadow-md">
+              {initials}
+            </div>
+
+            <div className="min-w-0 flex-1 space-y-1">
+              <div className="flex items-start justify-between gap-2">
+                <h1 className="text-lg font-black leading-tight text-white truncate">
+                  {member.fullName}
+                </h1>
+                <span
+                  className={`shrink-0 inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold border shadow-2xs ${mobileHeroBadgeClass}`}
+                >
+                  <CheckCircle2 className="w-3 h-3" />
+                  {badgeInfo.label}
+                </span>
+              </div>
+
+              <div className="flex items-center gap-1.5 text-xs text-white/90 truncate">
+                <Phone className="w-3.5 h-3.5 shrink-0 text-white/75" />
+                <span className="truncate font-medium">
+                  {member.phone || "No phone"}
+                </span>
+              </div>
+
+              <div className="flex items-center gap-1.5 text-xs text-white/80 truncate">
+                <Mail className="w-3.5 h-3.5 shrink-0 text-white/75" />
+                <span className="truncate">
+                  {member.email || `${shortMemberId} • ${member.branchName}`}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Desktop Back Navigation & Header Banner */}
+      <div className="hidden md:block space-y-5">
       {/* Back Navigation */}
       <div className="flex items-center justify-between gap-3">
         <Link
@@ -659,6 +841,7 @@ export function MemberProfileClient({
           </div>
         </div>
       </div>
+      </div>
 
       {/* Action Feedback Banner */}
       {actionFeedback && (
@@ -699,8 +882,53 @@ export function MemberProfileClient({
         </div>
       )}
 
-      {/* Navigation Tabs */}
-      <div className="flex items-center gap-1.5 border-b border-border pb-2.5 overflow-x-auto no-scrollbar">
+      {/* Mobile 4-Tab Segmented Navigation */}
+      <div className="md:hidden flex items-center justify-between gap-0.5 p-1 rounded-2xl bg-card border border-border shadow-2xs">
+        {[
+          { id: "overview" as const, label: "Overview", icon: null },
+          { id: "attendance" as const, label: "Attendance", icon: Calendar },
+          { id: "payments" as const, label: "Payments", icon: CreditCard },
+          { id: "activity" as const, label: "History", icon: Clock },
+        ].map((tab) => {
+          const Icon = tab.icon;
+          const isActive = activeTab === tab.id;
+          return (
+            <button
+              key={tab.id}
+              type="button"
+              onClick={() => setActiveTab(tab.id)}
+              className={`h-9 px-2 rounded-xl text-[11px] font-bold inline-flex items-center justify-center gap-1 transition-all cursor-pointer whitespace-nowrap ${
+                isActive
+                  ? "bg-primary text-primary-foreground shadow-xs"
+                  : "text-muted-foreground hover:text-foreground hover:bg-muted/60"
+              }`}
+            >
+              {Icon && <Icon className="w-3 h-3 shrink-0" />}
+              <span>{tab.label}</span>
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Mobile Membership Tab Back Pill */}
+      {activeTab === "membership" && (
+        <div className="md:hidden flex items-center justify-between gap-2 px-1">
+          <button
+            type="button"
+            onClick={() => setActiveTab("overview")}
+            className="inline-flex items-center gap-1.5 text-xs font-bold text-primary hover:underline cursor-pointer"
+          >
+            <ArrowLeft className="w-3.5 h-3.5" />
+            Back to Overview
+          </button>
+          <span className="text-[11px] font-semibold text-muted-foreground">
+            {memberships.length} contract{memberships.length === 1 ? "" : "s"}
+          </span>
+        </div>
+      )}
+
+      {/* Desktop Navigation Tabs */}
+      <div className="hidden md:flex items-center gap-1.5 border-b border-border pb-2.5 overflow-x-auto no-scrollbar">
         {[
           { id: "overview" as const, label: "Overview", icon: User },
           {
@@ -746,11 +974,339 @@ export function MemberProfileClient({
 
       {/* TAB: OVERVIEW */}
       {activeTab === "overview" && (
-        <div className="space-y-5">
+        <div className="space-y-3 md:space-y-5">
+          {/* Dedicated Mobile Overview Layout */}
+          <div className="md:hidden space-y-3">
+            {/* 1. Membership Summary Card */}
+            <button
+              type="button"
+              onClick={() => setActiveTab("membership")}
+              className="w-full text-left bg-card rounded-2xl border border-border shadow-2xs p-3.5 flex items-center justify-between gap-3 hover:bg-muted/30 transition-colors cursor-pointer"
+            >
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="h-10 w-10 rounded-full bg-amber-500/12 [.dark_&]:bg-amber-500/20 text-amber-600 [.dark_&]:text-amber-400 border border-amber-500/20 flex items-center justify-center shrink-0">
+                  <Crown className="w-5 h-5" />
+                </div>
+                <div className="min-w-0">
+                  <div className="text-[11px] font-medium text-muted-foreground">
+                    Membership
+                  </div>
+                  <div className="text-sm font-black text-foreground truncate">
+                    {latestPlanRecord ? latestPlanRecord.planName : "No Plan Assigned"}
+                  </div>
+                  <div className="text-[11px] text-muted-foreground truncate">
+                    {latestPlanRecord
+                      ? `${formatDate(latestPlanRecord.startDate)} – ${formatDate(latestPlanRecord.endDate)}`
+                      : "Tap to view or assign plan"}
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-1.5 shrink-0">
+                <span
+                  className={`px-2.5 py-1 rounded-full text-[11px] font-bold border ${
+                    activeMembership
+                      ? activeMembership.daysLeft <= 7
+                        ? "bg-amber-500/12 [.dark_&]:bg-amber-950/45 text-amber-700 [.dark_&]:text-amber-300 border-amber-500/25"
+                        : "bg-amber-500/12 [.dark_&]:bg-amber-950/45 text-amber-800 [.dark_&]:text-amber-300 border-amber-500/25"
+                      : badgeInfo.className
+                  }`}
+                >
+                  {activeMembership
+                    ? activeMembership.daysLeft <= 0
+                      ? "Ends today"
+                      : `${activeMembership.daysLeft} days left`
+                    : badgeInfo.label}
+                </span>
+                <ChevronRight className="w-4 h-4 text-muted-foreground" />
+              </div>
+            </button>
+
+            {/* 2. Attendance Summary Card (Factual counts, no fake target denominator) */}
+            <div className="bg-card rounded-2xl border border-border shadow-2xs p-3.5 space-y-2.5">
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <div className="h-9 w-9 rounded-full bg-indigo-500/12 [.dark_&]:bg-indigo-500/20 text-indigo-600 [.dark_&]:text-indigo-400 border border-indigo-500/20 flex items-center justify-center shrink-0">
+                    <Calendar className="w-4 h-4" />
+                  </div>
+                  <div className="text-sm font-black text-foreground truncate">
+                    Attendance{" "}
+                    <span className="font-normal text-xs text-muted-foreground">
+                      (This Month)
+                    </span>
+                  </div>
+                </div>
+                <div className="text-xs shrink-0">
+                  <span className="font-black text-foreground">
+                    {currentMonthAttendance}
+                  </span>{" "}
+                  <span className="text-muted-foreground">
+                    {currentMonthAttendance === 1 ? "visit" : "visits"}
+                  </span>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between gap-2 pt-0.5">
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-500/10 [.dark_&]:bg-emerald-950/45 text-emerald-700 [.dark_&]:text-emerald-300 border border-emerald-500/20 text-[11px] font-bold">
+                  <Activity className="w-3.5 h-3.5" />
+                  {totalWorkouts} total ·{" "}
+                  {attendance[0]
+                    ? `Last ${formatDate(attendance[0].checkInDate)}`
+                    : "No visits yet"}
+                </span>
+
+                <button
+                  type="button"
+                  onClick={() => setActiveTab("attendance")}
+                  className="text-xs font-bold text-primary inline-flex items-center gap-1 hover:underline cursor-pointer shrink-0"
+                >
+                  View Details →
+                </button>
+              </div>
+            </div>
+
+            {/* 3. Payment Summary Card (3 Tinted Tiles) */}
+            <div className="bg-card rounded-2xl border border-border shadow-2xs p-3.5 space-y-3">
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2.5">
+                  <div className="h-9 w-9 rounded-full bg-purple-500/12 [.dark_&]:bg-purple-500/20 text-purple-600 [.dark_&]:text-purple-400 border border-purple-500/20 flex items-center justify-center shrink-0">
+                    <Wallet className="w-4 h-4" />
+                  </div>
+                  <span className="text-sm font-black text-foreground">
+                    Payment Summary
+                  </span>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => setActiveTab("payments")}
+                  aria-label="View payment history"
+                  className="p-1 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted cursor-pointer"
+                >
+                  <ChevronRight className="w-4 h-4" />
+                </button>
+              </div>
+
+              <div className="grid grid-cols-3 gap-2">
+                <div className="rounded-xl p-2.5 text-center bg-emerald-500/10 [.dark_&]:bg-emerald-950/45 border border-emerald-500/20">
+                  <div className="text-sm font-black text-emerald-700 [.dark_&]:text-emerald-300 tabular-nums truncate">
+                    ₹{totalPaid.toLocaleString("en-IN")}
+                  </div>
+                  <div className="text-[11px] font-medium text-muted-foreground mt-0.5">
+                    Paid
+                  </div>
+                </div>
+
+                <div
+                  className={`rounded-xl p-2.5 text-center border ${
+                    outstandingDues > 0
+                      ? "bg-amber-500/12 [.dark_&]:bg-amber-950/45 border-amber-500/25"
+                      : "bg-blue-500/10 [.dark_&]:bg-blue-950/45 border-blue-500/20"
+                  }`}
+                >
+                  <div
+                    className={`text-sm font-black tabular-nums truncate ${
+                      outstandingDues > 0
+                        ? "text-amber-700 [.dark_&]:text-amber-300"
+                        : "text-blue-700 [.dark_&]:text-blue-300"
+                    }`}
+                  >
+                    ₹{outstandingDues.toLocaleString("en-IN")}
+                  </div>
+                  <div className="text-[11px] font-medium text-muted-foreground mt-0.5">
+                    Due
+                  </div>
+                </div>
+
+                <div className="rounded-xl p-2.5 text-center bg-purple-500/10 [.dark_&]:bg-purple-950/45 border border-purple-500/20">
+                  <div className="text-sm font-black text-purple-700 [.dark_&]:text-purple-300 tabular-nums truncate">
+                    ₹{totalBilled.toLocaleString("en-IN")}
+                  </div>
+                  <div className="text-[11px] font-medium text-muted-foreground mt-0.5">
+                    Total
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* 4. Primary Action Buttons */}
+            <div className="grid grid-cols-2 gap-2.5">
+              <button
+                type="button"
+                disabled={!permissions.canManageMembers}
+                onClick={() => setIsEditOpen(true)}
+                className="h-11 px-3 rounded-2xl bg-primary/12 [.dark_&]:bg-primary/20 hover:bg-primary/18 text-primary border border-primary/20 font-bold text-xs inline-flex items-center justify-center gap-2 transition-colors disabled:opacity-45 cursor-pointer"
+              >
+                <Edit2 className="w-4 h-4" />
+                Edit Member
+              </button>
+
+              <button
+                type="button"
+                disabled={!permissions.canRecordPayments}
+                onClick={() => setIsPaymentModalOpen(true)}
+                className="h-11 px-3 rounded-2xl bg-primary hover:opacity-95 text-primary-foreground font-bold text-xs shadow-sm inline-flex items-center justify-center gap-2 transition-opacity disabled:opacity-45 cursor-pointer"
+              >
+                <CreditCard className="w-4 h-4" />
+                Record Payment
+              </button>
+            </div>
+
+            {/* 5. Secondary Quick Actions (4-Column Compact Grid) */}
+            <div className="grid grid-cols-4 gap-2">
+              <button
+                type="button"
+                disabled={!permissions.canRecordAttendance || checkInLoading}
+                onClick={() => handleMarkAttendance(false)}
+                className="bg-card hover:bg-muted/60 rounded-2xl border border-border p-2.5 flex flex-col items-center justify-center gap-1.5 text-center transition-colors disabled:opacity-45 cursor-pointer shadow-2xs"
+              >
+                {checkInLoading ? (
+                  <Loader2 className="w-4 h-4 text-primary animate-spin" />
+                ) : (
+                  <CheckSquare className="w-4 h-4 text-primary" />
+                )}
+                <span className="text-[11px] font-semibold text-foreground leading-tight">
+                  Mark Attendance
+                </span>
+              </button>
+
+              <button
+                type="button"
+                disabled={!permissions.canManageMembers}
+                onClick={() => setIsRenewOpen(true)}
+                className="bg-card hover:bg-muted/60 rounded-2xl border border-border p-2.5 flex flex-col items-center justify-center gap-1.5 text-center transition-colors disabled:opacity-45 cursor-pointer shadow-2xs"
+              >
+                <RefreshCw className="w-4 h-4 text-primary" />
+                <span className="text-[11px] font-semibold text-foreground leading-tight">
+                  Renew / Change Plan
+                </span>
+              </button>
+
+              {showConvertToMembership ? (
+                <button
+                  type="button"
+                  onClick={() => setIsRenewOpen(true)}
+                  className="bg-card hover:bg-muted/60 rounded-2xl border border-border p-2.5 flex flex-col items-center justify-center gap-1.5 text-center transition-colors cursor-pointer shadow-2xs"
+                >
+                  <Crown className="w-4 h-4 text-primary" />
+                  <span className="text-[11px] font-semibold text-foreground leading-tight">
+                    Convert to Membership
+                  </span>
+                </button>
+              ) : (
+                <a
+                  href={hasPhone ? waDirectUrl : undefined}
+                  target={hasPhone ? "_blank" : undefined}
+                  rel={hasPhone ? "noopener noreferrer" : undefined}
+                  className={`bg-card hover:bg-muted/60 rounded-2xl border border-border p-2.5 flex flex-col items-center justify-center gap-1.5 text-center transition-colors shadow-2xs ${
+                    !hasPhone ? "opacity-45 pointer-events-none" : ""
+                  }`}
+                >
+                  <MessageSquare className="w-4 h-4 text-emerald-600 [.dark_&]:text-emerald-400" />
+                  <span className="text-[11px] font-semibold text-foreground leading-tight">
+                    WhatsApp Member
+                  </span>
+                </a>
+              )}
+
+              <button
+                type="button"
+                onClick={() => setMobileMoreOpen((v) => !v)}
+                className="bg-card hover:bg-muted/60 rounded-2xl border border-border p-2.5 flex flex-col items-center justify-center gap-1.5 text-center transition-colors cursor-pointer shadow-2xs"
+              >
+                <MoreVertical className="w-4 h-4 text-primary" />
+                <span className="text-[11px] font-semibold text-foreground leading-tight">
+                  More Actions
+                </span>
+              </button>
+            </div>
+
+            {/* 6. Expandable Member Details Row */}
+            <div className="bg-card rounded-2xl border border-border shadow-2xs overflow-hidden">
+              <button
+                type="button"
+                onClick={() => setDetailsExpanded((v) => !v)}
+                aria-expanded={detailsExpanded}
+                className="w-full p-3.5 flex items-center justify-between gap-3 text-left hover:bg-muted/30 transition-colors cursor-pointer"
+              >
+                <div className="flex items-center gap-2.5">
+                  <div className="h-9 w-9 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                    <User className="w-4 h-4" />
+                  </div>
+                  <span className="text-sm font-black text-foreground">
+                    Member Details
+                  </span>
+                </div>
+                {detailsExpanded ? (
+                  <ChevronDown className="w-4 h-4 text-muted-foreground" />
+                ) : (
+                  <ChevronRight className="w-4 h-4 text-muted-foreground" />
+                )}
+              </button>
+
+              {detailsExpanded && (
+                <div className="px-3.5 pb-3.5 pt-2 border-t border-border/70 grid grid-cols-2 gap-3 text-xs">
+                  <div>
+                    <div className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                      Member ID
+                    </div>
+                    <div className="font-mono font-bold text-foreground mt-0.5">
+                      {shortMemberId}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                      Joined Date
+                    </div>
+                    <div className="font-semibold text-foreground mt-0.5">
+                      {formatDate(member.createdAt)}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                      Branch
+                    </div>
+                    <div className="font-semibold text-foreground mt-0.5 truncate">
+                      {member.branchName}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                      Phone
+                    </div>
+                    <div className="font-semibold text-foreground mt-0.5 truncate">
+                      {member.phone || "—"}
+                    </div>
+                  </div>
+                  <div className="col-span-2">
+                    <div className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                      Email
+                    </div>
+                    <div className="font-semibold text-foreground mt-0.5 truncate">
+                      {member.email || "—"}
+                    </div>
+                  </div>
+                  {member.notes && (
+                    <div className="col-span-2">
+                      <div className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                        Notes
+                      </div>
+                      <div className="text-foreground/90 mt-0.5">
+                        {member.notes}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Desktop Overview Layout */}
+          <div className="hidden md:block space-y-5">
           {/* 3 Overview Summary Cards */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
             {/* 1. Membership Summary Card */}
-            <div className="bg-card rounded-3xl border border-border shadow-xs p-5 flex flex-col justify-between gap-4">
+            <div className="bg-card bg-gradient-to-br from-purple-50/70 via-card to-purple-50/30 [.dark_&]:from-purple-500/[0.12] [.dark_&]:via-card [.dark_&]:to-purple-500/[0.04] rounded-3xl border border-purple-200/80 [.dark_&]:border-purple-500/25 shadow-xs p-5 flex flex-col justify-between gap-4">
               <div className="flex items-start justify-between gap-3">
                 <div className="flex items-center gap-3 min-w-0">
                   <div className="h-10 w-10 rounded-2xl bg-purple-500/12 text-purple-600 dark:text-purple-400 border border-purple-500/20 flex items-center justify-center shrink-0">
@@ -812,7 +1368,7 @@ export function MemberProfileClient({
             </div>
 
             {/* 2. Attendance Summary Card */}
-            <div className="bg-card rounded-3xl border border-border shadow-xs p-5 flex flex-col justify-between gap-4">
+            <div className="bg-card bg-gradient-to-br from-emerald-50/70 via-card to-emerald-50/30 [.dark_&]:from-emerald-500/[0.12] [.dark_&]:via-card [.dark_&]:to-emerald-500/[0.04] rounded-3xl border border-emerald-200/80 [.dark_&]:border-emerald-500/25 shadow-xs p-5 flex flex-col justify-between gap-4">
               <div className="flex items-start justify-between gap-3">
                 <div className="flex items-center gap-3 min-w-0">
                   <div className="h-10 w-10 rounded-2xl bg-emerald-500/12 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 flex items-center justify-center shrink-0">
@@ -852,7 +1408,7 @@ export function MemberProfileClient({
             </div>
 
             {/* 3. Payments Summary Card */}
-            <div className="bg-card rounded-3xl border border-border shadow-xs p-5 flex flex-col justify-between gap-4">
+            <div className="bg-card bg-gradient-to-br from-blue-50/70 via-card to-blue-50/30 [.dark_&]:from-blue-500/[0.12] [.dark_&]:via-card [.dark_&]:to-blue-500/[0.04] rounded-3xl border border-blue-200/80 [.dark_&]:border-blue-500/25 shadow-xs p-5 flex flex-col justify-between gap-4">
               <div className="flex items-start justify-between gap-3">
                 <div className="flex items-center gap-3 min-w-0">
                   <div className="h-10 w-10 rounded-2xl bg-amber-500/12 text-amber-600 dark:text-amber-400 border border-amber-500/20 flex items-center justify-center shrink-0">
@@ -1102,6 +1658,7 @@ export function MemberProfileClient({
               </div>
             </div>
           </div>
+          </div>
         </div>
       )}
 
@@ -1122,7 +1679,35 @@ export function MemberProfileClient({
               </button>
             )}
           </div>
-          <div className="overflow-x-auto">
+          <div className="md:hidden divide-y divide-border">
+            {memberships.length === 0 ? (
+              <div className="p-6 text-center text-xs text-muted-foreground">
+                No membership contracts found.
+              </div>
+            ) : (
+              memberships.map((m) => (
+                <div key={m.id} className="p-3.5 space-y-1.5 text-xs">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="font-bold text-foreground truncate">
+                      {m.planName}
+                    </span>
+                    <span className={getStatusBadgeClass(m.status)}>
+                      {m.status}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between gap-2 text-muted-foreground">
+                    <span>
+                      {formatDate(m.startDate)} – {formatDate(m.endDate)}
+                    </span>
+                    <span className="font-bold text-foreground">
+                      ₹{m.planPrice.toLocaleString("en-IN")}
+                    </span>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+          <div className="hidden md:block overflow-x-auto">
             <table className="w-full text-left text-xs">
               <thead className="bg-muted/40 text-muted-foreground font-bold border-b border-border uppercase tracking-wider text-[10px]">
                 <tr>
@@ -1190,7 +1775,46 @@ export function MemberProfileClient({
               {payments.length} entries
             </div>
           </div>
-          <div className="overflow-x-auto">
+          <div className="md:hidden divide-y divide-border">
+            {payments.length === 0 ? (
+              <div className="p-6 text-center text-xs text-muted-foreground">
+                No payments recorded yet for this member.
+              </div>
+            ) : (
+              payments.map((p) => (
+                <div key={p.id} className="p-3.5 space-y-2 text-xs">
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="font-black text-foreground">
+                      ₹
+                      {p.amount.toLocaleString("en-IN", {
+                        minimumFractionDigits: 2,
+                      })}
+                    </div>
+                    <span className={getStatusBadgeClass(p.paymentStatus)}>
+                      {p.paymentStatus}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between gap-2 text-muted-foreground">
+                    <span>
+                      {formatDate(p.paymentDate)} •{" "}
+                      <span className="uppercase font-semibold">
+                        {p.paymentMethod}
+                      </span>
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => openReceipt(p)}
+                      className="inline-flex items-center gap-1 px-2.5 py-1 bg-primary/10 hover:bg-primary text-primary hover:text-primary-foreground rounded-lg font-bold text-[11px] transition-colors cursor-pointer"
+                    >
+                      <FileText className="w-3 h-3" />
+                      Receipt
+                    </button>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+          <div className="hidden md:block overflow-x-auto">
             <table className="w-full text-left text-xs">
               <thead className="bg-muted/40 text-muted-foreground font-bold border-b border-border uppercase tracking-wider text-[10px]">
                 <tr>
@@ -1268,7 +1892,38 @@ export function MemberProfileClient({
               {attendance.length} check-ins
             </div>
           </div>
-          <div className="overflow-x-auto">
+          <div className="md:hidden divide-y divide-border">
+            {attendance.length === 0 ? (
+              <div className="p-6 text-center text-xs text-muted-foreground">
+                No check-ins recorded yet for this member.
+              </div>
+            ) : (
+              attendance.map((att) => (
+                <div key={att.id} className="p-3.5 space-y-1 text-xs">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="font-bold text-foreground">
+                      {formatDate(att.checkInDate)}
+                    </span>
+                    <span className="px-2 py-0.5 rounded-full bg-muted text-muted-foreground font-semibold text-[11px] border border-border">
+                      {att.checkInMethod.replace("_", " ")}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between gap-2 text-muted-foreground">
+                    <span>
+                      {new Date(att.checkInTime).toLocaleTimeString("en-IN", {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
+                    </span>
+                    <span className="truncate">
+                      {att.branchName || member.branchName}
+                    </span>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+          <div className="hidden md:block overflow-x-auto">
             <table className="w-full text-left text-xs">
               <thead className="bg-muted/40 text-muted-foreground font-bold border-b border-border uppercase tracking-wider text-[10px]">
                 <tr>

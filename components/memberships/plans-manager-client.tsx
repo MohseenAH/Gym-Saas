@@ -319,50 +319,45 @@ export function PlansManagerClient({
         </div>
       )}
 
-      {/* Main Header & Dual Action Buttons */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight text-foreground">
-            Plans & Offers
-          </h1>
-          <p className="text-sm text-muted-foreground mt-0.5">
-            Create membership plans and manage promotional discounts for your gym
-          </p>
-        </div>
+      {/* Quick Actions Strip (Soft-tinted matching reference) */}
+      {canManagePlans && (
+        <div className="grid grid-cols-2 gap-2.5 sm:max-w-xl">
+          <button
+            type="button"
+            onClick={() => setCreatePlanModalOpen(true)}
+            className="flex items-center justify-between gap-2 px-3.5 py-2.5 rounded-xl bg-purple-50/90 hover:bg-purple-100/90 [.dark_&]:bg-purple-500/[0.14] [.dark_&]:hover:bg-purple-500/[0.22] border border-purple-200/90 hover:border-purple-300 [.dark_&]:border-purple-500/30 text-foreground text-xs sm:text-sm font-bold shadow-2xs transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-500/60"
+          >
+            <span className="flex items-center gap-2 min-w-0">
+              <Calendar className="w-4 h-4 text-purple-600 [.dark_&]:text-purple-400 shrink-0" />
+              <span className="truncate">Create Plan</span>
+            </span>
+            <Plus className="w-3.5 h-3.5 text-purple-600 [.dark_&]:text-purple-400 shrink-0" />
+          </button>
 
-        {/* Action Buttons */}
-        {canManagePlans && (
-          <div className="flex items-center gap-2.5 w-full sm:w-auto">
-            <button
-              type="button"
-              onClick={() => setCreatePlanModalOpen(true)}
-              className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-lg bg-primary hover:opacity-95 text-primary-foreground text-sm font-semibold shadow-xs transition-colors cursor-pointer"
-            >
-              <Plus className="w-4 h-4" />
-              <span>Create Plan</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setCreateOfferModalOpen(true)}
-              className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-lg border border-primary hover:bg-primary/10 text-primary text-sm font-semibold transition-colors cursor-pointer"
-            >
-              <Plus className="w-4 h-4" />
-              <span>Create Offer</span>
-            </button>
-          </div>
-        )}
-      </div>
+          <button
+            type="button"
+            onClick={() => setCreateOfferModalOpen(true)}
+            className="flex items-center justify-between gap-2 px-3.5 py-2.5 rounded-xl bg-amber-50/90 hover:bg-amber-100/90 [.dark_&]:bg-amber-500/[0.14] [.dark_&]:hover:bg-amber-500/[0.22] border border-amber-200/90 hover:border-amber-300 [.dark_&]:border-amber-500/30 text-foreground text-xs sm:text-sm font-bold shadow-2xs transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/60"
+          >
+            <span className="flex items-center gap-2 min-w-0">
+              <Tag className="w-4 h-4 text-amber-600 [.dark_&]:text-amber-400 shrink-0" />
+              <span className="truncate">Create Offer</span>
+            </span>
+            <Plus className="w-3.5 h-3.5 text-amber-600 [.dark_&]:text-amber-400 shrink-0" />
+          </button>
+        </div>
+      )}
 
       {/* Category Pills & Search Filter */}
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
         {/* Category Pills */}
-        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0 scrollbar-none">
+        <div className="flex flex-wrap items-center gap-1.5">
           <button
             type="button"
             onClick={() => setCategoryFilter("all")}
             className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition-all whitespace-nowrap cursor-pointer flex items-center gap-1.5 ${
               categoryFilter === "all"
-                ? "bg-emerald-700 dark:bg-emerald-600 text-white shadow-xs"
+                ? "bg-primary text-primary-foreground shadow-xs"
                 : "bg-muted/70 hover:bg-muted text-foreground border border-border"
             }`}
           >
@@ -370,7 +365,7 @@ export function PlansManagerClient({
             <span
               className={`px-1.5 py-0.2 rounded-full text-[10px] font-black tabular-nums ${
                 categoryFilter === "all"
-                  ? "bg-white/20 text-white"
+                  ? "bg-white/20 text-primary-foreground"
                   : "bg-card text-muted-foreground border border-border/60"
               }`}
             >
@@ -383,7 +378,7 @@ export function PlansManagerClient({
             onClick={() => setCategoryFilter("plans")}
             className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition-all whitespace-nowrap cursor-pointer flex items-center gap-1.5 ${
               categoryFilter === "plans"
-                ? "bg-emerald-700 dark:bg-emerald-600 text-white shadow-xs"
+                ? "bg-primary text-primary-foreground shadow-xs"
                 : "bg-muted/70 hover:bg-muted text-foreground border border-border"
             }`}
           >
@@ -391,7 +386,7 @@ export function PlansManagerClient({
             <span
               className={`px-1.5 py-0.2 rounded-full text-[10px] font-black tabular-nums ${
                 categoryFilter === "plans"
-                  ? "bg-white/20 text-white"
+                  ? "bg-white/20 text-primary-foreground"
                   : "bg-card text-muted-foreground border border-border/60"
               }`}
             >
@@ -404,7 +399,7 @@ export function PlansManagerClient({
             onClick={() => setCategoryFilter("offers")}
             className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition-all whitespace-nowrap cursor-pointer flex items-center gap-1.5 ${
               categoryFilter === "offers"
-                ? "bg-emerald-700 dark:bg-emerald-600 text-white shadow-xs"
+                ? "bg-primary text-primary-foreground shadow-xs"
                 : "bg-muted/70 hover:bg-muted text-foreground border border-border"
             }`}
           >

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect, startTransition } from "react";
+import { useState, useMemo, startTransition } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
@@ -17,10 +17,18 @@ import {
   ChevronRight,
   ArrowRight,
   Tag,
-  IndianRupee,
   Layers,
   Sparkles,
+  Crown,
+  Star,
+  Zap,
+  Dumbbell,
+  SlidersHorizontal,
+  X,
+  User,
+  RefreshCw,
 } from "lucide-react";
+import { KpiCard } from "@/components/ui/kpi-card";
 import {
   ManageMembershipModal,
   MembershipPlanOption,
@@ -37,7 +45,6 @@ import {
   BulkAssignModal,
   AssignableUnassignedMember,
 } from "./bulk-assign-modal";
-import { OfferItem } from "@/lib/validations/offers";
 
 export interface MembershipItem {
   id: string;
@@ -82,7 +89,98 @@ interface MembershipsClientProps {
 }
 
 type MainViewMode = "all" | "plans";
-type MembershipFilterTab = "all" | "active" | "trial" | "expiring" | "expired" | "pending";
+type MembershipFilterTab =
+  | "all"
+  | "active"
+  | "trial"
+  | "expiring"
+  | "expired"
+  | "unassigned"
+  | "pending";
+
+type MobileRecordItem =
+  | { kind: "contract"; membership: MembershipItem }
+  | { kind: "unassigned"; member: AssignableUnassignedMember };
+
+const PLAN_SURFACE_STYLES = [
+  {
+    iconKey: "dumbbell",
+    iconBox:
+      "bg-purple-500/12 text-purple-600 [.dark_&]:bg-purple-500/20 [.dark_&]:text-purple-300",
+    selectedCard:
+      "bg-purple-50/85 border-purple-400/75 [.dark_&]:bg-purple-500/[0.16] [.dark_&]:border-purple-400/55",
+    idleCard:
+      "bg-card hover:bg-muted/30 border-border",
+  },
+  {
+    iconKey: "crown",
+    iconBox:
+      "bg-amber-500/15 text-amber-600 [.dark_&]:bg-amber-500/20 [.dark_&]:text-amber-300",
+    selectedCard:
+      "bg-amber-50/85 border-amber-400/75 [.dark_&]:bg-amber-500/[0.16] [.dark_&]:border-amber-400/55",
+    idleCard:
+      "bg-card hover:bg-muted/30 border-border",
+  },
+  {
+    iconKey: "star",
+    iconBox:
+      "bg-orange-500/14 text-orange-600 [.dark_&]:bg-orange-500/20 [.dark_&]:text-orange-300",
+    selectedCard:
+      "bg-orange-50/85 border-orange-400/75 [.dark_&]:bg-orange-500/[0.16] [.dark_&]:border-orange-400/55",
+    idleCard:
+      "bg-card hover:bg-muted/30 border-border",
+  },
+  {
+    iconKey: "calendar",
+    iconBox:
+      "bg-blue-500/12 text-blue-600 [.dark_&]:bg-blue-500/20 [.dark_&]:text-blue-300",
+    selectedCard:
+      "bg-blue-50/85 border-blue-400/75 [.dark_&]:bg-blue-500/[0.16] [.dark_&]:border-blue-400/55",
+    idleCard:
+      "bg-card hover:bg-muted/30 border-border",
+  },
+] as const;
+
+const TRIAL_PLAN_STYLE = {
+  iconKey: "zap",
+  iconBox:
+    "bg-rose-500/12 text-rose-600 [.dark_&]:bg-rose-500/20 [.dark_&]:text-rose-300",
+  selectedCard:
+    "bg-rose-50/90 border-rose-400/75 [.dark_&]:bg-rose-500/[0.16] [.dark_&]:border-rose-400/55",
+  idleCard:
+    "bg-rose-50/45 border-rose-200/70 [.dark_&]:bg-rose-500/[0.08] [.dark_&]:border-rose-500/25",
+} as const;
+
+function renderPlanIcon(iconKey: string) {
+  switch (iconKey) {
+    case "crown":
+      return <Crown className="w-4 h-4" />;
+    case "star":
+      return <Star className="w-4 h-4" />;
+    case "calendar":
+      return <Calendar className="w-4 h-4" />;
+    case "zap":
+      return <Zap className="w-4 h-4" />;
+    default:
+      return <Dumbbell className="w-4 h-4" />;
+  }
+}
+
+function formatMobileDateRange(startStr: string, endStr: string): string {
+  try {
+    const s = new Date(startStr);
+    const e = new Date(endStr);
+    const sDate = s.toLocaleDateString("en-IN", { day: "2-digit", month: "short" });
+    const eDate = e.toLocaleDateString("en-IN", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    });
+    return `${sDate} – ${eDate}`;
+  } catch {
+    return `${startStr} – ${endStr}`;
+  }
+}
 
 function formatTimelineDate(dateStr: string): string {
   try {
@@ -104,7 +202,6 @@ export function MembershipsClient({
   canManagePlans = true,
   canManageMembers = true,
   selectedBranchId,
-  branchName,
   initialTab = "active",
 }: MembershipsClientProps) {
   const router = useRouter();
@@ -116,8 +213,25 @@ export function MembershipsClient({
     requestedView === "plans" || initialTab === "plans" ? "plans" : "all";
 
   const [viewMode, setViewMode] = useState<MainViewMode>(initialViewMode);
-  const [filterTab, setFilterTab] = useState<MembershipFilterTab>("all");
+  const [prevRequestedView, setPrevRequestedView] = useState<string | null>(
+    requestedView
+  );
+  if (requestedView !== prevRequestedView) {
+    setPrevRequestedView(requestedView);
+    if (requestedView === "plans" || initialTab === "plans") {
+      setViewMode("plans");
+    } else if (requestedView === "all") {
+      setViewMode("all");
+    }
+  }
+  const [filterTab, setFilterTab] = useState<MembershipFilterTab>(
+    initialTab === "unassigned" ? "unassigned" : "all"
+  );
+  const [selectedPlanFilterId, setSelectedPlanFilterId] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
+  const [mobileActionsOpen, setMobileActionsOpen] = useState(false);
+  const [selectedMobileRecord, setSelectedMobileRecord] =
+    useState<MobileRecordItem | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
 
@@ -131,15 +245,6 @@ export function MembershipsClient({
     type: "success" | "error";
     text: string;
   } | null>(null);
-
-  // Sync viewMode if query param changes
-  useEffect(() => {
-    if (requestedView === "plans" || initialTab === "plans") {
-      setViewMode("plans");
-    } else if (requestedView === "all") {
-      setViewMode("all");
-    }
-  }, [requestedView, initialTab]);
 
   function handleSwitchView(mode: MainViewMode) {
     setViewMode(mode);
@@ -209,7 +314,9 @@ export function MembershipsClient({
         m.planName.toLowerCase().includes("trial");
 
       // Tab filter
-      if (filterTab === "active") {
+      if (filterTab === "unassigned") {
+        return false;
+      } else if (filterTab === "active") {
         if (m.status !== "active" || isTrial) return false;
       } else if (filterTab === "trial") {
         if (!isTrial || m.status !== "active") return false;
@@ -219,6 +326,10 @@ export function MembershipsClient({
         if (m.status !== "expired") return false;
       } else if (filterTab === "pending") {
         if (m.totalDue <= 0) return false;
+      }
+
+      if (selectedPlanFilterId && m.planId !== selectedPlanFilterId) {
+        return false;
       }
 
       // Search term
@@ -235,19 +346,49 @@ export function MembershipsClient({
 
       return true;
     });
-  }, [memberships, filterTab, searchTerm]);
+  }, [memberships, filterTab, selectedPlanFilterId, searchTerm]);
 
-  // Reset page when filter changes
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [filterTab, searchTerm]);
+  const filteredUnassignedMembers = useMemo(() => {
+    if (selectedPlanFilterId) return [];
+    if (filterTab !== "all" && filterTab !== "unassigned") return [];
+    const term = searchTerm.toLowerCase().trim();
+    if (!term) return unassignedMembers;
+    return unassignedMembers.filter((m) => {
+      const memberCode = `#${m.phone ? m.phone.slice(-4) : "1001"}`.toLowerCase();
+      return (
+        m.fullName.toLowerCase().includes(term) ||
+        m.phone.includes(term) ||
+        memberCode.includes(term)
+      );
+    });
+  }, [unassignedMembers, filterTab, selectedPlanFilterId, searchTerm]);
+
+  const mobileRecords = useMemo<MobileRecordItem[]>(() => {
+    const contractRows: MobileRecordItem[] = filteredMemberships.map((m) => ({
+      kind: "contract",
+      membership: m,
+    }));
+    const unassignedRows: MobileRecordItem[] = filteredUnassignedMembers.map((m) => ({
+      kind: "unassigned",
+      member: m,
+    }));
+    return [...contractRows, ...unassignedRows];
+  }, [filteredMemberships, filteredUnassignedMembers]);
 
   // Pagination slice
   const totalPages = Math.ceil(filteredMemberships.length / itemsPerPage) || 1;
+  const safePage = Math.min(currentPage, totalPages);
   const paginatedMemberships = useMemo(() => {
-    const start = (currentPage - 1) * itemsPerPage;
+    const start = (safePage - 1) * itemsPerPage;
     return filteredMemberships.slice(start, start + itemsPerPage);
-  }, [filteredMemberships, currentPage]);
+  }, [filteredMemberships, safePage]);
+
+  const mobileTotalPages = Math.ceil(mobileRecords.length / itemsPerPage) || 1;
+  const safeMobilePage = Math.min(currentPage, mobileTotalPages);
+  const paginatedMobileRecords = useMemo(() => {
+    const start = (safeMobilePage - 1) * itemsPerPage;
+    return mobileRecords.slice(start, start + itemsPerPage);
+  }, [mobileRecords, safeMobilePage]);
 
   const bulkPlans = useMemo(() => {
     if (detailedPlans && detailedPlans.length > 0) {
@@ -300,7 +441,7 @@ export function MembershipsClient({
 
       {/* PAGE HEADER & TAB SWITCHER */}
       <div className="space-y-3">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2.5">
+        <div className="flex items-center justify-between gap-2.5 flex-wrap">
           <div className="flex items-center gap-2.5">
             <div className="w-8 h-8 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
               {viewMode === "plans" ? (
@@ -314,43 +455,56 @@ export function MembershipsClient({
             </h1>
           </div>
 
-          {unassignedMembers.length > 0 && (
-            <button
-              type="button"
-              onClick={() => setBulkAssignModalOpen(true)}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 text-amber-700 dark:text-amber-300 rounded-xl text-xs font-semibold transition-colors cursor-pointer self-start sm:self-auto"
-            >
-              <Sparkles className="w-3.5 h-3.5 text-amber-500" />
-              <span>{unassignedMembers.length} Unassigned Members</span>
-              <span className="text-[11px] underline ml-1">Bulk Assign &rarr;</span>
-            </button>
-          )}
+          <div className="hidden md:flex items-center gap-2 flex-wrap">
+            {unassignedMembers.length > 0 && (
+              <button
+                type="button"
+                onClick={() => setBulkAssignModalOpen(true)}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 text-amber-700 [.dark_&]:text-amber-300 rounded-xl text-xs font-semibold transition-colors cursor-pointer"
+              >
+                <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+                <span>{unassignedMembers.length} Unassigned Members</span>
+                <span className="text-[11px] underline ml-1">Bulk Assign &rarr;</span>
+              </button>
+            )}
+
+            {viewMode === "all" && canManageMembers && (
+              <button
+                type="button"
+                onClick={() => setAssignModalOpen(true)}
+                className="inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl bg-primary hover:opacity-95 text-primary-foreground text-sm font-bold shadow-xs transition-colors cursor-pointer"
+              >
+                <UserPlus className="w-4 h-4" />
+                <span>+ Assign Plan</span>
+              </button>
+            )}
+          </div>
         </div>
 
-        <div className="inline-flex p-1 bg-muted/60 rounded-full border border-border">
+        <div className="grid grid-cols-2 sm:inline-flex p-1 bg-muted/60 rounded-full border border-border">
           <button
             type="button"
             onClick={() => handleSwitchView("all")}
-            className={`flex items-center gap-2 px-4 py-1.5 text-xs sm:text-sm font-bold rounded-full transition-all cursor-pointer ${
+            className={`flex items-center justify-center gap-2 px-3 sm:px-4 py-1.5 text-xs sm:text-sm font-bold rounded-full transition-all cursor-pointer ${
               viewMode === "all"
                 ? "bg-primary text-primary-foreground shadow-xs"
                 : "text-muted-foreground hover:text-foreground"
             }`}
           >
-            <IdCard className="w-4 h-4" />
-            <span>Memberships</span>
+            <IdCard className="w-4 h-4 shrink-0" />
+            <span className="truncate">Memberships</span>
           </button>
           <button
             type="button"
             onClick={() => handleSwitchView("plans")}
-            className={`flex items-center gap-2 px-4 py-1.5 text-xs sm:text-sm font-bold rounded-full transition-all cursor-pointer ${
+            className={`flex items-center justify-center gap-2 px-3 sm:px-4 py-1.5 text-xs sm:text-sm font-bold rounded-full transition-all cursor-pointer ${
               viewMode === "plans"
                 ? "bg-primary text-primary-foreground shadow-xs"
                 : "text-muted-foreground hover:text-foreground"
             }`}
           >
-            <Tag className="w-4 h-4" />
-            <span>Plans & Offers</span>
+            <Tag className="w-4 h-4 shrink-0" />
+            <span className="truncate">Plans &amp; Offers</span>
           </button>
         </div>
       </div>
@@ -395,12 +549,19 @@ export function MembershipsClient({
                     "bg-card bg-gradient-to-br from-rose-50 via-rose-50/85 to-rose-100/60 border-rose-200/90 dark:from-rose-500/[0.17] dark:via-rose-500/[0.11] dark:to-rose-500/[0.07] dark:border-rose-500/30",
                   ];
                   const tint = tints[idx % tints.length];
+                  const isPlanSelected = selectedPlanFilterId === plan.id;
                   return (
                     <button
                       key={plan.id}
                       type="button"
-                      onClick={() => setSearchTerm(plan.name)}
-                      className={`p-3.5 rounded-2xl border text-left shadow-xs hover:shadow-sm transition-all cursor-pointer flex flex-col justify-between gap-2 ${tint}`}
+                      onClick={() =>
+                        setSelectedPlanFilterId((prev) =>
+                          prev === plan.id ? null : plan.id
+                        )
+                      }
+                      className={`p-3.5 rounded-2xl border text-left shadow-xs hover:shadow-sm transition-all cursor-pointer flex flex-col justify-between gap-2 ${tint} ${
+                        isPlanSelected ? "ring-2 ring-primary/50 border-primary" : ""
+                      }`}
                     >
                       <div>
                         <div className="text-xs font-bold text-foreground truncate">
@@ -414,7 +575,10 @@ export function MembershipsClient({
                         </div>
                       </div>
                       <div className="pt-2 border-t border-border/50 flex items-center justify-between text-xs font-semibold text-foreground">
-                        <span>{plan.activeSubscribersCount} Members</span>
+                        <span>
+                          {plan.activeSubscribersCount}{" "}
+                          {plan.activeSubscribersCount === 1 ? "Member" : "Members"}
+                        </span>
                         <ChevronRight className="w-3.5 h-3.5 text-muted-foreground" />
                       </div>
                     </button>
@@ -422,118 +586,214 @@ export function MembershipsClient({
                 })}
               </div>
 
-              {/* Mobile Compact List */}
-              <div className="sm:hidden flex flex-col gap-2">
-                {detailedPlans.slice(0, 5).map((plan) => (
-                  <button
-                    key={plan.id}
-                    type="button"
-                    onClick={() => setSearchTerm(plan.name)}
-                    className="p-3 rounded-xl bg-card border border-border flex items-center justify-between gap-3 text-left shadow-xs cursor-pointer"
-                  >
-                    <div className="min-w-0">
-                      <div className="text-sm font-bold text-foreground truncate">
-                        {plan.name}
+              {/* Mobile Compact Horizontal Cards */}
+              <div className="sm:hidden flex flex-col gap-1.5">
+                {detailedPlans.slice(0, 5).map((plan, idx) => {
+                  const isTrialPlan =
+                    plan.price === 0 || plan.name.toLowerCase().includes("trial");
+                  const planStyle = isTrialPlan
+                    ? TRIAL_PLAN_STYLE
+                    : PLAN_SURFACE_STYLES[idx % PLAN_SURFACE_STYLES.length];
+                  const isPlanSelected = selectedPlanFilterId === plan.id;
+
+                  return (
+                    <button
+                      key={plan.id}
+                      type="button"
+                      aria-pressed={isPlanSelected}
+                      onClick={() => {
+                        setSelectedPlanFilterId((prev) =>
+                          prev === plan.id ? null : plan.id
+                        );
+                        setFilterTab("all");
+                        setCurrentPage(1);
+                      }}
+                      className={`px-3 py-2 rounded-xl border flex items-center justify-between gap-2.5 text-left shadow-2xs transition-all cursor-pointer ${
+                        isPlanSelected ? planStyle.selectedCard : planStyle.idleCard
+                      }`}
+                    >
+                      <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                        <div
+                          className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${planStyle.iconBox}`}
+                        >
+                          {renderPlanIcon(planStyle.iconKey)}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <div className="text-sm font-bold text-foreground truncate leading-tight">
+                            {plan.name}
+                          </div>
+                          <div className="text-[11px] text-muted-foreground tabular-nums truncate leading-tight mt-0.5">
+                            ₹{plan.price.toLocaleString("en-IN")} · {plan.durationDays} Days
+                          </div>
+                        </div>
                       </div>
-                      <div className="text-xs text-muted-foreground tabular-nums">
-                        ₹{plan.price.toLocaleString("en-IN")} · {plan.durationDays} Days
+                      <div className="flex items-center gap-1.5 text-xs font-semibold text-foreground shrink-0">
+                        <Users className="w-3.5 h-3.5 text-primary shrink-0" />
+                        <span className="tabular-nums whitespace-nowrap">
+                          {plan.activeSubscribersCount}{" "}
+                          {plan.activeSubscribersCount === 1 ? "Member" : "Members"}
+                        </span>
+                        <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" />
                       </div>
-                    </div>
-                    <div className="flex items-center gap-1 text-xs font-semibold text-primary shrink-0">
-                      <span>{plan.activeSubscribersCount} Members</span>
-                      <ChevronRight className="w-3.5 h-3.5" />
-                    </div>
-                  </button>
-                ))}
+                    </button>
+                  );
+                })}
               </div>
             </section>
           )}
-          {/* Header & Primary Action */}
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div>
-              <h1 className="text-2xl font-bold tracking-tight text-foreground">
-                Memberships
-              </h1>
-              <p className="text-sm text-muted-foreground mt-0.5">
-                Manage member memberships, renewals and expiry
-              </p>
-            </div>
-
-            {canManageMembers && (
-              <button
-                type="button"
-                onClick={() => setAssignModalOpen(true)}
-                className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-lg bg-primary hover:opacity-95 text-primary-foreground text-sm font-semibold shadow-xs transition-colors cursor-pointer"
-              >
-                <UserPlus className="w-4 h-4" />
-                <span>+ Assign Plan</span>
-              </button>
-            )}
-          </div>
 
           {/* 4-Metric Summary Strip */}
-          {/* Desktop 4-column row / Mobile 2x2 grid card */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            {/* Active Memberships */}
-            <div className="bg-card text-card-foreground rounded-2xl border border-border p-3.5 sm:p-4 shadow-xs flex flex-col justify-between">
-              <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                Active Memberships
-              </span>
-              <div className="text-xl sm:text-2xl font-black text-foreground tabular-nums mt-1">
-                {stats.active}
-              </div>
-            </div>
-
-            {/* Trial Memberships */}
-            <div className="bg-card text-card-foreground rounded-2xl border border-border p-3.5 sm:p-4 shadow-xs flex flex-col justify-between">
-              <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                Trial Memberships
-              </span>
-              <div className="text-xl sm:text-2xl font-black text-foreground tabular-nums mt-1">
-                {stats.trial}
-              </div>
-            </div>
-
-            {/* Expiring Soon */}
-            <div className="bg-amber-500/10 rounded-2xl border border-amber-500/30 p-3.5 sm:p-4 shadow-xs flex flex-col justify-between">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-semibold text-amber-600 dark:text-amber-400 uppercase tracking-wider">
-                  Expiring Soon
-                </span>
-                <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
-              </div>
-              <div className="text-xl sm:text-2xl font-black text-amber-600 dark:text-amber-400 tabular-nums mt-1">
-                {stats.expiring}
-              </div>
-            </div>
-
-            {/* Expired Memberships */}
-            <div className="bg-card text-card-foreground rounded-2xl border border-border p-3.5 sm:p-4 shadow-xs flex flex-col justify-between">
-              <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                Expired Memberships
-              </span>
-              <div className="text-xl sm:text-2xl font-black text-foreground tabular-nums mt-1">
-                {stats.expired}
-              </div>
-            </div>
+          {/* Desktop 4-column row (hidden on mobile per approved mobile layout) */}
+          <div className="hidden md:grid md:grid-cols-4 gap-3">
+            <KpiCard
+              label="Active Memberships"
+              value={stats.active}
+              variant="green"
+              icon={<CheckCircle2 className="w-4 h-4 sm:w-5 sm:h-5" />}
+            />
+            <KpiCard
+              label="Trial Memberships"
+              value={stats.trial}
+              variant="blue"
+              icon={<Clock className="w-4 h-4 sm:w-5 sm:h-5" />}
+            />
+            <KpiCard
+              label="Expiring Soon"
+              value={stats.expiring}
+              variant="amber"
+              icon={<AlertTriangle className="w-4 h-4 sm:w-5 sm:h-5" />}
+            />
+            <KpiCard
+              label="Expired Memberships"
+              value={stats.expired}
+              variant="purple"
+              icon={<XCircle className="w-4 h-4 sm:w-5 sm:h-5" />}
+            />
           </div>
 
-          {/* Search Bar & Count-Badged Filter Pills */}
-          <div className="space-y-3">
+          {/* Search Bar & Filters */}
+          <div className="space-y-2.5 md:space-y-3">
             {/* Search Input */}
             <div className="relative">
               <Search className="w-4 h-4 absolute left-3.5 top-3 text-muted-foreground pointer-events-none" />
               <input
                 type="text"
                 value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                placeholder="Search member name, phone, or plan..."
-                className="w-full pl-10 pr-4 py-2 text-sm bg-card border border-input rounded-xl focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:border-primary text-foreground placeholder:text-muted-foreground shadow-xs transition-all"
+                onChange={(e) => {
+                  setSearchTerm(e.target.value);
+                  setCurrentPage(1);
+                }}
+                placeholder="Search member by name or ID..."
+                className="w-full h-10 pl-10 pr-9 text-sm bg-card border border-input rounded-xl focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:border-primary text-foreground placeholder:text-muted-foreground shadow-xs transition-all"
               />
+              {searchTerm && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSearchTerm("");
+                    setCurrentPage(1);
+                  }}
+                  aria-label="Clear member search"
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1 rounded-lg text-muted-foreground hover:text-foreground cursor-pointer"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              )}
             </div>
 
-            {/* Filter Pills */}
-            <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
+            {/* Mobile Status Select + Filter / Quick Actions Bar */}
+            <div className="md:hidden space-y-2">
+              <div className="flex items-center gap-2">
+                <select
+                  value={filterTab}
+                  onChange={(e) => {
+                    setFilterTab(e.target.value as MembershipFilterTab);
+                    setCurrentPage(1);
+                  }}
+                  aria-label="Filter membership status"
+                  className="flex-1 min-w-0 h-10 px-3 rounded-xl bg-card border border-border text-sm font-semibold text-foreground focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary/40"
+                >
+                  <option value="all">
+                    All Status ({stats.total + unassignedMembers.length})
+                  </option>
+                  <option value="active">Active ({stats.active})</option>
+                  <option value="expiring">Expiring ({stats.expiring})</option>
+                  <option value="expired">Expired ({stats.expired})</option>
+                  <option value="trial">Trial ({stats.trial})</option>
+                  <option value="unassigned">
+                    Unassigned ({unassignedMembers.length})
+                  </option>
+                  <option value="pending">
+                    Payment Pending ({stats.pendingPayment})
+                  </option>
+                </select>
+
+                <button
+                  type="button"
+                  onClick={() => setMobileActionsOpen((v) => !v)}
+                  aria-expanded={mobileActionsOpen}
+                  aria-label="Toggle quick actions and status filters"
+                  className={`h-10 w-10 rounded-xl border inline-flex items-center justify-center shrink-0 transition-colors cursor-pointer ${
+                    mobileActionsOpen || filterTab !== "all" || selectedPlanFilterId
+                      ? "bg-primary/10 text-primary border-primary/30"
+                      : "bg-card text-muted-foreground hover:text-foreground border-border"
+                  }`}
+                >
+                  <SlidersHorizontal className="w-4 h-4" />
+                </button>
+              </div>
+
+              {mobileActionsOpen && (
+                <div className="p-3 rounded-2xl bg-card border border-border shadow-xs space-y-2">
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    {canManageMembers && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setMobileActionsOpen(false);
+                          setPreselectedMemberId(undefined);
+                          setAssignModalOpen(true);
+                        }}
+                        className="px-3 py-1.5 rounded-xl bg-primary text-primary-foreground text-xs font-bold cursor-pointer inline-flex items-center gap-1.5"
+                      >
+                        <UserPlus className="w-3.5 h-3.5" />
+                        <span>+ Assign Plan</span>
+                      </button>
+                    )}
+                    {canManageMembers && unassignedMembers.length > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setMobileActionsOpen(false);
+                          setBulkAssignModalOpen(true);
+                        }}
+                        className="px-3 py-1.5 rounded-xl bg-amber-500/12 text-amber-800 [.dark_&]:text-amber-300 border border-amber-500/25 text-xs font-bold cursor-pointer inline-flex items-center gap-1.5"
+                      >
+                        <Sparkles className="w-3.5 h-3.5" />
+                        <span>Bulk Assign ({unassignedMembers.length})</span>
+                      </button>
+                    )}
+                    {(filterTab !== "all" || selectedPlanFilterId) && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setFilterTab("all");
+                          setSelectedPlanFilterId(null);
+                          setCurrentPage(1);
+                          setMobileActionsOpen(false);
+                        }}
+                        className="px-2.5 py-1.5 rounded-xl bg-muted text-foreground text-xs font-semibold cursor-pointer"
+                      >
+                        Reset Filters
+                      </button>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Desktop Filter Pills */}
+            <div className="hidden md:flex flex-wrap items-center gap-1.5">
               <button
                 type="button"
                 onClick={() => setFilterTab("all")}
@@ -884,154 +1144,171 @@ export function MembershipsClient({
             </div>
           </div>
 
-          {/* MOBILE CARDS VIEW (390px) */}
+          {/* MOBILE COMPACT GROUPED LIST (390px Reference) */}
           <div className="block md:hidden space-y-3">
-            {paginatedMemberships.length === 0 ? (
+            {paginatedMobileRecords.length === 0 ? (
               <div className="p-8 text-center bg-card rounded-2xl border border-border text-muted-foreground text-xs">
                 No memberships found matching your filters.
               </div>
             ) : (
-              paginatedMemberships.map((m) => {
-                const isTrial =
-                  m.isTrial ||
-                  m.planPrice === 0 ||
-                  m.planName.toLowerCase().includes("trial");
+              <div className="bg-card rounded-2xl border border-border divide-y divide-border overflow-hidden shadow-xs">
+                {paginatedMobileRecords.map((item) => {
+                  if (item.kind === "unassigned") {
+                    const u = item.member;
+                    const memberCode = `#${u.phone ? u.phone.slice(-4) : "1001"}`;
+                    const initials =
+                      u.fullName
+                        .split(" ")
+                        .filter(Boolean)
+                        .map((n) => n[0])
+                        .join("")
+                        .substring(0, 2)
+                        .toUpperCase() || "M";
 
-                const memberCode = m.memberCode || `#${m.memberPhone.slice(-4) || "1001"}`;
-                const initials = m.memberName
-                  .split(" ")
-                  .map((n) => n[0])
-                  .join("")
-                  .substring(0, 2)
-                  .toUpperCase();
-
-                // Accent border color based on status
-                const accentBorder = isTrial
-                  ? "border-l-blue-500"
-                  : m.isExpiringSoon
-                  ? "border-l-amber-500"
-                  : m.status === "expired"
-                  ? "border-l-rose-500"
-                  : "border-l-emerald-500";
-
-                return (
-                  <div
-                    key={m.id}
-                    className={`bg-card rounded-2xl border border-border shadow-xs p-3.5 border-l-4 ${accentBorder} flex flex-col justify-between gap-2.5 text-card-foreground`}
-                  >
-                    {/* Row 1: Avatar, Name (#ID), Status Pill */}
-                    <div className="flex items-center justify-between gap-2">
-                      <div className="flex items-center gap-2">
-                        <div className="w-8 h-8 rounded-full bg-muted text-foreground font-bold flex items-center justify-center text-xs shrink-0">
+                    return (
+                      <button
+                        key={`unassigned-${u.id}`}
+                        type="button"
+                        onClick={() => setSelectedMobileRecord(item)}
+                        className="w-full px-3 py-2.5 flex items-center gap-2.5 text-left hover:bg-muted/40 active:bg-muted/60 transition-colors cursor-pointer"
+                      >
+                        <div className="w-9 h-9 rounded-full bg-slate-500/12 text-slate-700 [.dark_&]:bg-slate-500/20 [.dark_&]:text-slate-300 font-bold flex items-center justify-center text-xs shrink-0">
                           {initials}
                         </div>
-                        <div>
-                          <div className="font-semibold text-foreground text-sm leading-tight">
-                            {m.memberName}{" "}
-                            <span className="text-xs font-normal text-muted-foreground font-mono">
-                              ({memberCode})
-                            </span>
+
+                        <div className="min-w-0 flex-1">
+                          <div className="font-bold text-foreground text-sm leading-tight truncate">
+                            {u.fullName}
                           </div>
-                          <div className="text-[11px] text-muted-foreground">
-                            {m.memberPhone}
+                          <div className="text-[11px] text-muted-foreground leading-tight truncate mt-0.5">
+                            {memberCode} · —
                           </div>
+                        </div>
+
+                        <div className="shrink-0 flex items-center gap-1.5">
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-slate-500/12 text-slate-700 [.dark_&]:bg-slate-500/20 [.dark_&]:text-slate-300">
+                            <span className="w-1.5 h-1.5 rounded-full bg-slate-500 shrink-0" />
+                            <span>Unassigned</span>
+                          </span>
+                          <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" />
+                        </div>
+                      </button>
+                    );
+                  }
+
+                  const m = item.membership;
+                  const isTrial =
+                    m.isTrial ||
+                    m.planPrice === 0 ||
+                    m.planName.toLowerCase().includes("trial");
+
+                  const memberCode =
+                    m.memberCode || `#${m.memberPhone.slice(-4) || "1001"}`;
+                  const initials =
+                    m.memberName
+                      .split(" ")
+                      .filter(Boolean)
+                      .map((n) => n[0])
+                      .join("")
+                      .substring(0, 2)
+                      .toUpperCase() || "M";
+
+                  const badgeStyle = isTrial
+                    ? {
+                        pill: "bg-purple-500/12 text-purple-700 [.dark_&]:bg-purple-500/20 [.dark_&]:text-purple-300",
+                        dot: "bg-purple-500",
+                        avatar:
+                          "bg-purple-500/12 text-purple-700 [.dark_&]:bg-purple-500/20 [.dark_&]:text-purple-300",
+                        label: "Trial",
+                      }
+                    : m.status === "expired"
+                    ? {
+                        pill: "bg-rose-500/12 text-rose-700 [.dark_&]:bg-rose-500/20 [.dark_&]:text-rose-300",
+                        dot: "bg-rose-500",
+                        avatar:
+                          "bg-rose-500/12 text-rose-700 [.dark_&]:bg-rose-500/20 [.dark_&]:text-rose-300",
+                        label: "Expired",
+                      }
+                    : m.isExpiringSoon
+                    ? {
+                        pill: "bg-amber-500/15 text-amber-700 [.dark_&]:bg-amber-500/20 [.dark_&]:text-amber-300",
+                        dot: "bg-amber-500",
+                        avatar:
+                          "bg-amber-500/15 text-amber-700 [.dark_&]:bg-amber-500/20 [.dark_&]:text-amber-300",
+                        label: "Expiring",
+                      }
+                    : {
+                        pill: "bg-emerald-500/12 text-emerald-700 [.dark_&]:bg-emerald-500/20 [.dark_&]:text-emerald-300",
+                        dot: "bg-emerald-500",
+                        avatar:
+                          "bg-emerald-500/12 text-emerald-700 [.dark_&]:bg-emerald-500/20 [.dark_&]:text-emerald-300",
+                        label: "Active",
+                      };
+
+                  return (
+                    <button
+                      key={m.id}
+                      type="button"
+                      onClick={() => setSelectedMobileRecord(item)}
+                      className="w-full px-3 py-2.5 flex items-center gap-2.5 text-left hover:bg-muted/40 active:bg-muted/60 transition-colors cursor-pointer"
+                    >
+                      <div
+                        className={`w-9 h-9 rounded-full font-bold flex items-center justify-center text-xs shrink-0 ${badgeStyle.avatar}`}
+                      >
+                        {initials}
+                      </div>
+
+                      <div className="min-w-0 flex-1">
+                        <div className="font-bold text-foreground text-sm leading-tight truncate">
+                          {m.memberName}
+                        </div>
+                        <div className="text-[11px] text-muted-foreground leading-tight truncate mt-0.5">
+                          {memberCode} · {m.planName}
+                        </div>
+                        <div className="text-[11px] text-muted-foreground tabular-nums leading-tight truncate mt-0.5">
+                          {formatMobileDateRange(m.startDate, m.endDate)}
                         </div>
                       </div>
 
-                      {/* Status Pill */}
-                      <span
-                        className={`text-[11px] font-semibold px-2 py-0.5 rounded-full border ${
-                          isTrial
-                            ? "bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-500/20"
-                            : m.isExpiringSoon
-                            ? "bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/20"
-                            : m.status === "expired"
-                            ? "bg-rose-500/10 text-rose-700 dark:text-rose-400 border-rose-500/20"
-                            : "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/20"
-                        }`}
-                      >
-                        {isTrial
-                          ? "Trial"
-                          : m.isExpiringSoon
-                          ? "Expiring"
-                          : m.status === "expired"
-                          ? "Expired"
-                          : "Active"}
-                      </span>
-                    </div>
-
-                    {/* Row 2: Plan & Final amount line, offer, payment pill, validity */}
-                    <div className="pt-2 border-t border-border/60 space-y-1">
-                      <div className="text-xs font-semibold text-foreground flex items-center justify-between">
-                        <span>
-                          {m.planName} · ₹{m.planPrice.toLocaleString("en-IN")}
+                      <div className="shrink-0 flex items-center gap-1.5">
+                        <span
+                          className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold ${badgeStyle.pill}`}
+                        >
+                          <span
+                            className={`w-1.5 h-1.5 rounded-full shrink-0 ${badgeStyle.dot}`}
+                          />
+                          <span>{badgeStyle.label}</span>
                         </span>
-                        <span className="text-[11px] font-medium text-muted-foreground">
-                          {m.status === "expired"
-                            ? `${Math.abs(m.daysRemaining)}d ago`
-                            : `${m.daysRemaining}d left`}
-                        </span>
+                        <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" />
                       </div>
-
-                      <div className="flex items-center justify-between text-xs text-muted-foreground">
-                        <span>
-                          {formatTimelineDate(m.startDate)} &rarr; {formatTimelineDate(m.endDate)}
-                        </span>
-                        {m.totalDue > 0 ? (
-                          <span className="text-amber-700 dark:text-amber-400 font-semibold bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20 text-[11px]">
-                            ₹{m.totalDue.toLocaleString("en-IN")} Due
-                          </span>
-                        ) : isTrial ? (
-                          <span className="text-muted-foreground font-semibold bg-muted px-2 py-0.5 rounded border border-border text-[11px]">
-                            Free
-                          </span>
-                        ) : (
-                          <span className="text-emerald-700 dark:text-emerald-400 font-semibold bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20 text-[11px]">
-                            Paid
-                          </span>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Row 3: Action Buttons */}
-                    <div className="pt-2 border-t border-border/60 flex items-center justify-between gap-2">
-                      <Link
-                        href={`/app/${gymId}/members/${m.memberId}`}
-                        className="py-1.5 px-3 rounded-xl border border-border bg-muted/20 hover:bg-muted text-muted-foreground hover:text-foreground text-xs font-semibold text-center transition-colors"
-                      >
-                        360° ↗
-                      </Link>
-                      <button
-                        type="button"
-                        onClick={() => handleOpenManagePlan(m)}
-                        className="flex-1 py-1.5 px-3 rounded-xl border border-border bg-muted/30 hover:bg-muted text-foreground text-xs font-semibold text-center transition-colors shadow-xs cursor-pointer"
-                      >
-                        Manage Plan
-                      </button>
-                    </div>
-                  </div>
-                );
-              })
+                    </button>
+                  );
+                })}
+              </div>
             )}
 
             {/* Mobile Pagination */}
-            {totalPages > 1 && (
-              <div className="flex items-center justify-center gap-1 pt-2">
+            {mobileTotalPages > 1 && (
+              <div className="flex items-center justify-center gap-1 pt-1">
                 <button
                   type="button"
                   disabled={currentPage <= 1}
                   onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                  aria-label="Previous page"
                   className="p-2 rounded-xl border border-border bg-card text-foreground disabled:opacity-40 cursor-pointer"
                 >
                   <ChevronLeft className="w-4 h-4" />
                 </button>
                 <span className="text-xs font-semibold text-muted-foreground px-3">
-                  {currentPage} of {totalPages}
+                  {currentPage} of {mobileTotalPages}
                 </span>
                 <button
                   type="button"
-                  disabled={currentPage >= totalPages}
-                  onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                  disabled={currentPage >= mobileTotalPages}
+                  onClick={() =>
+                    setCurrentPage((p) => Math.min(mobileTotalPages, p + 1))
+                  }
+                  aria-label="Next page"
                   className="p-2 rounded-xl border border-border bg-card text-foreground disabled:opacity-40 cursor-pointer"
                 >
                   <ChevronRight className="w-4 h-4" />
@@ -1042,9 +1319,160 @@ export function MembershipsClient({
         </div>
       )}
 
+      {/* Mobile Contextual Membership Action Sheet */}
+      {selectedMobileRecord && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label="Membership Record Actions"
+          className="fixed inset-0 z-50 md:hidden bg-black/60 backdrop-blur-xs flex items-end justify-center p-3 animate-in fade-in duration-150"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setSelectedMobileRecord(null);
+          }}
+        >
+          <div className="bg-card text-card-foreground rounded-2xl w-full max-w-md p-4 shadow-2xl border border-border space-y-3">
+            {selectedMobileRecord.kind === "contract" ? (
+              <>
+                <div className="flex items-start justify-between gap-2 pb-3 border-b border-border">
+                  <div className="min-w-0">
+                    <h3 className="text-base font-bold text-foreground truncate">
+                      {selectedMobileRecord.membership.memberName}
+                    </h3>
+                    <p className="text-xs text-muted-foreground truncate mt-0.5">
+                      {selectedMobileRecord.membership.planName} · ₹
+                      {selectedMobileRecord.membership.planPrice.toLocaleString("en-IN")}
+                    </p>
+                    <p className="text-[11px] text-muted-foreground tabular-nums mt-0.5">
+                      {formatMobileDateRange(
+                        selectedMobileRecord.membership.startDate,
+                        selectedMobileRecord.membership.endDate
+                      )}
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedMobileRecord(null)}
+                    aria-label="Close actions"
+                    className="p-1.5 rounded-xl text-muted-foreground hover:text-foreground hover:bg-muted cursor-pointer"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+
+                <div className="space-y-2">
+                  {canManageMembers && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const target = selectedMobileRecord.membership;
+                        setSelectedMobileRecord(null);
+                        handleOpenManagePlan(target);
+                      }}
+                      className="w-full h-11 px-3.5 rounded-xl bg-primary text-primary-foreground text-sm font-bold flex items-center justify-between cursor-pointer"
+                    >
+                      <span className="flex items-center gap-2">
+                        <Layers className="w-4 h-4" />
+                        <span>Manage Plan / Extend / Change</span>
+                      </span>
+                      <ChevronRight className="w-4 h-4" />
+                    </button>
+                  )}
+
+                  {canManageMembers && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const memberId = selectedMobileRecord.membership.memberId;
+                        setSelectedMobileRecord(null);
+                        setPreselectedMemberId(memberId);
+                        setAssignModalOpen(true);
+                      }}
+                      className="w-full h-11 px-3.5 rounded-xl bg-muted/60 hover:bg-muted border border-border text-foreground text-sm font-semibold flex items-center justify-between cursor-pointer"
+                    >
+                      <span className="flex items-center gap-2">
+                        <RefreshCw className="w-4 h-4 text-primary" />
+                        <span>Renew / Assign New Plan</span>
+                      </span>
+                      <ChevronRight className="w-4 h-4 text-muted-foreground" />
+                    </button>
+                  )}
+
+                  <Link
+                    href={`/app/${gymId}/members/${selectedMobileRecord.membership.memberId}`}
+                    onClick={() => setSelectedMobileRecord(null)}
+                    className="w-full h-11 px-3.5 rounded-xl bg-card hover:bg-muted border border-border text-foreground text-sm font-semibold flex items-center justify-between"
+                  >
+                    <span className="flex items-center gap-2">
+                      <User className="w-4 h-4 text-muted-foreground" />
+                      <span>View Member Profile</span>
+                    </span>
+                    <ChevronRight className="w-4 h-4 text-muted-foreground" />
+                  </Link>
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="flex items-start justify-between gap-2 pb-3 border-b border-border">
+                  <div className="min-w-0">
+                    <h3 className="text-base font-bold text-foreground truncate">
+                      {selectedMobileRecord.member.fullName}
+                    </h3>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      Unassigned · No active membership plan
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedMobileRecord(null)}
+                    aria-label="Close actions"
+                    className="p-1.5 rounded-xl text-muted-foreground hover:text-foreground hover:bg-muted cursor-pointer"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+
+                <div className="space-y-2">
+                  {canManageMembers && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const memberId = selectedMobileRecord.member.id;
+                        setSelectedMobileRecord(null);
+                        setPreselectedMemberId(memberId);
+                        setAssignModalOpen(true);
+                      }}
+                      className="w-full h-11 px-3.5 rounded-xl bg-primary text-primary-foreground text-sm font-bold flex items-center justify-between cursor-pointer"
+                    >
+                      <span className="flex items-center gap-2">
+                        <UserPlus className="w-4 h-4" />
+                        <span>Assign Plan</span>
+                      </span>
+                      <ChevronRight className="w-4 h-4" />
+                    </button>
+                  )}
+
+                  <Link
+                    href={`/app/${gymId}/members/${selectedMobileRecord.member.id}`}
+                    onClick={() => setSelectedMobileRecord(null)}
+                    className="w-full h-11 px-3.5 rounded-xl bg-card hover:bg-muted border border-border text-foreground text-sm font-semibold flex items-center justify-between"
+                  >
+                    <span className="flex items-center gap-2">
+                      <User className="w-4 h-4 text-muted-foreground" />
+                      <span>View Member Profile</span>
+                    </span>
+                    <ChevronRight className="w-4 h-4 text-muted-foreground" />
+                  </Link>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* MODALS */}
       {/* 1. Assign Membership Modal */}
       <AssignMembershipModal
+        key={`${assignModalOpen}-${preselectedMemberId || "default"}`}
         gymId={gymId}
         members={membersList}
         plans={detailedPlans.map((p) => ({

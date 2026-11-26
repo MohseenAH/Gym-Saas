@@ -23,11 +23,14 @@ import {
   BarChart3,
   ChevronRight,
   ChevronLeft,
+  ChevronDown,
   MoreVertical,
   ArrowRight,
   Building2,
+  SlidersHorizontal,
 } from "lucide-react";
 import { KpiCard } from "@/components/ui/kpi-card";
+import { FilterPillBar } from "@/components/ui/filter-pill-bar";
 import { staffCheckInAction, undoCheckInAction } from "@/lib/actions/attendance";
 import { formatDate } from "@/lib/utils";
 
@@ -139,6 +142,7 @@ export function StaffCheckInClient({
   const [currentPage, setCurrentPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(5);
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
+  const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
 
   // Modals
   const [isManualModalOpen, setIsManualModalOpen] = useState(false);
@@ -499,50 +503,55 @@ export function StaffCheckInClient({
       )}
 
       {/* 5 KPI Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-5 gap-2.5 sm:gap-3.5">
+      <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-2.5 sm:gap-3.5">
         <KpiCard
-          compact
+          horizontal
+          hideChevron
           label="Total Members"
           value={branchMembers.length}
           variant="purple"
-          icon={<Users className="w-4 h-4" />}
+          icon={<Users className="w-6 h-6" strokeWidth={2} />}
           onClick={() => handleFilterSelect("all")}
           active={statusFilter === "all"}
         />
         <KpiCard
-          compact
+          horizontal
+          hideChevron
           label={isViewingToday ? "Present Today" : "Present"}
           value={presentCount}
           variant="green"
-          icon={<UserCheck className="w-4 h-4" />}
+          icon={<UserCheck className="w-6 h-6" strokeWidth={2} />}
           onClick={() => handleFilterSelect("present")}
           active={statusFilter === "present"}
         />
         <KpiCard
-          compact
+          horizontal
+          hideChevron
           label={isViewingToday ? "Absent Today" : "Absent"}
           value={absentCount}
           variant="red"
-          icon={<XCircle className="w-4 h-4" />}
+          icon={<XCircle className="w-6 h-6" strokeWidth={2} />}
           onClick={() => handleFilterSelect("absent")}
           active={statusFilter === "absent"}
         />
         <KpiCard
-          compact
+          horizontal
+          hideChevron
           label="QR Check-ins"
           value={qrCount}
           variant="blue"
-          icon={<QrCode className="w-4 h-4" />}
+          icon={<QrCode className="w-6 h-6" strokeWidth={2} />}
           onClick={() => handleFilterSelect("qr")}
           active={statusFilter === "qr"}
         />
-        <div className="col-span-2 lg:col-span-1">
+        <div className="col-span-2 md:col-span-1">
           <KpiCard
-            compact
+            horizontal
+            hideChevron
             label="Manual Check-ins"
             value={manualCount}
             variant="amber"
-            icon={<Hand className="w-4 h-4" />}
+            icon={<Hand className="w-6 h-6" strokeWidth={2} />}
             onClick={() => handleFilterSelect("manual")}
             active={statusFilter === "manual"}
           />
@@ -550,18 +559,18 @@ export function StaffCheckInClient({
       </div>
 
       {/* Primary Attendance Actions */}
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-2 gap-3 sm:gap-4">
         <button
           type="button"
           onClick={() => setIsManualModalOpen(true)}
-          className="group flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-4 p-4 sm:p-5 rounded-2xl sm:rounded-3xl border border-purple-500/20 bg-purple-500/8 hover:bg-purple-500/14 text-left transition-all cursor-pointer"
+          className="group min-h-[96px] sm:min-h-0 flex flex-col sm:flex-row items-center justify-center sm:justify-between gap-2 sm:gap-4 p-3.5 sm:p-5 rounded-2xl border border-purple-200/80 dark:border-purple-500/30 bg-card bg-gradient-to-br from-purple-50/90 via-purple-50/70 to-indigo-50/60 hover:border-purple-300 dark:from-purple-500/[0.16] dark:via-purple-500/[0.10] dark:to-indigo-500/[0.08] dark:hover:border-purple-400/50 text-center sm:text-left shadow-xs transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-500/60 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
         >
-          <div className="flex flex-col sm:flex-row sm:items-center gap-2.5 sm:gap-3.5">
-            <div className="h-10 w-10 rounded-xl bg-purple-500/15 text-purple-600 dark:text-purple-400 flex items-center justify-center shrink-0">
-              <UserPlus className="w-5 h-5" />
+          <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-3.5">
+            <div className="sm:h-11 sm:w-11 sm:rounded-xl sm:bg-purple-500/18 dark:sm:bg-purple-500/25 sm:border sm:border-purple-500/25 text-purple-700 dark:text-purple-300 flex items-center justify-center shrink-0">
+              <UserPlus className="w-7 h-7 sm:w-6 sm:h-6" strokeWidth={2} />
             </div>
             <div>
-              <div className="text-xs sm:text-sm font-black text-foreground">
+              <div className="text-[13px] sm:text-base font-bold text-foreground leading-snug">
                 Manual Check-In
               </div>
               <div className="hidden sm:block text-xs text-muted-foreground mt-0.5">
@@ -569,20 +578,20 @@ export function StaffCheckInClient({
               </div>
             </div>
           </div>
-          <ChevronRight className="hidden sm:block w-4 h-4 text-muted-foreground group-hover:translate-x-0.5 transition-transform shrink-0" />
+          <ChevronRight className="hidden sm:block w-5 h-5 text-muted-foreground group-hover:translate-x-0.5 transition-transform shrink-0" />
         </button>
 
         <button
           type="button"
           onClick={() => setIsQrModalOpen(true)}
-          className="group flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-4 p-4 sm:p-5 rounded-2xl sm:rounded-3xl border border-blue-500/20 bg-blue-500/8 hover:bg-blue-500/14 text-left transition-all cursor-pointer"
+          className="group min-h-[96px] sm:min-h-0 flex flex-col sm:flex-row items-center justify-center sm:justify-between gap-2 sm:gap-4 p-3.5 sm:p-5 rounded-2xl border border-blue-200/80 dark:border-blue-500/30 bg-card bg-gradient-to-br from-blue-50/90 via-blue-50/70 to-indigo-50/60 hover:border-blue-300 dark:from-blue-500/[0.16] dark:via-blue-500/[0.10] dark:to-indigo-500/[0.08] dark:hover:border-blue-400/50 text-center sm:text-left shadow-xs transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/60 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
         >
-          <div className="flex flex-col sm:flex-row sm:items-center gap-2.5 sm:gap-3.5">
-            <div className="h-10 w-10 rounded-xl bg-blue-500/15 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0">
-              <QrCode className="w-5 h-5" />
+          <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-3.5">
+            <div className="sm:h-11 sm:w-11 sm:rounded-xl sm:bg-blue-500/18 dark:sm:bg-blue-500/25 sm:border sm:border-blue-500/25 text-blue-700 dark:text-blue-300 flex items-center justify-center shrink-0">
+              <QrCode className="w-7 h-7 sm:w-6 sm:h-6" strokeWidth={2} />
             </div>
             <div>
-              <div className="text-xs sm:text-sm font-black text-foreground">
+              <div className="text-[13px] sm:text-base font-bold text-foreground leading-snug">
                 Scan QR / Open Scanner
               </div>
               <div className="hidden sm:block text-xs text-muted-foreground mt-0.5">
@@ -590,12 +599,149 @@ export function StaffCheckInClient({
               </div>
             </div>
           </div>
-          <ChevronRight className="hidden sm:block w-4 h-4 text-muted-foreground group-hover:translate-x-0.5 transition-transform shrink-0" />
+          <ChevronRight className="hidden sm:block w-5 h-5 text-muted-foreground group-hover:translate-x-0.5 transition-transform shrink-0" />
         </button>
       </div>
 
-      {/* Search and Filters */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+      {/* Mobile Search & Filters Toolbar */}
+      <div className="md:hidden space-y-2">
+        {/* Row 1: Full-width Search */}
+        <div className="relative">
+          <Search className="w-4 h-4 text-muted-foreground absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+          <input
+            type="text"
+            value={search}
+            onChange={(e) => {
+              setSearch(e.target.value);
+              setCurrentPage(1);
+            }}
+            placeholder="Search by member name or ID..."
+            aria-label="Search attendance records"
+            className="w-full h-10 pl-10 pr-4 rounded-xl bg-card border border-border text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
+          />
+        </div>
+
+        {/* Row 2: Attendance Criteria (All, Present, Manual, QR) */}
+        <FilterPillBar
+          ariaLabel="Attendance criteria"
+          value={statusFilter}
+          onChange={(id) => handleFilterSelect(id)}
+          items={[
+            { id: "all", label: `All (${allRows.length})` },
+            { id: "present", label: `Present (${presentCount})` },
+            { id: "manual", label: `Manual (${manualCount})` },
+            { id: "qr", label: `QR (${qrCount})` },
+          ]}
+        />
+
+        {/* Row 3: Wide Date Selector (~80%) + Additional Filter Button */}
+        <div className="flex items-center gap-2">
+          <div className="relative flex-1 min-w-0 h-9 px-3 rounded-xl bg-card border border-border flex items-center justify-between gap-2 text-xs font-semibold text-foreground focus-within:ring-2 focus-within:ring-primary/30">
+            <div className="flex items-center gap-2 min-w-0">
+              <Calendar className="w-4 h-4 text-muted-foreground shrink-0" />
+              <span className="truncate">
+                {isViewingToday ? "Today" : formatDate(selectedDate)}
+              </span>
+            </div>
+            <ChevronDown className="w-4 h-4 text-muted-foreground shrink-0" />
+            <input
+              type="date"
+              value={selectedDate}
+              max={todayDate}
+              onChange={(e) => handleDateChange(e.target.value)}
+              aria-label="Select attendance date"
+              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+            />
+          </div>
+
+          <button
+            type="button"
+            onClick={() => setMobileFiltersOpen((v) => !v)}
+            aria-expanded={mobileFiltersOpen}
+            aria-label="Toggle additional attendance filters"
+            className={`h-9 w-12 rounded-xl border inline-flex items-center justify-center shrink-0 transition-colors cursor-pointer ${
+              mobileFiltersOpen ||
+              statusFilter === "absent" ||
+              selectedBranchId !== "all" ||
+              !isViewingToday
+                ? "bg-primary/10 text-primary border-primary/30"
+                : "bg-card text-muted-foreground hover:text-foreground border-border"
+            }`}
+          >
+            <SlidersHorizontal className="w-4 h-4" />
+          </button>
+        </div>
+
+        {/* Expandable Additional Filters (Absent, Branch, Reset) */}
+        {mobileFiltersOpen && (
+          <div className="p-3 rounded-2xl bg-card border border-border shadow-xs space-y-2.5">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  handleFilterSelect(statusFilter === "absent" ? "all" : "absent");
+                }}
+                aria-pressed={statusFilter === "absent"}
+                className={`h-8 px-3 rounded-full text-xs font-bold border transition-colors cursor-pointer ${
+                  statusFilter === "absent"
+                    ? "bg-primary text-primary-foreground border-primary shadow-xs"
+                    : "bg-muted/50 text-foreground border-border hover:bg-muted"
+                }`}
+              >
+                Absent ({absentCount})
+              </button>
+
+              {(statusFilter !== "all" ||
+                selectedBranchId !== "all" ||
+                !isViewingToday ||
+                search) && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSearch("");
+                    setStatusFilter("all");
+                    setSelectedBranchId(branchId || "all");
+                    setCurrentPage(1);
+                    if (!isViewingToday) {
+                      handleDateChange(todayDate);
+                    }
+                    setMobileFiltersOpen(false);
+                  }}
+                  className="text-xs font-bold text-primary hover:underline cursor-pointer"
+                >
+                  Reset Filters
+                </button>
+              )}
+            </div>
+
+            {branches.length > 1 && (
+              <div className="relative flex items-center">
+                <Building2 className="w-3.5 h-3.5 text-muted-foreground absolute left-3 pointer-events-none" />
+                <select
+                  value={selectedBranchId}
+                  onChange={(e) => {
+                    setSelectedBranchId(e.target.value);
+                    setCurrentPage(1);
+                  }}
+                  aria-label="Filter mobile attendance by branch"
+                  className="w-full h-9 pl-8 pr-8 rounded-xl bg-background border border-border text-xs font-semibold text-foreground appearance-none"
+                >
+                  <option value="all">All Branches</option>
+                  {branches.map((b) => (
+                    <option key={b.id} value={b.id}>
+                      {b.name}
+                    </option>
+                  ))}
+                </select>
+                <ChevronDown className="w-4 h-4 text-muted-foreground absolute right-2.5 pointer-events-none" />
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* Desktop Search and Filters */}
+      <div className="hidden md:flex flex-col lg:flex-row lg:items-center justify-between gap-3">
         <div className="relative flex-1 min-w-0">
           <Search className="w-4 h-4 text-muted-foreground absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
           <input

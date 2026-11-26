@@ -20,6 +20,7 @@ import {
   ExternalLink,
   ChevronRight,
   ChevronLeft,
+  ChevronDown,
   ArrowRight,
   CheckCircle2,
   Calendar,
@@ -31,6 +32,7 @@ import {
   MoreVertical,
 } from "lucide-react";
 import { KpiCard } from "@/components/ui/kpi-card";
+import { FilterPillBar } from "@/components/ui/filter-pill-bar";
 import { ReceiptModal, ReceiptData } from "@/components/payments/receipt-modal";
 import { RecordPaymentModal } from "@/components/payments/record-payment-modal";
 import { verifyPaymentAction, rejectPaymentAction } from "@/lib/actions/payments";
@@ -660,8 +662,85 @@ export function PaymentsLedgerClient({
         </button>
       </div>
 
-      {/* Search & Filters */}
-      <div className="space-y-2.5">
+      {/* Mobile Search & Filters Toolbar */}
+      <div className="md:hidden space-y-2">
+        {/* Row 1: Full-width Search */}
+        <div className="relative">
+          <Search className="w-4 h-4 text-muted-foreground absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+          <input
+            type="text"
+            value={search}
+            onChange={(e) => {
+              setSearch(e.target.value);
+              setCurrentPage(1);
+            }}
+            placeholder="Search by member, reference or UTR..."
+            aria-label="Search payments"
+            className="w-full h-10 pl-10 pr-4 rounded-xl bg-card border border-border text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
+          />
+        </div>
+
+        {/* Row 2: Payment Status Criteria */}
+        <FilterPillBar
+          ariaLabel="Payment status criteria"
+          value={activeTab}
+          onChange={(id) => {
+            setActiveTab(id);
+            setCurrentPage(1);
+          }}
+          items={[
+            { id: "all", label: `All (${tabCounts.all})` },
+            { id: "confirmed", label: `Confirmed (${tabCounts.confirmed})` },
+            { id: "pending", label: `Pending (${tabCounts.pending})` },
+            { id: "rejected", label: `Rejected (${tabCounts.rejected})` },
+          ]}
+        />
+
+        {/* Row 3: Payment Method + Date/Period Dropdowns */}
+        <div className="grid grid-cols-2 gap-2">
+          <div className="relative flex items-center">
+            <CreditCard className="w-4 h-4 text-muted-foreground absolute left-3 pointer-events-none" />
+            <select
+              value={methodFilter}
+              onChange={(e) => {
+                setMethodFilter(e.target.value as MethodFilterType);
+                setCurrentPage(1);
+              }}
+              aria-label="Filter payments by method"
+              className="w-full h-9 pl-9 pr-8 rounded-xl bg-card border border-border text-xs font-semibold text-foreground appearance-none focus:outline-none focus:ring-2 focus:ring-primary/30 cursor-pointer"
+            >
+              <option value="all">All Methods</option>
+              <option value="cash">Cash</option>
+              <option value="digital">Digital</option>
+              <option value="upi">UPI</option>
+              <option value="bank_transfer">Bank</option>
+            </select>
+            <ChevronDown className="w-4 h-4 text-muted-foreground absolute right-2.5 pointer-events-none" />
+          </div>
+
+          <div className="relative flex items-center">
+            <Calendar className="w-4 h-4 text-muted-foreground absolute left-3 pointer-events-none" />
+            <select
+              value={dateFilter}
+              onChange={(e) => {
+                setDateFilter(e.target.value as DateFilterType);
+                setCurrentPage(1);
+              }}
+              aria-label="Filter payments by date range"
+              className="w-full h-9 pl-9 pr-8 rounded-xl bg-card border border-border text-xs font-semibold text-foreground appearance-none focus:outline-none focus:ring-2 focus:ring-primary/30 cursor-pointer"
+            >
+              <option value="this_month">This Month</option>
+              <option value="30d">Last 30 Days</option>
+              <option value="7d">Last 7 Days</option>
+              <option value="all">All Time</option>
+            </select>
+            <ChevronDown className="w-4 h-4 text-muted-foreground absolute right-2.5 pointer-events-none" />
+          </div>
+        </div>
+      </div>
+
+      {/* Desktop Search & Filters */}
+      <div className="hidden md:block space-y-2.5">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-2.5">
           <div className="relative flex-1 min-w-0">
             <Search className="w-4 h-4 text-muted-foreground absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />

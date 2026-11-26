@@ -32,6 +32,7 @@ import {
   ArrowUpDown,
   ChevronLeft,
   ChevronRight,
+  SlidersHorizontal,
 } from "lucide-react";
 import { KpiCard } from "@/components/ui/kpi-card";
 import {
@@ -230,6 +231,8 @@ export function FollowUpsClient({
   const [promiseModalMember, setPromiseModalMember] =
     useState<FollowUpMember | null>(null);
   const [promiseDateInput, setPromiseDateInput] = useState("");
+  const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
+  const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
 
   // Renew Membership modal
   const [renewMember, setRenewMember] = useState<FollowUpMember | null>(null);
@@ -624,7 +627,7 @@ export function FollowUpsClient({
   const endIndex = Math.min(safePage * rowsPerPage, filteredAndSorted.length);
 
   return (
-    <div className="space-y-5 text-foreground">
+    <div className="space-y-4 md:space-y-5 text-foreground">
       {/* Page Header */}
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <div className="flex items-center gap-2.5 min-w-0">
@@ -636,24 +639,25 @@ export function FollowUpsClient({
           </h1>
         </div>
 
-        <div className="flex items-center gap-2">
+        {/* Desktop Header Actions (hidden on mobile to keep mobile header compact per reference) */}
+        <div className="hidden md:flex items-center gap-2">
           <button
             type="button"
             onClick={() => {
               setEditingScripts(scripts);
               setIsScriptModalOpen(true);
             }}
-            className="h-9 sm:h-10 px-3 rounded-xl border border-border bg-card hover:bg-muted text-foreground text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer"
+            className="h-10 px-3 rounded-xl border border-border bg-card hover:bg-muted text-foreground text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer"
           >
             <FileEdit className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">Scripts</span>
+            <span>Scripts</span>
           </button>
 
           {canRecordPayments && (
             <button
               type="button"
               onClick={() => openPaymentModal()}
-              className="h-9 sm:h-10 px-3.5 sm:px-4 rounded-xl bg-primary text-primary-foreground text-xs font-bold shadow-sm hover:opacity-95 inline-flex items-center gap-1.5 cursor-pointer"
+              className="h-10 px-4 rounded-xl bg-primary text-primary-foreground text-xs font-bold shadow-sm hover:opacity-95 inline-flex items-center gap-1.5 cursor-pointer"
             >
               <Plus className="w-4 h-4" />
               Record Payment
@@ -662,19 +666,20 @@ export function FollowUpsClient({
         </div>
       </div>
 
-      {/* Approved KPI Cards (3 permanent + conditional Trial Ending) */}
+      {/* Approved KPI Cards (Horizontal layout matching Attendance + Reference) */}
       <div
         className={`grid grid-cols-2 gap-2.5 sm:gap-4 ${
           showTrialCard ? "lg:grid-cols-4" : "lg:grid-cols-3"
         }`}
       >
         <KpiCard
-          compact
+          horizontal
+          hideChevron
           label="Expiring"
-          value={`${expiringMembers.length} Members`}
+          value={expiringMembers.length}
           variant="amber"
-          icon={<Calendar className="w-4 h-4" />}
-          subtext="Ends in 1–7 days"
+          icon={<Calendar className="w-4 h-4 sm:w-5 sm:h-5" />}
+          subtext="1 – 7 days"
           onClick={() => {
             setActiveTab((prev) => (prev === "expiring" ? "all" : "expiring"));
             setCurrentPage(1);
@@ -683,12 +688,15 @@ export function FollowUpsClient({
         />
 
         <KpiCard
-          compact
+          horizontal
+          hideChevron
           label="Pending"
           value={`₹${pendingTotal.toLocaleString("en-IN")}`}
-          variant="red"
-          icon={<Wallet className="w-4 h-4" />}
-          subtext={`${pendingMembers.length} Members`}
+          variant="green"
+          icon={<Wallet className="w-4 h-4 sm:w-5 sm:h-5" />}
+          subtext={`${pendingMembers.length} ${
+            pendingMembers.length === 1 ? "Member" : "Members"
+          }`}
           onClick={() => {
             setActiveTab((prev) => (prev === "pending" ? "all" : "pending"));
             setCurrentPage(1);
@@ -697,12 +705,13 @@ export function FollowUpsClient({
         />
 
         <KpiCard
-          compact
+          horizontal
+          hideChevron
           label="Overdue"
-          value={`${overdueMembers.length} Members`}
+          value={overdueMembers.length}
           variant="red"
-          icon={<XCircle className="w-4 h-4" />}
-          subtext="Expired without renewal"
+          icon={<XCircle className="w-4 h-4 sm:w-5 sm:h-5" />}
+          subtext="Expired (1–30 days)"
           onClick={() => {
             setActiveTab((prev) => (prev === "overdue" ? "all" : "overdue"));
             setCurrentPage(1);
@@ -712,12 +721,13 @@ export function FollowUpsClient({
 
         {showTrialCard && (
           <KpiCard
-            compact
+            horizontal
+            hideChevron
             label="Trial Ending"
-            value={`${trialEndingMembers.length} Members`}
+            value={trialEndingMembers.length}
             variant="purple"
-            icon={<Hourglass className="w-4 h-4" />}
-            subtext="Ends in 0–3 days"
+            icon={<Hourglass className="w-4 h-4 sm:w-5 sm:h-5" />}
+            subtext="1 – 3 days"
             onClick={() => {
               setActiveTab((prev) =>
                 prev === "trial_ending" ? "all" : "trial_ending"
@@ -730,10 +740,70 @@ export function FollowUpsClient({
       </div>
 
       {/* Category Pills + Search + Sort + Filters */}
-      <div className="flex flex-col gap-3">
+      <div className="flex flex-col gap-2.5 md:gap-3">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-2.5">
-          {/* Category Filter Pills */}
-          <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-0.5">
+          {/* Mobile Category Filter Pills (evenly distributed, semantic selected surfaces) */}
+          <div
+            className={`md:hidden grid gap-1.5 ${
+              showTrialCard ? "grid-cols-2" : "grid-cols-3"
+            }`}
+          >
+            {(
+              [
+                {
+                  id: "expiring" as const,
+                  label: `Expiring (${expiringMembers.length})`,
+                  activeClass:
+                    "bg-orange-500 text-white border-orange-500 shadow-xs",
+                },
+                {
+                  id: "pending" as const,
+                  label: `Pending (${pendingMembers.length})`,
+                  activeClass:
+                    "bg-emerald-600 text-white border-emerald-600 shadow-xs",
+                },
+                {
+                  id: "overdue" as const,
+                  label: `Overdue (${overdueMembers.length})`,
+                  activeClass:
+                    "bg-rose-600 text-white border-rose-600 shadow-xs",
+                },
+                ...(showTrialCard
+                  ? [
+                      {
+                        id: "trial_ending" as const,
+                        label: `Trial Ending (${trialEndingMembers.length})`,
+                        activeClass:
+                          "bg-purple-600 text-white border-purple-600 shadow-xs",
+                      },
+                    ]
+                  : []),
+              ]
+            ).map((pill) => {
+              const active = activeTab === pill.id;
+              return (
+                <button
+                  key={pill.id}
+                  type="button"
+                  aria-pressed={active}
+                  onClick={() => {
+                    setActiveTab((prev) => (prev === pill.id ? "all" : pill.id));
+                    setCurrentPage(1);
+                  }}
+                  className={`h-9 px-2 rounded-full text-xs font-bold border transition-colors cursor-pointer truncate text-center ${
+                    active
+                      ? pill.activeClass
+                      : "bg-card text-foreground border-border hover:bg-muted/60"
+                  }`}
+                >
+                  {pill.label}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Desktop Category Filter Pills */}
+          <div className="hidden md:flex flex-wrap items-center gap-1.5">
             {(
               [
                 { id: "all" as const, label: `All (${branchMembers.length})` },
@@ -780,8 +850,174 @@ export function FollowUpsClient({
             })}
           </div>
 
-          {/* Search, Sort, Plan, Branch */}
-          <div className="flex items-center gap-2 flex-wrap">
+          {/* Mobile Search + Sort + Filter Single Row */}
+          <div className="md:hidden space-y-2">
+            <div className="flex items-center justify-between gap-2">
+              <button
+                type="button"
+                onClick={() => setMobileSearchOpen((v) => !v)}
+                aria-expanded={mobileSearchOpen || searchQuery.length > 0}
+                aria-label="Toggle follow-up search"
+                className={`h-10 w-10 rounded-xl border inline-flex items-center justify-center shrink-0 transition-colors cursor-pointer ${
+                  mobileSearchOpen || searchQuery.length > 0
+                    ? "bg-primary/10 text-primary border-primary/30"
+                    : "bg-card text-muted-foreground hover:text-foreground border-border"
+                }`}
+              >
+                <Search className="w-4 h-4" />
+              </button>
+
+              <div className="relative flex-1 flex items-center min-w-0">
+                <ArrowUpDown className="w-3.5 h-3.5 text-muted-foreground absolute left-3 pointer-events-none" />
+                <select
+                  value={sortBy}
+                  onChange={(e) => setSortBy(e.target.value as SortOption)}
+                  aria-label="Sort follow-ups"
+                  className="w-full h-10 pl-8 pr-3 rounded-xl bg-card border border-border text-xs font-semibold text-foreground"
+                >
+                  <option value="urgency">Sort: Urgency</option>
+                  <option value="balance">Sort: Balance</option>
+                  <option value="name">Sort: Name</option>
+                </select>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setMobileFiltersOpen((v) => !v)}
+                aria-expanded={mobileFiltersOpen}
+                aria-label="Toggle follow-up filters"
+                className={`h-10 w-10 rounded-xl border inline-flex items-center justify-center shrink-0 transition-colors cursor-pointer ${
+                  mobileFiltersOpen ||
+                  selectedPlanId !== "all" ||
+                  selectedBranchId !== "all"
+                    ? "bg-primary/10 text-primary border-primary/30"
+                    : "bg-card text-muted-foreground hover:text-foreground border-border"
+                }`}
+              >
+                <SlidersHorizontal className="w-4 h-4" />
+              </button>
+            </div>
+
+            {(mobileSearchOpen || searchQuery.length > 0) && (
+              <div className="relative">
+                <Search className="w-4 h-4 text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => {
+                    setSearchQuery(e.target.value);
+                    setCurrentPage(1);
+                  }}
+                  placeholder="Search member, phone, ID..."
+                  className="w-full h-10 pl-9 pr-8 rounded-xl bg-card border border-border text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
+                />
+                {searchQuery && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSearchQuery("");
+                      setCurrentPage(1);
+                    }}
+                    aria-label="Clear search"
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground cursor-pointer"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                )}
+              </div>
+            )}
+
+            {mobileFiltersOpen && (
+              <div className="p-3 rounded-2xl bg-card border border-border space-y-2.5 shadow-xs">
+                <div className="grid grid-cols-1 gap-2">
+                  {plans.length > 0 && (
+                    <select
+                      value={selectedPlanId}
+                      onChange={(e) => {
+                        setSelectedPlanId(e.target.value);
+                        setCurrentPage(1);
+                      }}
+                      aria-label="Filter follow-ups by plan"
+                      className="h-9 px-3 rounded-xl bg-background border border-border text-xs font-semibold text-foreground"
+                    >
+                      <option value="all">All Plans</option>
+                      {plans.map((p) => (
+                        <option key={p.id} value={p.id}>
+                          {p.name}
+                        </option>
+                      ))}
+                    </select>
+                  )}
+                  {branches.length > 1 && (
+                    <select
+                      value={selectedBranchId}
+                      onChange={(e) => {
+                        setSelectedBranchId(e.target.value);
+                        setCurrentPage(1);
+                      }}
+                      aria-label="Filter follow-ups by branch"
+                      className="h-9 px-3 rounded-xl bg-background border border-border text-xs font-semibold text-foreground"
+                    >
+                      <option value="all">All Branches</option>
+                      {branches.map((b) => (
+                        <option key={b.id} value={b.id}>
+                          {b.name}
+                        </option>
+                      ))}
+                    </select>
+                  )}
+                </div>
+
+                <div className="flex flex-wrap items-center gap-1.5 pt-1 border-t border-border/70">
+                  {canRecordPayments && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setMobileFiltersOpen(false);
+                        openPaymentModal();
+                      }}
+                      className="h-8 px-3 rounded-xl bg-primary text-primary-foreground text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer"
+                    >
+                      <Plus className="w-3.5 h-3.5" />
+                      <span>Record Payment</span>
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setMobileFiltersOpen(false);
+                      setEditingScripts(scripts);
+                      setIsScriptModalOpen(true);
+                    }}
+                    className="h-8 px-3 rounded-xl border border-border bg-muted/60 text-foreground text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer"
+                  >
+                    <FileEdit className="w-3.5 h-3.5" />
+                    <span>Message Scripts</span>
+                  </button>
+                  {(activeTab !== "all" ||
+                    selectedPlanId !== "all" ||
+                    selectedBranchId !== "all") && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setActiveTab("all");
+                        setSelectedPlanId("all");
+                        setSelectedBranchId("all");
+                        setCurrentPage(1);
+                        setMobileFiltersOpen(false);
+                      }}
+                      className="h-8 px-2.5 rounded-xl bg-muted text-foreground text-xs font-semibold cursor-pointer"
+                    >
+                      Reset
+                    </button>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Desktop Search, Sort, Plan, Branch */}
+          <div className="hidden md:flex items-center gap-2 flex-wrap">
             <div className="relative flex-1 sm:w-60 min-w-[180px]">
               <Search className="w-4 h-4 text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
               <input
@@ -1063,7 +1299,7 @@ export function FollowUpsClient({
       </div>
 
       {/* Mobile Follow-up Cards */}
-      <div className="md:hidden space-y-2.5">
+      <div className="md:hidden space-y-2">
         {paginatedMembers.length === 0 ? (
           <div className="bg-card rounded-2xl border border-border p-8 text-center text-xs text-muted-foreground">
             No follow-up records match the current selection.
@@ -1072,74 +1308,56 @@ export function FollowUpsClient({
           paginatedMembers.map((member) => {
             const cleanPhone = (member.phone || "").replace(/\D/g, "");
             const hasPhone = cleanPhone.length >= 7;
+            const initials =
+              member.fullName
+                .split(/\s+/)
+                .filter(Boolean)
+                .map((p) => p[0])
+                .join("")
+                .slice(0, 2)
+                .toUpperCase() || "M";
+            const savedStatus = followUpStatuses[member.id];
+            const avatarTone = member.isTrialEnding
+              ? "bg-purple-500/12 [.dark_&]:bg-purple-500/20 text-purple-700 [.dark_&]:text-purple-300 border-purple-500/25"
+              : member.isOverdue
+              ? "bg-rose-500/12 [.dark_&]:bg-rose-500/20 text-rose-700 [.dark_&]:text-rose-300 border-rose-500/25"
+              : member.isExpiring
+              ? "bg-amber-500/15 [.dark_&]:bg-amber-500/20 text-amber-700 [.dark_&]:text-amber-300 border-amber-500/25"
+              : "bg-emerald-500/12 [.dark_&]:bg-emerald-500/20 text-emerald-700 [.dark_&]:text-emerald-300 border-emerald-500/25";
 
             return (
               <div
                 key={member.id}
-                className="bg-card rounded-2xl border border-border p-3.5 space-y-3"
+                className="bg-card rounded-2xl border border-border p-3 space-y-2 shadow-2xs"
               >
+                {/* Row 1: Initials + Name + Code/Phone | Urgency Pill + Overflow Menu */}
                 <div className="flex items-start justify-between gap-2">
-                  <div className="flex items-center gap-3 min-w-0">
-                    <div className="h-9 w-9 rounded-full bg-amber-500/12 text-amber-700 dark:text-amber-300 border border-amber-500/25 flex items-center justify-center font-black text-xs shrink-0">
-                      {member.fullName.charAt(0).toUpperCase()}
+                  <div className="flex items-start gap-2.5 min-w-0 flex-1">
+                    <div
+                      className={`h-10 w-10 rounded-full border flex items-center justify-center font-bold text-xs shrink-0 ${avatarTone}`}
+                    >
+                      {initials}
                     </div>
-                    <div className="min-w-0">
+                    <div className="min-w-0 flex-1">
                       <Link
                         href={`/app/${gymId}/members/${member.id}`}
-                        className="font-bold text-sm text-foreground truncate block hover:underline"
+                        className="font-bold text-sm text-foreground leading-tight truncate block hover:underline"
                       >
                         {member.fullName}
                       </Link>
-                      <div className="text-[11px] text-muted-foreground font-mono truncate">
-                        {member.code} • {member.phone || "No phone"}
+                      <div className="text-[11px] text-muted-foreground leading-snug mt-0.5 flex flex-wrap items-center gap-x-1">
+                        <span>{member.code}</span>
+                        <span>·</span>
+                        <span className="tabular-nums">
+                          {member.phone || "No phone"}
+                        </span>
                       </div>
                     </div>
                   </div>
-                  <div className="shrink-0">{renderUrgencyPill(member)}</div>
-                </div>
 
-                <div className="flex items-center justify-between gap-2 text-xs text-muted-foreground">
-                  <div className="truncate">
-                    <span className="font-semibold text-foreground">
-                      {member.planName}
-                    </span>{" "}
-                    • {member.isOverdue ? "Ended" : "Ends"}{" "}
-                    {member.formattedEndDate}
-                    {member.dueAmount > 0 && (
-                      <span className="ml-1 font-bold text-rose-600 dark:text-rose-400">
-                        (₹{member.dueAmount.toLocaleString("en-IN")} due)
-                      </span>
-                    )}
-                  </div>
-                </div>
+                  <div className="flex items-center gap-0.5 shrink-0 relative">
+                    <div>{renderUrgencyPill(member)}</div>
 
-                <div className="flex items-center gap-2 pt-1">
-                  {hasPhone ? (
-                    <a
-                      href={`tel:${cleanPhone}`}
-                      className="flex-1 h-9 rounded-xl bg-primary text-primary-foreground font-bold text-xs inline-flex items-center justify-center gap-1.5"
-                    >
-                      <Phone className="w-3.5 h-3.5" />
-                      Call
-                    </a>
-                  ) : (
-                    <span className="flex-1 h-9 rounded-xl bg-muted text-muted-foreground font-bold text-xs inline-flex items-center justify-center gap-1.5 opacity-60">
-                      <Phone className="w-3.5 h-3.5" />
-                      No Phone
-                    </span>
-                  )}
-
-                  <button
-                    type="button"
-                    disabled={!hasPhone}
-                    onClick={() => handleWhatsApp(member)}
-                    aria-label="WhatsApp"
-                    className="h-9 w-10 rounded-xl bg-emerald-500/12 text-emerald-700 dark:text-emerald-400 border border-emerald-500/25 inline-flex items-center justify-center disabled:opacity-40 cursor-pointer"
-                  >
-                    <MessageSquare className="w-4 h-4" />
-                  </button>
-
-                  <div className="relative">
                     <button
                       type="button"
                       aria-label="Mobile follow-up actions"
@@ -1148,7 +1366,7 @@ export function FollowUpsClient({
                           prev === `mob-${member.id}` ? null : `mob-${member.id}`
                         )
                       }
-                      className="h-9 w-9 rounded-xl border border-border bg-muted/40 text-foreground inline-flex items-center justify-center cursor-pointer"
+                      className="h-7 w-7 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted inline-flex items-center justify-center cursor-pointer"
                     >
                       <MoreVertical className="w-4 h-4" />
                     </button>
@@ -1159,7 +1377,7 @@ export function FollowUpsClient({
                           className="fixed inset-0 z-20"
                           onClick={() => setOpenMenuId(null)}
                         />
-                        <div className="absolute right-0 bottom-10 w-48 bg-popover text-popover-foreground border border-border rounded-2xl shadow-lg p-1.5 z-30 text-xs font-semibold">
+                        <div className="absolute right-0 top-8 w-48 bg-popover text-popover-foreground border border-border rounded-2xl shadow-lg p-1.5 z-30 text-xs font-semibold">
                           {canRecordPayments && member.dueAmount > 0 && (
                             <button
                               type="button"
@@ -1217,10 +1435,96 @@ export function FollowUpsClient({
                             <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
                             Mark Contacted
                           </button>
+                          {member.email && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setOpenMenuId(null);
+                                handleEmail(member);
+                              }}
+                              className="w-full flex items-center gap-2 px-3 py-2 rounded-xl hover:bg-muted cursor-pointer"
+                            >
+                              <Mail className="w-3.5 h-3.5 text-muted-foreground" />
+                              Send Email
+                            </button>
+                          )}
                         </div>
                       </>
                     )}
                   </div>
+                </div>
+
+                {/* Row 2: Plan · Expiry / Due Details */}
+                <div className="flex items-center justify-between gap-2 text-xs text-muted-foreground">
+                  <div className="truncate">
+                    <span className="font-semibold text-foreground">
+                      {member.planName}
+                    </span>{" "}
+                    · {member.isOverdue ? "Ended" : "Ends on"}{" "}
+                    {member.formattedEndDate}
+                    {member.dueAmount > 0 && (
+                      <span className="ml-1 font-bold text-rose-600 [.dark_&]:text-rose-400">
+                        (₹{member.dueAmount.toLocaleString("en-IN")} due)
+                      </span>
+                    )}
+                  </div>
+                  {savedStatus && (
+                    <span className="shrink-0 text-[10px] font-semibold text-primary bg-primary/10 px-2 py-0.5 rounded-full">
+                      {savedStatus}
+                    </span>
+                  )}
+                </div>
+
+                {/* Row 3: 3 Compact Horizontally Aligned Action Buttons (Call | WhatsApp | Log) */}
+                <div className="grid grid-cols-3 gap-2 pt-0.5">
+                  {hasPhone ? (
+                    <a
+                      href={`tel:${cleanPhone}`}
+                      className="h-9 rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-bold text-xs inline-flex items-center justify-center gap-1.5 shadow-2xs transition-colors"
+                    >
+                      <Phone className="w-3.5 h-3.5" />
+                      <span>Call</span>
+                    </a>
+                  ) : (
+                    <span className="h-9 rounded-xl bg-muted text-muted-foreground font-bold text-xs inline-flex items-center justify-center gap-1.5 opacity-60">
+                      <Phone className="w-3.5 h-3.5" />
+                      <span>No Phone</span>
+                    </span>
+                  )}
+
+                  <button
+                    type="button"
+                    disabled={!hasPhone}
+                    onClick={() => handleWhatsApp(member)}
+                    aria-label="WhatsApp"
+                    className="h-9 rounded-xl bg-emerald-500/15 hover:bg-emerald-500/22 [.dark_&]:bg-emerald-500/20 text-emerald-700 [.dark_&]:text-emerald-300 border border-emerald-500/25 inline-flex items-center justify-center text-xs font-bold disabled:opacity-40 cursor-pointer transition-colors"
+                  >
+                    <svg
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      className="w-4 h-4"
+                      aria-hidden="true"
+                    >
+                      <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" />
+                      <path d="M9.5 9.5c.3 1.5 1.5 2.7 3 3 .5.1 1-.2 1.3-.5l.7.7c-.3.5-.9.9-1.6.9-2.2 0-4.5-2.3-4.5-4.5 0-.7.4-1.3.9-1.6l.7.7c-.3.3-.6.8-.5 1.3z" />
+                    </svg>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setPromiseModalMember(member);
+                      setPromiseDateInput(todayStr);
+                    }}
+                    className="h-9 rounded-xl bg-card hover:bg-muted text-foreground border border-border inline-flex items-center justify-center gap-1.5 text-xs font-bold cursor-pointer transition-colors"
+                  >
+                    <FileEdit className="w-3.5 h-3.5 text-muted-foreground" />
+                    <span>Log</span>
+                  </button>
                 </div>
               </div>
             );
@@ -1309,13 +1613,24 @@ export function FollowUpsClient({
                 className="w-full h-10 px-3 rounded-xl bg-background border border-border text-foreground"
               />
             </div>
-            <div className="mt-5 flex justify-end gap-2">
+            <div className="mt-5 flex flex-wrap items-center justify-end gap-2">
               <button
                 type="button"
                 onClick={() => setPromiseModalMember(null)}
-                className="h-9 px-4 rounded-xl border border-border bg-muted font-bold text-xs cursor-pointer"
+                className="h-9 px-3 rounded-xl border border-border bg-muted font-bold text-xs cursor-pointer"
               >
                 Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  if (!promiseModalMember) return;
+                  updateFollowUpStatus(promiseModalMember.id, "Contacted");
+                  setPromiseModalMember(null);
+                }}
+                className="h-9 px-3 rounded-xl border border-emerald-500/30 bg-emerald-500/12 text-emerald-700 [.dark_&]:text-emerald-300 font-bold text-xs cursor-pointer"
+              >
+                Mark Contacted
               </button>
               <button
                 type="button"

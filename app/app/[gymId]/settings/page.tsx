@@ -6,10 +6,12 @@ import { SettingsViewClient } from "@/components/settings/settings-view-client";
 
 interface SettingsPageProps {
   params: Promise<{ gymId: string }>;
+  searchParams: Promise<{ section?: string }>;
 }
 
-export default async function SettingsPage({ params }: SettingsPageProps) {
+export default async function SettingsPage({ params, searchParams }: SettingsPageProps) {
   const { gymId } = await params;
+  const { section } = await searchParams;
 
   // Settings route lockdown: Only owner role possesses settings:manage
   const authContext = await getCachedGymAuthContext(gymId);
@@ -62,6 +64,7 @@ export default async function SettingsPage({ params }: SettingsPageProps) {
         }}
         userEmail={user?.email || ""}
         userRole={authContext.role}
+        initialSection={section}
       />
     </div>
   );

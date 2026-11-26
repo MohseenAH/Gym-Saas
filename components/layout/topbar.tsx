@@ -121,6 +121,7 @@ export function Topbar({
   }
 
   const roleLabel = ROLE_LABELS[role] || "Staff";
+  const isMemberProfileRoute = /^\/app\/[^/]+\/members\/[^/]+$/.test(pathname);
   const avatarLetter = userName
     ? userName[0].toUpperCase()
     : userEmail
@@ -128,7 +129,11 @@ export function Topbar({
     : "U";
 
   return (
-    <header className="h-16 px-4 md:px-6 bg-card border-b border-border flex items-center justify-between shrink-0 sticky top-0 z-30 transition-colors">
+    <header
+      className={`h-16 px-4 md:px-6 bg-card border-b border-border ${
+        isMemberProfileRoute ? "hidden md:flex" : "flex"
+      } items-center justify-between shrink-0 sticky top-0 z-30 transition-colors`}
+    >
       {/* Left: Mobile Toggle & Branch Selector */}
       <div className="flex items-center gap-2 md:gap-3">
         {onMenuClick && (

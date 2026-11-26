@@ -24,6 +24,7 @@ import { LandingHeroWaves } from "@/components/landing/landing-hero-waves";
 import { LandingIllustration } from "@/components/landing/landing-illustration";
 import { GymApraLogo } from "@/components/ui/gymapra-logo";
 import { LandingFaq } from "@/components/landing/landing-faq";
+import { COMPANY_CONTACT } from "@/lib/config/company";
 
 // ─── Feature card data ───────────────────────────────────────────────────────
 const FEATURES = [
@@ -425,7 +426,7 @@ export default async function HomePage() {
               <ul className="space-y-2 text-xs text-[#10243E]/70 mb-4">
                 <li>
                   <a
-                    href="mailto:support@gymapra.com"
+                    href={COMPANY_CONTACT.emailUrl}
                     className="hover:text-[#2563EB] transition-colors"
                   >
                     Contact Us
@@ -441,14 +442,14 @@ export default async function HomePage() {
               {/* Contact icons */}
               <div className="flex items-center gap-2">
                 <a
-                  href="mailto:support@gymapra.com"
+                  href={COMPANY_CONTACT.emailUrl}
                   aria-label="Email Support"
                   className="w-8 h-8 rounded-full border border-[#B8D0E6] bg-white text-[#2563EB] flex items-center justify-center transition-colors hover:bg-[#EBF4FF]"
                 >
                   <Mail className="w-3.5 h-3.5" />
                 </a>
                 <a
-                  href="tel:+919876543210"
+                  href={COMPANY_CONTACT.callUrl}
                   aria-label="Call Support"
                   className="w-8 h-8 rounded-full border border-[#B8D0E6] bg-white text-[#2563EB] flex items-center justify-center transition-colors hover:bg-[#EBF4FF]"
                 >

@@ -282,7 +282,8 @@ export function MembersTableClient({
       >
         <KpiCard
           compact
-          label="Total Members"
+          horizontalMobile
+          label="Total"
           value={stats.total.toLocaleString("en-IN")}
           variant="purple"
           icon={<Users className="w-4 h-4" />}
@@ -291,6 +292,7 @@ export function MembersTableClient({
         />
         <KpiCard
           compact
+          horizontalMobile
           label="Active"
           value={stats.active.toLocaleString("en-IN")}
           variant="green"
@@ -300,6 +302,7 @@ export function MembersTableClient({
         />
         <KpiCard
           compact
+          horizontalMobile
           label="Expiring"
           value={stats.expiring.toLocaleString("en-IN")}
           variant="amber"
@@ -309,6 +312,7 @@ export function MembersTableClient({
         />
         <KpiCard
           compact
+          horizontalMobile
           label="Expired"
           value={stats.expired.toLocaleString("en-IN")}
           variant="red"
@@ -318,6 +322,7 @@ export function MembersTableClient({
         />
         <KpiCard
           compact
+          horizontalMobile
           label="Trial"
           value={stats.trial.toLocaleString("en-IN")}
           variant="purple"
@@ -327,6 +332,7 @@ export function MembersTableClient({
         />
         <KpiCard
           compact
+          horizontalMobile
           label="Unassigned"
           value={stats.unassigned.toLocaleString("en-IN")}
           variant="slate"
@@ -349,7 +355,7 @@ export function MembersTableClient({
                 setSearch(e.target.value);
                 setCurrentPage(1);
               }}
-              placeholder="Search member by name, phone, or member ID..."
+              placeholder="Search member by name or ID..."
               aria-label="Search members"
               className="w-full h-10 pl-10 pr-9 rounded-xl bg-card border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
             />
