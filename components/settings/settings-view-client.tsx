@@ -3,6 +3,7 @@
 import { useState, useSyncExternalStore } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
+import { APP_TIMEZONE_FULL_LABEL } from "@/lib/config/timezone";
 import {
   Settings,
   Building2,
@@ -975,7 +976,7 @@ export function SettingsViewClient({
               </div>
               <div className="p-3.5 rounded-xl bg-muted/40 border border-border">
                 <div className="text-xs text-muted-foreground font-medium">Timezone</div>
-                <div className="text-sm font-bold text-foreground mt-0.5">IST (Asia/Kolkata)</div>
+                <div className="text-sm font-bold text-foreground mt-0.5">{APP_TIMEZONE_FULL_LABEL}</div>
               </div>
             </div>
           </div>

@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
+import { usePathname, useRouter } from "next/navigation";
 import { Sidebar } from "./sidebar";
 import { Topbar } from "./topbar";
 import { ThemedPageBackground } from "./themed-page-background";
@@ -32,12 +33,143 @@ export function AppShell({
   children,
 }: AppShellProps) {
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
+  const [exitToastPath, setExitToastPath] = useState<string | null>(null);
+  const pathname = usePathname();
+  const router = useRouter();
+  const exitArmedRef = useRef(false);
+  const exitTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const drawerOpenRef = useRef(mobileDrawerOpen);
+  const exitToastVisible = exitToastPath === pathname;
+
+  useEffect(() => {
+    drawerOpenRef.current = mobileDrawerOpen;
+  }, [mobileDrawerOpen]);
 
   useEffect(() => {
     if (gymId && typeof document !== "undefined") {
       document.cookie = `gymapra_last_gym_id=${gymId}; path=/; max-age=31536000; SameSite=Lax`;
     }
   }, [gymId]);
+
+  // Reset double-back-to-exit timer when navigating away from Dashboard
+  useEffect(() => {
+    const dashboardPath = `/app/${gymId}/dashboard`;
+    if (pathname !== dashboardPath) {
+      exitArmedRef.current = false;
+      if (exitTimerRef.current) {
+        clearTimeout(exitTimerRef.current);
+        exitTimerRef.current = null;
+      }
+    }
+  }, [pathname, gymId]);
+
+  // Mobile & PWA Back Navigation + Double Back to Exit
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const isStandalonePWA =
+      window.matchMedia("(display-mode: standalone)").matches ||
+      (window.navigator as Navigator & { standalone?: boolean }).standalone === true;
+    const isMobileViewport = window.matchMedia("(max-width: 767px)").matches;
+
+    if (!isStandalonePWA && !isMobileViewport) return;
+
+    const dashboardPath = `/app/${gymId}/dashboard`;
+    const primaryPaths = new Set([
+      `/app/${gymId}/dashboard`,
+      `/app/${gymId}/members`,
+      `/app/${gymId}/memberships`,
+      `/app/${gymId}/attendance`,
+      `/app/${gymId}/payments`,
+      `/app/${gymId}/expenses`,
+      `/app/${gymId}/reports`,
+      `/app/${gymId}/follow-ups`,
+      `/app/${gymId}/staff`,
+      `/app/${gymId}/branches`,
+      `/app/${gymId}/notices`,
+      `/app/${gymId}/settings`,
+    ]);
+
+    if (
+      isStandalonePWA &&
+      pathname === dashboardPath &&
+      !window.history.state?.gymapraExitGuard
+    ) {
+      window.history.pushState({ gymapraExitGuard: true }, "");
+    }
+
+    function handlePopState() {
+      // 1. Close mobile drawer if open
+      if (drawerOpenRef.current) {
+        setMobileDrawerOpen(false);
+        window.history.pushState({ gymapraGuard: true }, "");
+        return;
+      }
+
+      // 2. Close active modal/dialog if open
+      const openDialog = document.querySelector('[role="dialog"][aria-modal="true"]');
+      if (openDialog) {
+        const closeBtn = openDialog.querySelector<HTMLButtonElement>(
+          'button[aria-label*="Close" i], button[aria-label*="Dismiss" i]'
+        );
+        if (closeBtn) {
+          closeBtn.click();
+        } else {
+          document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" }));
+        }
+        window.history.pushState({ gymapraGuard: true }, "");
+        return;
+      }
+
+      // 3. Preserve unsaved form protection
+      const unsavedForm = document.querySelector(
+        'form[data-dirty="true"], [data-unsaved="true"]'
+      );
+      if (unsavedForm) {
+        return;
+      }
+
+      if (!isStandalonePWA) return;
+
+      // 4. On primary non-dashboard pages in installed PWA, back returns to Dashboard
+      if (pathname !== dashboardPath && primaryPaths.has(pathname)) {
+        router.replace(dashboardPath);
+        return;
+      }
+
+      // 5. On Dashboard in installed PWA, implement double back to exit
+      if (pathname === dashboardPath) {
+        if (!exitArmedRef.current) {
+          exitArmedRef.current = true;
+          setExitToastPath(dashboardPath);
+          window.history.pushState({ gymapraExitGuard: true }, "");
+          if (exitTimerRef.current) clearTimeout(exitTimerRef.current);
+          exitTimerRef.current = setTimeout(() => {
+            exitArmedRef.current = false;
+            setExitToastPath(null);
+            exitTimerRef.current = null;
+          }, 2000);
+        } else {
+          // Second back press within 2s: allow normal platform exit
+          exitArmedRef.current = false;
+          setExitToastPath(null);
+          if (exitTimerRef.current) {
+            clearTimeout(exitTimerRef.current);
+            exitTimerRef.current = null;
+          }
+        }
+      }
+    }
+
+    window.addEventListener("popstate", handlePopState);
+    return () => {
+      window.removeEventListener("popstate", handlePopState);
+      if (exitTimerRef.current) {
+        clearTimeout(exitTimerRef.current);
+        exitTimerRef.current = null;
+      }
+    };
+  }, [gymId, pathname, router]);
 
   return (
     <div className="relative min-h-screen bg-transparent text-foreground">
@@ -98,6 +230,17 @@ export function AppShell({
           </main>
         </div>
       </div>
+
+      {/* Double Back to Exit Toast (Installed Mobile PWA) */}
+      {exitToastVisible && (
+        <div
+          role="status"
+          aria-live="polite"
+          className="fixed bottom-5 left-1/2 -translate-x-1/2 z-50 px-4 py-2.5 rounded-full bg-foreground text-background text-xs font-semibold shadow-lg pointer-events-none animate-in fade-in duration-150 whitespace-nowrap"
+        >
+          Press back again to exit GymApra
+        </div>
+      )}
     </div>
   );
 }

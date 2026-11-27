@@ -4,6 +4,8 @@
  * and CSV formula-injection protection, safe period comparisons, and formatting.
  */
 
+import { APP_TIMEZONE } from "@/lib/config/timezone";
+
 export type ReportPeriod = "today" | "weekly" | "monthly" | "last_month" | "all_time";
 
 export interface PeriodDateRange {
@@ -19,7 +21,7 @@ export interface PeriodDateRange {
  * Returns gym-local date (default Asia/Kolkata) as YYYY-MM-DD.
  * Never uses .toISOString() on local midnight to prevent off-by-one shifts.
  */
-export function getLocalTodayDateString(timeZone = "Asia/Kolkata"): string {
+export function getLocalTodayDateString(timeZone = APP_TIMEZONE): string {
   return new Intl.DateTimeFormat("en-CA", {
     timeZone,
     year: "numeric",
@@ -31,7 +33,7 @@ export function getLocalTodayDateString(timeZone = "Asia/Kolkata"): string {
 /**
  * Computes deterministic date ranges for the 5 supported report periods.
  */
-export function getPeriodDateRange(period: ReportPeriod, timeZone = "Asia/Kolkata"): PeriodDateRange {
+export function getPeriodDateRange(period: ReportPeriod, timeZone = APP_TIMEZONE): PeriodDateRange {
   const todayStr = getLocalTodayDateString(timeZone);
   const [y, m, d] = todayStr.split("-").map(Number);
 

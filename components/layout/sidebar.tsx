@@ -322,6 +322,7 @@ export function Sidebar({ gymId, gymName, role, branches = [], onNavigate }: Sid
                         <Link
                           key={item.href}
                           href={targetHref}
+                          replace={Boolean(onNavigate)}
                           prefetch={true}
                           onMouseEnter={() => router.prefetch(targetHref)}
                           onTouchStart={() => router.prefetch(targetHref)}
