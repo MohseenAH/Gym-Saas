@@ -33,13 +33,9 @@ export function AppShell({
   children,
 }: AppShellProps) {
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
-  const [exitToastPath, setExitToastPath] = useState<string | null>(null);
   const pathname = usePathname();
   const router = useRouter();
-  const exitArmedRef = useRef(false);
-  const exitTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const drawerOpenRef = useRef(mobileDrawerOpen);
-  const exitToastVisible = exitToastPath === pathname;
 
   useEffect(() => {
     drawerOpenRef.current = mobileDrawerOpen;
@@ -51,19 +47,7 @@ export function AppShell({
     }
   }, [gymId]);
 
-  // Reset double-back-to-exit timer when navigating away from Dashboard
-  useEffect(() => {
-    const dashboardPath = `/app/${gymId}/dashboard`;
-    if (pathname !== dashboardPath) {
-      exitArmedRef.current = false;
-      if (exitTimerRef.current) {
-        clearTimeout(exitTimerRef.current);
-        exitTimerRef.current = null;
-      }
-    }
-  }, [pathname, gymId]);
-
-  // Mobile & PWA Back Navigation + Double Back to Exit
+  // Dashboard-First Mobile & PWA Back Navigation (no double-back timer or exit toast)
   useEffect(() => {
     if (typeof window === "undefined") return;
 
@@ -90,19 +74,11 @@ export function AppShell({
       `/app/${gymId}/settings`,
     ]);
 
-    if (
-      isStandalonePWA &&
-      pathname === dashboardPath &&
-      !window.history.state?.gymapraExitGuard
-    ) {
-      window.history.pushState({ gymapraExitGuard: true }, "");
-    }
-
     function handlePopState() {
       // 1. Close mobile drawer if open
       if (drawerOpenRef.current) {
         setMobileDrawerOpen(false);
-        window.history.pushState({ gymapraGuard: true }, "");
+        window.history.pushState({ gymapraOverlayGuard: true }, "");
         return;
       }
 
@@ -117,7 +93,7 @@ export function AppShell({
         } else {
           document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" }));
         }
-        window.history.pushState({ gymapraGuard: true }, "");
+        window.history.pushState({ gymapraOverlayGuard: true }, "");
         return;
       }
 
@@ -131,43 +107,17 @@ export function AppShell({
 
       if (!isStandalonePWA) return;
 
-      // 4. On primary non-dashboard pages in installed PWA, back returns to Dashboard
+      // 4. Dashboard-first back navigation in installed PWA:
+      //    Back from any non-dashboard primary tab returns directly to Dashboard.
+      //    Back from Dashboard allows normal platform exit behaviour without trapping.
       if (pathname !== dashboardPath && primaryPaths.has(pathname)) {
         router.replace(dashboardPath);
-        return;
-      }
-
-      // 5. On Dashboard in installed PWA, implement double back to exit
-      if (pathname === dashboardPath) {
-        if (!exitArmedRef.current) {
-          exitArmedRef.current = true;
-          setExitToastPath(dashboardPath);
-          window.history.pushState({ gymapraExitGuard: true }, "");
-          if (exitTimerRef.current) clearTimeout(exitTimerRef.current);
-          exitTimerRef.current = setTimeout(() => {
-            exitArmedRef.current = false;
-            setExitToastPath(null);
-            exitTimerRef.current = null;
-          }, 2000);
-        } else {
-          // Second back press within 2s: allow normal platform exit
-          exitArmedRef.current = false;
-          setExitToastPath(null);
-          if (exitTimerRef.current) {
-            clearTimeout(exitTimerRef.current);
-            exitTimerRef.current = null;
-          }
-        }
       }
     }
 
     window.addEventListener("popstate", handlePopState);
     return () => {
       window.removeEventListener("popstate", handlePopState);
-      if (exitTimerRef.current) {
-        clearTimeout(exitTimerRef.current);
-        exitTimerRef.current = null;
-      }
     };
   }, [gymId, pathname, router]);
 
@@ -230,17 +180,6 @@ export function AppShell({
           </main>
         </div>
       </div>
-
-      {/* Double Back to Exit Toast (Installed Mobile PWA) */}
-      {exitToastVisible && (
-        <div
-          role="status"
-          aria-live="polite"
-          className="fixed bottom-5 left-1/2 -translate-x-1/2 z-50 px-4 py-2.5 rounded-full bg-foreground text-background text-xs font-semibold shadow-lg pointer-events-none animate-in fade-in duration-150 whitespace-nowrap"
-        >
-          Press back again to exit GymApra
-        </div>
-      )}
     </div>
   );
 }

@@ -318,11 +318,16 @@ export function Sidebar({ gymId, gymName, role, branches = [], onNavigate }: Sid
                         ? `${item.href}?branchId=${encodeURIComponent(currentBranchId)}`
                         : item.href;
 
+                      const isDashboardCurrent =
+                        pathname === `/app/${gymId}/dashboard`;
+                      const shouldReplaceMobile =
+                        Boolean(onNavigate) && !isDashboardCurrent;
+
                       return (
                         <Link
                           key={item.href}
                           href={targetHref}
-                          replace={Boolean(onNavigate)}
+                          replace={shouldReplaceMobile}
                           prefetch={true}
                           onMouseEnter={() => router.prefetch(targetHref)}
                           onTouchStart={() => router.prefetch(targetHref)}
